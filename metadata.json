@@ -1,0 +1,5 @@
+{
+  "name": "Vishal Tour & Travelers",
+  "description": "A touring and traveling website with Admin, Staff/Driver, and Customer modules, real-time sync, and Google Sheets integration.",
+  "requestFramePermissions": []
+}

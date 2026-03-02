@@ -1,0 +1,132 @@
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { LogOut, User as UserIcon, Map, Menu, X } from 'lucide-react';
+
+export default function Navbar() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+    setIsMobileMenuOpen(false);
+  };
+
+  return (
+    <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+      <div className="w-full mx-auto px-4 sm:px-6 lg:px-12 xl:px-24">
+        <div className="flex justify-between h-16">
+          <div className="flex">
+            <Link to="/" className="flex-shrink-0 flex items-center">
+              <Map className="h-8 w-8 text-indigo-600" />
+              <span className="ml-2 text-xl font-bold text-gray-900 truncate">Vishal Tour & Travelers</span>
+            </Link>
+          </div>
+          
+          {/* Desktop Menu */}
+          <div className="hidden sm:flex sm:items-center">
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <Link
+                  to={`/dashboard/${user.role}`}
+                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Dashboard
+                </Link>
+                <div className="flex items-center text-gray-700">
+                  <UserIcon className="h-5 w-5 mr-1" />
+                  <span className="text-sm font-medium">{user.name}</span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  <LogOut className="h-5 w-5 mr-1" />
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-4">
+                <Link
+                  to="/login"
+                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="flex items-center sm:hidden">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+            >
+              <span className="sr-only">Open main menu</span>
+              {isMobileMenuOpen ? (
+                <X className="block h-6 w-6" aria-hidden="true" />
+              ) : (
+                <Menu className="block h-6 w-6" aria-hidden="true" />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="sm:hidden border-t border-gray-200">
+          <div className="pt-2 pb-3 space-y-1">
+            {user ? (
+              <>
+                <div className="px-4 py-2 flex items-center text-gray-700 border-b border-gray-100">
+                  <UserIcon className="h-5 w-5 mr-2" />
+                  <span className="text-base font-medium">{user.name}</span>
+                </div>
+                <Link
+                  to={`/dashboard/${user.role}`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block px-4 py-2 text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50"
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left px-4 py-2 text-base font-medium text-gray-700 hover:text-red-600 hover:bg-gray-50"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block px-4 py-2 text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block px-4 py-2 text-base font-medium text-indigo-600 hover:bg-indigo-50"
+                >
+                  Register
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </nav>
+  );
+}
