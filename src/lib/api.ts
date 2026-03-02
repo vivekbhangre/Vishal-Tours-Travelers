@@ -84,7 +84,18 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) {
+      const text = await res.text();
+      try {
+        const json = JSON.parse(text);
+        throw new Error(json.message || json.error || 'Failed to update booking');
+      } catch (e) {
+        if (e instanceof Error && e.message !== 'Failed to update booking' && !e.message.startsWith('Unexpected token')) {
+          throw e; // rethrow the parsed error
+        }
+        throw new Error(text);
+      }
+    }
     return res.json();
   },
 

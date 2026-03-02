@@ -24,7 +24,7 @@ async function startServer() {
 
   app.use(cors());
   app.use(express.json());
-  
+
   app.use('/api', cityAutocompleteRouter);
 
   app.get("/api/generate-hero", async (req, res) => {
@@ -99,12 +99,12 @@ async function startServer() {
 
     const { name, email, phone, password, role } = req.body;
     const userRole = role || 'customer';
-    
+
     try {
       const sheet = doc.sheetsByTitle['Users'];
       const rows = await sheet.getRows();
       const existingUser = rows.find(r => r.get('email') === email);
-      
+
       if (existingUser) {
         return res.status(400).json({ error: 'Email already exists' });
       }
@@ -133,17 +133,17 @@ async function startServer() {
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
     const { name, email, phone } = req.body;
-    
+
     try {
       const usersSheet = doc.sheetsByTitle['Users'];
       const userRows = await usersSheet.getRows();
-      
-      const user = userRows.find(r => 
-        r.get('email') === email && 
-        r.get('name') === name && 
+
+      const user = userRows.find(r =>
+        r.get('email') === email &&
+        r.get('name') === name &&
         r.get('phone') === phone
       );
-      
+
       if (!user) {
         return res.status(404).json({ error: 'No matching account found with these details.' });
       }
@@ -160,13 +160,13 @@ async function startServer() {
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
     const { userId, newPassword } = req.body;
-    
+
     try {
       const usersSheet = doc.sheetsByTitle['Users'];
       const userRows = await usersSheet.getRows();
-      
+
       const user = userRows.find(r => r.get('id') === userId);
-      
+
       if (!user) {
         return res.status(404).json({ error: 'User not found.' });
       }
@@ -186,19 +186,19 @@ async function startServer() {
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
     const { email, password } = req.body;
-    
+
     try {
       const usersSheet = doc.sheetsByTitle['Users'];
       const staffSheet = doc.sheetsByTitle['Staff'];
-      
+
       const userRows = await usersSheet.getRows();
       let user = userRows.find(r => r.get('email') === email && r.get('password') === password);
-      
+
       if (!user) {
         const staffRows = await staffSheet.getRows();
         user = staffRows.find(r => r.get('email') === email && r.get('password') === password);
       }
-      
+
       if (!user) {
         return res.status(401).json({ error: 'Invalid email or password' });
       }
@@ -224,15 +224,15 @@ async function startServer() {
     try {
       const usersSheet = doc.sheetsByTitle['Users'];
       const staffSheet = doc.sheetsByTitle['Staff'];
-      
+
       const userRows = await usersSheet.getRows();
       let user = userRows.find(r => r.get('id') === req.params.id);
-      
+
       if (!user) {
         const staffRows = await staffSheet.getRows();
         user = staffRows.find(r => r.get('id') === req.params.id);
       }
-      
+
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
@@ -255,25 +255,25 @@ async function startServer() {
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
     const { name, email, phone } = req.body;
-    
+
     try {
       const usersSheet = doc.sheetsByTitle['Users'];
       const staffSheet = doc.sheetsByTitle['Staff'];
-      
+
       // Ensure headers include phone
       await usersSheet.setHeaderRow(['id', 'name', 'email', 'phone', 'password', 'role', 'createdAt']);
       await staffSheet.setHeaderRow(['id', 'name', 'email', 'phone', 'password', 'role', 'createdAt']);
-      
+
       const userRows = await usersSheet.getRows();
       let user = userRows.find(r => r.get('id') === req.params.id);
       let isStaff = false;
-      
+
       if (!user) {
         const staffRows = await staffSheet.getRows();
         user = staffRows.find(r => r.get('id') === req.params.id);
         isStaff = true;
       }
-      
+
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
@@ -302,16 +302,16 @@ async function startServer() {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
-    const { 
+    const {
       userId, userName, userEmail, fromLocation, toLocation, rideDate, rideType, numberOfPeople, fareAmount,
       tripType, returnDate, weddingDetails, intercityDetails, airportDetails, customRequirements,
       destinations, numberOfDays, numberOfCars, estimatedKM, suggestedVehicle
     } = req.body;
-    
+
     try {
       const sheet = doc.sheetsByTitle['Bookings'];
       const id = Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9);
-      
+
       // Format the date to 12-hour format
       let formattedDate = rideDate;
       if (rideDate) {
@@ -332,7 +332,7 @@ async function startServer() {
           console.error('Error formatting date:', e);
         }
       }
-      
+
       const newBooking = {
         id,
         userId,
@@ -362,7 +362,7 @@ async function startServer() {
 
       // Ensure headers include new fields
       await sheet.setHeaderRow([
-        'id', 'userId', 'userName', 'userEmail', 'fromLocation', 'toLocation', 'rideDate', 
+        'id', 'userId', 'userName', 'userEmail', 'fromLocation', 'toLocation', 'rideDate',
         'rideType', 'numberOfPeople', 'rideStatus', 'paymentStatus', 'fareAmount', 'timestamp',
         'tripType', 'returnDate', 'destinations', 'numberOfDays', 'numberOfCars', 'estimatedKM', 'suggestedVehicle',
         'weddingDetails', 'intercityDetails', 'airportDetails', 'customRequirements'
@@ -370,10 +370,10 @@ async function startServer() {
 
       await sheet.addRow(newBooking);
       await autoResizeSheet(sheet);
-      
+
       // Notify all clients about the new booking
       io.emit('booking:created', newBooking);
-      
+
       res.json(newBooking);
     } catch (error) {
       console.error(error);
@@ -386,44 +386,44 @@ async function startServer() {
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
     const { userId } = req.query;
-    
+
     try {
       const sheet = doc.sheetsByTitle['Bookings'];
       const usersSheet = doc.sheetsByTitle['Users'];
-      
+
       const rows = await sheet.getRows();
       const userRows = await usersSheet.getRows();
-      
+
       const userPhones: Record<string, string> = {};
       userRows.forEach(r => {
         userPhones[r.get('id')] = r.get('phone') || '';
       });
-      
+
       let bookings = rows
         .filter(r => r.get('id'))
         .map(r => ({
-        id: r.get('id'),
-        userId: r.get('userId'),
-        userName: r.get('userName'),
-        userPhone: userPhones[r.get('userId')] || '',
-        userEmail: r.get('userEmail'),
-        fromLocation: r.get('fromLocation'),
-        toLocation: r.get('toLocation'),
-        destinations: r.get('destinations'),
-        rideDate: r.get('rideDate'),
-        returnDate: r.get('returnDate'),
-        tripType: r.get('tripType'),
-        rideType: r.get('rideType'),
-        numberOfPeople: r.get('numberOfPeople'),
-        numberOfDays: r.get('numberOfDays'),
-        numberOfCars: r.get('numberOfCars'),
-        estimatedKM: r.get('estimatedKM'),
-        suggestedVehicle: r.get('suggestedVehicle'),
-        rideStatus: r.get('rideStatus'),
-        paymentStatus: r.get('paymentStatus'),
-        fareAmount: r.get('fareAmount'),
-        timestamp: r.get('timestamp')
-      }));
+          id: r.get('id'),
+          userId: r.get('userId'),
+          userName: r.get('userName'),
+          userPhone: userPhones[r.get('userId')] || '',
+          userEmail: r.get('userEmail'),
+          fromLocation: r.get('fromLocation'),
+          toLocation: r.get('toLocation'),
+          destinations: r.get('destinations'),
+          rideDate: r.get('rideDate'),
+          returnDate: r.get('returnDate'),
+          tripType: r.get('tripType'),
+          rideType: r.get('rideType'),
+          numberOfPeople: r.get('numberOfPeople'),
+          numberOfDays: r.get('numberOfDays'),
+          numberOfCars: r.get('numberOfCars'),
+          estimatedKM: r.get('estimatedKM'),
+          suggestedVehicle: r.get('suggestedVehicle'),
+          rideStatus: r.get('rideStatus'),
+          paymentStatus: r.get('paymentStatus'),
+          fareAmount: r.get('fareAmount'),
+          timestamp: r.get('timestamp')
+        }));
 
       if (userId) {
         bookings = bookings.filter(b => b.userId === userId);
@@ -442,12 +442,12 @@ async function startServer() {
 
     const { id } = req.params;
     const { rideStatus, paymentStatus } = req.body;
-    
+
     try {
       const sheet = doc.sheetsByTitle['Bookings'];
       const rows = await sheet.getRows();
       const row = rows.find(r => r.get('id') === id);
-      
+
       if (!row) {
         return res.status(404).json({ error: 'Booking not found' });
       }
@@ -457,20 +457,22 @@ async function startServer() {
         const rideDateStr = row.get('rideDate');
         if (rideDateStr) {
           let rideTime = new Date(rideDateStr);
-          // If the date string doesn't contain timezone info, assume it's PST (-0800)
-          if (!rideDateStr.includes('Z') && !rideDateStr.includes('+') && !rideDateStr.includes('-')) {
-            rideTime = new Date(`${rideDateStr} PST`);
+          // Parse the date as local time for accurate offset checking against the system
+          if (isNaN(rideTime.getTime())) {
+            // If the date string was stored oddly, fallback parsing might be needed, but 
+            // the frontend enforces valid strings. PST addition was arbitrary.
+            rideTime = new Date(rideDateStr);
           }
-          
+
           const currentTime = new Date();
           const diffInMs = rideTime.getTime() - currentTime.getTime();
           const diffInHours = diffInMs / (1000 * 60 * 60);
 
           if (diffInHours < 2) {
-            const message = diffInHours < 0 
+            const message = diffInHours < 0
               ? "You cannot cancel a ride that has already started or is in the past."
               : "You can cancel the ride only up to 2 hours before departure.";
-              
+
             return res.status(400).json({
               error: "Cancellation not allowed",
               message: message
@@ -483,7 +485,7 @@ async function startServer() {
 
       if (rideStatus) row.set('rideStatus', rideStatus);
       if (paymentStatus) row.set('paymentStatus', paymentStatus);
-      
+
       await row.save();
       await autoResizeSheet(sheet);
 
@@ -494,11 +496,11 @@ async function startServer() {
           const date = new Date();
           const month = date.toLocaleString('default', { month: 'short' });
           const year = date.getFullYear().toString();
-          
+
           const revenueSheet = doc.sheetsByTitle['Revenue Logs'];
           const revRows = await revenueSheet.getRows();
           const revRow = revRows.find(r => r.get('month') === month && r.get('year') === year);
-          
+
           if (revRow) {
             const currentAmount = parseFloat(revRow.get('amount') || '0');
             revRow.set('amount', currentAmount + fareAmount);
@@ -533,7 +535,7 @@ async function startServer() {
 
       // Notify all clients about the updated booking
       io.emit('booking:updated', updatedBooking);
-      
+
       res.json(updatedBooking);
     } catch (error) {
       console.error(error);
@@ -549,7 +551,7 @@ async function startServer() {
     try {
       const sheet = doc.sheetsByTitle['Revenue Logs'];
       const rows = await sheet.getRows();
-      
+
       const data = rows.map(r => ({
         month: r.get('month'),
         year: r.get('year'),
@@ -571,7 +573,7 @@ async function startServer() {
     try {
       const sheet = doc.sheetsByTitle['Bookings'];
       const rows = await sheet.getRows();
-      
+
       const bookings = rows.map(r => ({
         rideStatus: r.get('rideStatus'),
         paymentStatus: r.get('paymentStatus'),
@@ -586,24 +588,24 @@ async function startServer() {
       const pdfDoc = new PDFDocument();
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'attachment; filename=monthly_report.pdf');
-      
+
       pdfDoc.pipe(res);
-      
+
       pdfDoc.fontSize(25).text('Vishal Tour & Travelers', { align: 'center' });
       pdfDoc.moveDown();
       pdfDoc.fontSize(18).text('Monthly Revenue Report', { align: 'center' });
       pdfDoc.moveDown();
-      
+
       pdfDoc.fontSize(14).text(`Date Generated: ${new Date().toLocaleDateString()}`);
       pdfDoc.moveDown();
-      
+
       pdfDoc.text(`Total Rides: ${totalRides}`);
       pdfDoc.text(`Completed Rides: ${completedRides}`);
       pdfDoc.text(`Pending Rides: ${pendingRides}`);
       pdfDoc.moveDown();
-      
+
       pdfDoc.fontSize(16).text(`Total Revenue: $${totalRevenue.toFixed(2)}`, { underline: true });
-      
+
       pdfDoc.end();
     } catch (error) {
       console.error(error);
@@ -613,7 +615,7 @@ async function startServer() {
 
   app.get('/calculate-distance', async (req, res) => {
     const { from, to, tripType, departureDate, returnDate, vehicle } = req.query;
-    
+
     if (!from || !to) {
       return res.status(400).json({ error: 'Both from and to are required' });
     }
@@ -622,7 +624,7 @@ async function startServer() {
       // Use Open-Meteo for geocoding as it's more reliable from cloud environments
       const fromUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(from as string)}&count=1&language=en&format=json`;
       const fromRes = await axios.get(fromUrl, { timeout: 10000 });
-      
+
       if (!fromRes.data || !fromRes.data.results || fromRes.data.results.length === 0) {
         return res.status(400).json({ error: 'Origin city not found' });
       }
@@ -631,7 +633,7 @@ async function startServer() {
 
       const toUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(to as string)}&count=1&language=en&format=json`;
       const toRes = await axios.get(toUrl, { timeout: 10000 });
-      
+
       if (!toRes.data || !toRes.data.results || toRes.data.results.length === 0) {
         return res.status(400).json({ error: 'Destination city not found' });
       }
@@ -644,34 +646,34 @@ async function startServer() {
       const R = 6371; // Radius of the earth in km
       const dLat = (toLat - fromLat) * Math.PI / 180;
       const dLon = (toLon - fromLon) * Math.PI / 180;
-      const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(fromLat * Math.PI / 180) * Math.cos(toLat * Math.PI / 180) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2); 
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(fromLat * Math.PI / 180) * Math.cos(toLat * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       const straightLineDistance = R * c;
       const oneWayDistance = straightLineDistance * 1.3; // Add 30% for road curves
       distanceKm = oneWayDistance * 2; // Double the distance to account for vehicle returning to hometown
 
       const distanceRounded = distanceKm.toFixed(2);
-      
+
       // Base Fare Formula
       const baseFare = distanceKm * 13;
       const roundedFare = Math.ceil(baseFare / 500) * 500;
-      
+
       // Halt Logic (Only For Round Trip)
       let haltDays = 0;
       let haltCharges = 0;
-      
+
       if (tripType === 'Round-trip' && departureDate && returnDate) {
         const depDate = new Date(departureDate as string);
         const retDate = new Date(returnDate as string);
-        
+
         // Check if both dates are the same calendar day
         if (depDate.toDateString() !== retDate.toDateString()) {
           const timeDiff = retDate.getTime() - depDate.getTime();
           haltDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-          
+
           // Vehicle Halt Rates
           let vehicleHaltRate = 1000; // default for dzire/sedan
           const vehicleStr = (vehicle as string || '').toLowerCase();
@@ -680,11 +682,11 @@ async function startServer() {
           } else if (vehicleStr.includes('van') || vehicleStr.includes('traveller')) {
             vehicleHaltRate = 3000;
           }
-          
+
           haltCharges = haltDays * vehicleHaltRate;
         }
       }
-      
+
       const finalPrice = roundedFare + haltCharges;
 
       return res.json({
