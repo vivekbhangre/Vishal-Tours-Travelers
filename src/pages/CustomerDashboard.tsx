@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { api, socket } from '../lib/api';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle, Calendar, Clock, Car, Users, MapPin, Grid, RefreshCw } from 'lucide-react';
+import { CheckCircle, Calendar, Clock, Car, Users, MapPin, Grid, RefreshCw, Info, ChevronDown, ChevronUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const AVAILABLE_VEHICLES = [
@@ -14,9 +14,13 @@ const AVAILABLE_VEHICLES = [
   { name: 'Force Traveller (22 Seater)', capacity: 22, quantity: 1 },
 ];
 
+
 export default function CustomerDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings'>(() => {
+    return (localStorage.getItem('customerActiveTab') as 'dashboard' | 'bookings') || 'dashboard';
+  });
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [fromLocation, setFromLocation] = useState('');
@@ -44,6 +48,8 @@ export default function CustomerDashboard() {
 
   // Tour Fields
   const [destinations, setDestinations] = useState<string[]>(['']);
+  const [activeDestinationIndex, setActiveDestinationIndex] = useState<number | null>(null);
+  const [destinationSuggestions, setDestinationSuggestions] = useState<{ [key: number]: string[] }>({});
   
   // Car Renting Fields
   const [numberOfDays, setNumberOfDays] = useState(1);
@@ -53,6 +59,8 @@ export default function CustomerDashboard() {
   const [estimatedKM, setEstimatedKM] = useState(0);
   const [estimatedPrice, setEstimatedPrice] = useState(0);
   const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
+  const [showCostBreakdown, setShowCostBreakdown] = useState(false);
+  const [isAC, setIsAC] = useState(false);
 
   // Wedding Fields
   const [weddingDate, setWeddingDate] = useState('');
@@ -73,12 +81,25 @@ export default function CustomerDashboard() {
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
+  const [cancelMessage, setCancelMessage] = useState<{id: string, text: string, type: 'success' | 'error'} | null>(null);
+  const [expandedBookingId, setExpandedBookingId] = useState<string | null>(null);
+  const [rebookModal, setRebookModal] = useState<{ isOpen: boolean, booking: any | null }>({ isOpen: false, booking: null });
+  const [rebookDate, setRebookDate] = useState('');
+  const [rebookTimeHour, setRebookTimeHour] = useState('12');
+  const [rebookTimeMinute, setRebookTimeMinute] = useState('00');
+  const [rebookTimeAmPm, setRebookTimeAmPm] = useState('AM');
+  const [rebookLoading, setRebookLoading] = useState(false);
+  const [rebookError, setRebookError] = useState('');
 
   // Autocomplete State
   const [fromSuggestions, setFromSuggestions] = useState<string[]>([]);
   const [toSuggestions, setToSuggestions] = useState<string[]>([]);
   const [showFromSuggestions, setShowFromSuggestions] = useState(false);
   const [showToSuggestions, setShowToSuggestions] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('customerActiveTab', activeTab);
+  }, [activeTab]);
 
   useEffect(() => {
     fetchBookings();
@@ -88,7 +109,7 @@ export default function CustomerDashboard() {
 
     socket.on('booking:updated', (updatedBooking) => {
       if (updatedBooking.userId === user?.id) {
-        setBookings(prev => prev.map(b => b.id === updatedBooking.id ? updatedBooking : b));
+        setBookings(prev => prev.map(b => b.id === updatedBooking.id ? { ...b, ...updatedBooking } : b));
       }
     });
 
@@ -151,30 +172,78 @@ export default function CustomerDashboard() {
   }, [toLocation, showToSuggestions]);
 
   useEffect(() => {
+    const fetchSuggestions = async (input: string, index: number) => {
+      if (!input || input.length < 2) {
+        setDestinationSuggestions(prev => ({ ...prev, [index]: [] }));
+        return;
+      }
+      try {
+        const res = await fetch(`/api/city-suggestions?q=${encodeURIComponent(input)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setDestinationSuggestions(prev => ({ ...prev, [index]: data.suggestions }));
+        }
+      } catch (e) {
+        console.error('Failed to fetch city suggestions', e);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      if (activeDestinationIndex !== null) {
+        fetchSuggestions(destinations[activeDestinationIndex], activeDestinationIndex);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [destinations, activeDestinationIndex]);
+
+  useEffect(() => {
     if (tripType === 'Car Renting') {
       setEstimatedPrice(numberOfDays * 2000 * numberOfCars);
       return;
     }
 
-    if (!fromLocation || !toLocation || tripType === 'Tour') {
-      setEstimatedPrice(estimatedKM * 13);
+    if (!fromLocation || fromLocation.trim().length < 2) {
+      setEstimatedKM(0);
+      setEstimatedPrice(0);
+      return;
+    }
+
+    if (tripType !== 'Tour' && (!toLocation || toLocation.trim().length < 2)) {
+      setEstimatedKM(0);
+      setEstimatedPrice(0);
+      return;
+    }
+
+    const validDestinations = destinations.filter(d => d.trim().length >= 2);
+    if (tripType === 'Tour' && validDestinations.length === 0) {
+      setEstimatedKM(0);
+      setEstimatedPrice(0);
       return;
     }
 
     const calculateDistance = async () => {
       setIsCalculatingDistance(true);
       try {
-        const response = await fetch(`/calculate-distance?from=${encodeURIComponent(fromLocation)}&to=${encodeURIComponent(toLocation)}`);
+        let url = `/calculate-distance?from=${encodeURIComponent(fromLocation)}&isAC=${isAC}`;
+        if (tripType === 'Tour') {
+          url += `&destinations=${encodeURIComponent(JSON.stringify(validDestinations))}`;
+        } else {
+          url += `&to=${encodeURIComponent(toLocation)}`;
+        }
+
+        const response = await fetch(url);
         if (response.ok) {
           const data = await response.json();
           setEstimatedKM(parseFloat(data.distance));
           setEstimatedPrice(parseFloat(data.price));
         } else {
-          setEstimatedPrice(estimatedKM * 13);
+          setEstimatedKM(0);
+          setEstimatedPrice(0);
         }
       } catch (error) {
         console.error('Failed to calculate distance:', error);
-        setEstimatedPrice(estimatedKM * 13);
+        setEstimatedKM(0);
+        setEstimatedPrice(0);
       } finally {
         setIsCalculatingDistance(false);
       }
@@ -182,7 +251,7 @@ export default function CustomerDashboard() {
 
     const timeoutId = setTimeout(calculateDistance, 1000);
     return () => clearTimeout(timeoutId);
-  }, [fromLocation, toLocation, tripType, numberOfDays, numberOfCars, estimatedKM]);
+  }, [fromLocation, toLocation, tripType, numberOfDays, numberOfCars, destinations, isAC]);
 
   useEffect(() => {
     let recommended = '';
@@ -197,10 +266,10 @@ export default function CustomerDashboard() {
     setConfirmCapacity(false);
   }, [numberOfPeople]);
 
-  const fetchBookings = async () => {
+  const fetchBookings = async (forceRefresh: boolean = false) => {
     try {
       if (user) {
-        const data = await api.getBookings(user.id);
+        const data = await api.getBookings(user.id, false, forceRefresh);
         setBookings(data);
       }
     } catch (error) {
@@ -229,6 +298,17 @@ export default function CustomerDashboard() {
     setProfileSuccess('');
     setProfileLoading(true);
 
+    if (profileName.trim().length < 2) {
+      setProfileError('Name must be at least 2 characters long');
+      setProfileLoading(false);
+      return;
+    }
+    if (!/^\+?[\d\s-]{10,15}$/.test(profilePhone)) {
+      setProfileError('Please enter a valid phone number (10-15 digits)');
+      setProfileLoading(false);
+      return;
+    }
+
     try {
       if (!user) return;
       await api.updateUser(user.id, {
@@ -245,10 +325,70 @@ export default function CustomerDashboard() {
     }
   };
 
+  const calculateHaltCharge = () => {
+    if (tripType !== 'Round-trip' || !rideDate || !returnDate || !selectedVehicle) return 0;
+    
+    const start = new Date(rideDate);
+    const end = new Date(returnDate);
+    
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
+    
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    
+    const diffTime = end.getTime() - start.getTime();
+    if (diffTime <= 0) return 0;
+    
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    let rate = 0;
+    if (selectedVehicle === 'Swift Dzire') rate = 1000;
+    else if (selectedVehicle === 'Ertiga') rate = 1500;
+    else if (selectedVehicle.includes('Force Traveller') || selectedVehicle.includes('Force Van')) rate = 3000;
+    
+    return diffDays * rate;
+  };
+
   const handleBookRide = async (e: React.FormEvent) => {
     e.preventDefault();
     setBookingError('');
     setBookingLoading(true);
+
+    if (rideType === 'Wedding') {
+      if (!weddingDate || !eventLocation) {
+        setBookingError('Please fill in all wedding details (date and location).');
+        setBookingLoading(false);
+        return;
+      }
+    } else if (rideType === 'Car Renting') {
+      if (!fromLocation || !rideDate) {
+        setBookingError('Please fill in pickup location and date.');
+        setBookingLoading(false);
+        return;
+      }
+    } else {
+      if (!fromLocation || !toLocation || !rideDate) {
+        setBookingError('Please fill in pickup, dropoff, and date.');
+        setBookingLoading(false);
+        return;
+      }
+      if (tripType === 'Round Trip' && !returnDate) {
+        setBookingError('Please select a return date for round trip.');
+        setBookingLoading(false);
+        return;
+      }
+      if (tripType === 'Multi-city' && destinations.some(d => !d)) {
+        setBookingError('Please fill in all destination cities.');
+        setBookingLoading(false);
+        return;
+      }
+    }
+
+    if (numberOfPeople < 1) {
+      setBookingError('Number of people must be at least 1.');
+      setBookingLoading(false);
+      return;
+    }
 
     try {
       if (!user) return;
@@ -270,7 +410,7 @@ export default function CustomerDashboard() {
       if (tripType === 'Car Renting') {
         finalEstimatedPrice = (numberOfDays * 2000 * numberOfCars);
       } else {
-        finalEstimatedPrice = estimatedPrice || (estimatedKM * 13);
+        finalEstimatedPrice = estimatedPrice || (estimatedKM * (isAC ? 14 : 13));
       }
 
       const formattedRideDate = `${rideDate} ${rideTimeHour}:${rideTimeMinute} ${rideTimeAmPm}`;
@@ -290,15 +430,21 @@ export default function CustomerDashboard() {
           return;
         }
         formattedReturnDate = `${returnDate} ${returnTimeHour}:${returnTimeMinute} ${returnTimeAmPm}`;
+        
+        // Add halt charge for round-trip
+        const haltCharge = calculateHaltCharge();
+        finalEstimatedPrice += haltCharge;
       }
 
+      const validDestinations = destinations.filter(d => d.trim() !== '');
+      
       const newBooking = await api.createBooking({
         userId: user.id,
         userName: user.name,
         userEmail: user.email,
         fromLocation,
         toLocation: tripType === 'Tour' ? 'N/A' : toLocation,
-        destinations: tripType === 'Tour' ? destinations.join(', ') : 'N/A',
+        destinations: tripType === 'Tour' ? validDestinations.join(', ') : 'N/A',
         rideDate: formattedRideDate,
         tripType,
         returnDate: formattedReturnDate,
@@ -309,6 +455,7 @@ export default function CustomerDashboard() {
         numberOfCars: tripType === 'Car Renting' ? numberOfCars : 'N/A',
         estimatedKM: tripType !== 'Car Renting' ? estimatedKM : 'N/A',
         suggestedVehicle: selectedVehicle,
+        isAC,
         weddingDetails: tripType === 'Wedding' ? { weddingDate, eventLocation, vehiclesRequired, decorationRequired } : undefined,
         airportDetails: rideType === 'Airport Transfer' ? { pickupType } : undefined,
         customRequirements: rideType === 'Other' ? customRequirements : undefined
@@ -351,14 +498,86 @@ export default function CustomerDashboard() {
     }
   };
 
-  const handleCancelRide = async (bookingId: string) => {
-    if (!window.confirm('Are you sure you want to cancel this ride?')) return;
+  const handleRebookSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rebookModal.booking || !rebookDate) return;
+
+    setRebookLoading(true);
+    setRebookError('');
+
     try {
-      await api.updateBooking(bookingId, { rideStatus: 'Cancelled' });
-      fetchBookings();
-    } catch (error: any) {
-      console.error('Failed to cancel ride:', error);
-      alert(error.message || 'Failed to cancel ride. Please try again.');
+      const b = rebookModal.booking;
+      const rideDate = new Date(`${rebookDate} ${rebookTimeHour}:${rebookTimeMinute} ${rebookTimeAmPm}`);
+      
+      const newBooking = {
+        userId: user?.id,
+        userName: user?.name,
+        userEmail: user?.email,
+        userPhone: user?.phone,
+        tripType: b.tripType,
+        fromLocation: b.fromLocation,
+        toLocation: b.toLocation,
+        destinations: b.destinations,
+        rideDate: rideDate.toISOString(),
+        numberOfPeople: b.numberOfPeople,
+        suggestedVehicle: b.suggestedVehicle,
+        isAC: b.isAC,
+        distance: b.distance,
+        fareAmount: b.fareAmount,
+        rideStatus: 'Pending',
+        paymentStatus: 'Pending',
+      };
+
+      const response = await api.createBooking(newBooking);
+      setBookingSuccessData(response);
+      setRebookModal({ isOpen: false, booking: null });
+      setRebookDate('');
+      setRebookTimeHour('12');
+      setRebookTimeMinute('00');
+      setRebookTimeAmPm('AM');
+      setActiveTab('dashboard'); // Switch to dashboard to show success message
+    } catch (error) {
+      console.error('Failed to rebook:', error);
+      setRebookError('Failed to rebook ride. Please try again.');
+    } finally {
+      setRebookLoading(false);
+    }
+  };
+
+  const handleCancel = async (id: string) => {
+    setCancelMessage(null);
+    try {
+      const response = await fetch(`/api/bookings/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ rideStatus: "Cancelled" })
+      });
+
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        const data = await response.json();
+        if (!response.ok) {
+          setCancelMessage({ id, text: data.message || data.error || "Failed to cancel ride", type: 'error' });
+          return;
+        }
+      } else {
+        const text = await response.text();
+        if (!response.ok) {
+          console.error("Non-JSON error response:", text);
+          setCancelMessage({ id, text: "Failed to cancel ride. Server returned an invalid response.", type: 'error' });
+          return;
+        }
+      }
+
+      setCancelMessage({ id, text: "Ride cancelled successfully", type: 'success' });
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error) {
+      console.error("Error cancelling ride:", error);
+      setCancelMessage({ id, text: "An error occurred while cancelling the ride. Please try again.", type: 'error' });
     }
   };
 
@@ -402,6 +621,8 @@ export default function CustomerDashboard() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Pending': return 'bg-yellow-50 text-yellow-600 border border-yellow-100';
+      case 'Confirmed': return 'bg-indigo-50 text-indigo-600 border border-indigo-100';
+      case 'Assigned': return 'bg-purple-50 text-purple-600 border border-purple-100';
       case 'Ongoing': return 'bg-blue-50 text-blue-600 border border-blue-100';
       case 'Completed': return 'bg-green-50 text-green-600 border border-green-100';
       case 'Cancelled': return 'bg-red-50 text-red-600 border border-red-100';
@@ -413,21 +634,53 @@ export default function CustomerDashboard() {
     return status === 'Paid' ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-red-50 text-red-600 border border-red-100';
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="min-h-screen bg-gray-50 transition-colors duration-300"
+    >
       <Navbar />
       
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Customer Dashboard</h1>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+            <div className="flex items-center gap-4">
+              <h1 className="text-3xl font-bold text-gray-900 capitalize">
+                {getGreeting()}, {user?.name || 'Customer'}
+              </h1>
+            </div>
+            <div className="flex flex-wrap sm:flex-nowrap bg-white rounded-lg shadow-sm border border-gray-100 p-1 w-full sm:w-auto">
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => setActiveTab('bookings')}
+                className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'bookings' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+              >
+                My Bookings
+              </button>
+            </div>
+          </div>
           
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-            <div className="flex flex-col gap-8 lg:col-span-1">
+          {activeTab === 'dashboard' ? (
+            <div className="max-w-3xl mx-auto flex flex-col gap-8">
               {/* Profile Section */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                 <div className={`flex justify-between items-start ${isEditingProfile ? 'mb-6' : ''}`}>
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-md shadow-indigo-200">
+                    <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-md">
                       {profileName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                     </div>
                     <div>
@@ -514,96 +767,6 @@ export default function CustomerDashboard() {
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-6">Book a Ride</h3>
                 <AnimatePresence mode="wait">
-                  {bookingSuccessData ? (
-                    <motion.div
-                      key="success"
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.4 }}
-                      className="flex flex-col items-center text-center space-y-6 py-4"
-                    >
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
-                      >
-                        <CheckCircle className="w-16 h-16 text-green-500" />
-                      </motion.div>
-                      
-                      <div>
-                        <h2 className="text-2xl font-bold text-gray-900">🎉 Thank You for Booking!</h2>
-                        <p className="text-gray-500 mt-2">Your ride has been successfully scheduled.</p>
-                      </div>
-
-                      <div className="bg-gray-50 rounded-xl p-6 w-full text-left space-y-3 border border-gray-100">
-                        <h3 className="font-semibold text-gray-900 border-b pb-2 mb-3">Booking Details</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <span className="text-gray-500 block">Booking ID</span>
-                            <span className="font-medium text-gray-900">#{bookingSuccessData.id.slice(-6)}</span>
-                          </div>
-                          <div>
-                            <span className="text-gray-500 block">Trip Type</span>
-                            <span className="font-medium text-gray-900">{bookingSuccessData.tripType}</span>
-                          </div>
-                          <div>
-                            <span className="text-gray-500 block">Ride Type</span>
-                            <span className="font-medium text-gray-900">{bookingSuccessData.rideType}</span>
-                          </div>
-                          <div>
-                            <span className="text-gray-500 block">Number of People</span>
-                            <span className="font-medium text-gray-900">{bookingSuccessData.numberOfPeople}</span>
-                          </div>
-                          <div className="sm:col-span-2">
-                            <span className="text-gray-500 block">Route</span>
-                            <span className="font-medium text-gray-900">
-                              {bookingSuccessData.tripType === 'Tour' 
-                                ? `${bookingSuccessData.fromLocation} \u2192 ${bookingSuccessData.destinations}`
-                                : `${bookingSuccessData.fromLocation} \u2192 ${bookingSuccessData.toLocation}`}
-                            </span>
-                          </div>
-                          <div className="sm:col-span-2">
-                            <span className="text-gray-500 block">Departure</span>
-                            <span className="font-medium text-gray-900">{bookingSuccessData.rideDate}</span>
-                          </div>
-                          {bookingSuccessData.returnDate && (
-                            <div className="sm:col-span-2">
-                              <span className="text-gray-500 block">Return</span>
-                              <span className="font-medium text-gray-900">{bookingSuccessData.returnDate}</span>
-                            </div>
-                          )}
-                          <div className="sm:col-span-2">
-                            <span className="text-gray-500 block">Recommended Vehicle</span>
-                            <span className="font-medium text-gray-900">
-                              {bookingSuccessData.suggestedVehicle}
-                            </span>
-                          </div>
-                          {(bookingSuccessData.tripType === 'Car Renting' || bookingSuccessData.tripType === 'Tour') && (
-                            <div className="sm:col-span-2">
-                              <span className="text-gray-500 block">Estimated Cost</span>
-                              <span className="font-medium text-indigo-600 font-bold">₹{bookingSuccessData.fareAmount}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row gap-3 w-full pt-4">
-                        <button
-                          onClick={() => setBookingSuccessData(null)}
-                          className="flex-1 justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-                        >
-                          Book Another Ride
-                        </button>
-                        <button
-                          onClick={() => navigate('/')}
-                          className="flex-1 justify-center py-2.5 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-                        >
-                          Go to Home
-                        </button>
-                      </div>
-                    </motion.div>
-                  ) : (
                     <motion.form 
                       key="form"
                       initial={{ opacity: 0 }}
@@ -719,11 +882,11 @@ export default function CustomerDashboard() {
                         animate={{ opacity: 1, y: 0, height: 'auto' }}
                         exit={{ opacity: 0, y: -10, height: 0 }}
                         transition={{ duration: 0.3 }}
-                        className="space-y-4 overflow-hidden"
+                        className="space-y-4"
                       >
                         {destinations.map((dest, index) => (
                           <div key={index} className="flex gap-2 items-end">
-                            <div className="flex-grow">
+                            <div className="flex-grow relative">
                               <label className="block text-sm font-medium text-gray-700">Destination {index + 1}</label>
                               <input
                                 type="text"
@@ -733,15 +896,43 @@ export default function CustomerDashboard() {
                                   const newDests = [...destinations];
                                   newDests[index] = e.target.value;
                                   setDestinations(newDests);
+                                  setActiveDestinationIndex(index);
                                 }}
+                                onFocus={() => setActiveDestinationIndex(index)}
+                                onBlur={() => setTimeout(() => setActiveDestinationIndex(null), 200)}
                                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                 placeholder={`Destination ${index + 1}`}
+                                autoComplete="off"
                               />
+                              {activeDestinationIndex === index && destinationSuggestions[index] && destinationSuggestions[index].length > 0 && (
+                                <ul className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                                  {destinationSuggestions[index].map((city, idx) => (
+                                    <li
+                                      key={idx}
+                                      className="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-indigo-600 hover:text-white"
+                                      onMouseDown={(e) => {
+                                        e.preventDefault(); // Prevent input from losing focus immediately
+                                        const newDests = [...destinations];
+                                        newDests[index] = city;
+                                        setDestinations(newDests);
+                                        setActiveDestinationIndex(null);
+                                      }}
+                                    >
+                                      {city}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
                             </div>
                             {index > 0 && (
                               <button
                                 type="button"
-                                onClick={() => setDestinations(destinations.filter((_, i) => i !== index))}
+                                onClick={() => {
+                                  setDestinations(destinations.filter((_, i) => i !== index));
+                                  const newSuggestions = { ...destinationSuggestions };
+                                  delete newSuggestions[index];
+                                  setDestinationSuggestions(newSuggestions);
+                                }}
                                 className="mb-1 px-3 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200"
                               >
                                 Remove
@@ -972,6 +1163,23 @@ export default function CustomerDashboard() {
                                 </label>
                               </div>
                             )}
+
+                            {tripType !== 'Car Renting' && (
+                              <div className="mt-4 bg-white border border-gray-200 rounded-lg p-4 shadow-sm flex items-center justify-between">
+                                <div>
+                                  <h4 className="text-sm font-medium text-gray-900">AC Vehicle</h4>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                  <input 
+                                    type="checkbox" 
+                                    className="sr-only peer"
+                                    checked={isAC}
+                                    onChange={(e) => setIsAC(e.target.checked)}
+                                  />
+                                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                </label>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
@@ -1085,17 +1293,46 @@ export default function CustomerDashboard() {
                     animate={{ opacity: 1, y: 0 }}
                     className="mt-6 bg-indigo-50 border border-indigo-100 rounded-xl p-4 shadow-sm"
                   >
-                    <h4 className="text-sm font-medium text-indigo-800 mb-2">Estimated Cost Summary</h4>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-indigo-600">Total Estimated Price</span>
+                    <div 
+                      className="flex justify-between items-center cursor-pointer"
+                      onClick={() => setShowCostBreakdown(!showCostBreakdown)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-medium text-indigo-800">Total Cost Summary</h4>
+                        {tripType === 'Round-trip' && calculateHaltCharge() > 0 && !isCalculatingDistance && (
+                          showCostBreakdown ? <ChevronUp className="w-4 h-4 text-indigo-600" /> : <ChevronDown className="w-4 h-4 text-indigo-600" />
+                        )}
+                      </div>
                       <span className="text-2xl font-bold text-indigo-900">
                         {isCalculatingDistance ? (
                           <span className="text-sm font-normal text-indigo-500 animate-pulse">Calculating...</span>
                         ) : (
-                          `₹${estimatedPrice.toFixed(2)}`
+                          `₹${(estimatedPrice + (tripType === 'Round-trip' ? calculateHaltCharge() : 0)).toFixed(2)}`
                         )}
                       </span>
                     </div>
+                    
+                    <AnimatePresence>
+                      {showCostBreakdown && tripType === 'Round-trip' && calculateHaltCharge() > 0 && !isCalculatingDistance && (
+                        <motion.div 
+                          initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                          animate={{ height: 'auto', opacity: 1, marginTop: 12 }}
+                          exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="space-y-2 pt-3 border-t border-indigo-100">
+                            <div className="flex justify-between items-center text-sm text-indigo-600">
+                              <span>Base Fare</span>
+                              <span>₹{estimatedPrice.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm text-indigo-600">
+                              <span>Halt Charge</span>
+                              <span>₹{calculateHaltCharge().toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </motion.div>
                   
                   <button
@@ -1105,21 +1342,23 @@ export default function CustomerDashboard() {
                   >
                     {bookingLoading ? 'Booking...' : 'Book Ride'}
                   </button>
+                  <p className="text-xs text-center text-gray-500 mt-3 flex items-center justify-center gap-1.5">
+                    <Info className="w-3.5 h-3.5" />
+                    You can cancel your ride before 2 hours of departure time.
+                  </p>
                 </motion.form>
-                )}
                 </AnimatePresence>
               </div>
             </div>
-
-            {/* My Bookings List */}
-            <div className="lg:col-span-2">
-              <div className="flex justify-between items-center mb-6">
+          ) : (
+            <div className="max-w-5xl mx-auto">
+              <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-3">
                   <h3 className="text-xl font-bold text-gray-900">My Bookings</h3>
                   <button 
                     onClick={() => {
                       setLoading(true);
-                      fetchBookings();
+                      fetchBookings(true);
                     }}
                     disabled={loading}
                     className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors disabled:opacity-50"
@@ -1128,8 +1367,11 @@ export default function CustomerDashboard() {
                     <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                   </button>
                 </div>
-                <button className="text-sm text-indigo-600 font-medium hover:text-indigo-800">View all</button>
               </div>
+              <p className="text-sm text-gray-500 mb-6 flex items-center gap-1.5">
+                <Info className="w-4 h-4" />
+                You can cancel your ride before 2 hours of departure time.
+              </p>
               
               <div className="space-y-4">
                 {loading ? (
@@ -1138,73 +1380,335 @@ export default function CustomerDashboard() {
                   <div className="p-4 text-center text-gray-500 bg-white rounded-2xl shadow-sm border border-gray-100">No bookings found. Book a ride to get started!</div>
                 ) : (
                   bookings.map((booking) => (
-                    <div key={booking.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                      <div className="flex justify-between items-start mb-4">
-                        <h4 className="text-lg font-bold text-gray-900">
-                          {booking.tripType === 'Tour' 
-                            ? `${booking.fromLocation} \u2192 ${booking.destinations}`
-                            : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
-                        </h4>
-                        <div className="flex gap-2">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.rideStatus)}`}>
-                            {booking.rideStatus}
-                          </span>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPaymentColor(booking.paymentStatus)}`}>
-                            {booking.paymentStatus}
-                          </span>
+                    <div key={booking.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                      {/* Always visible header */}
+                      <div 
+                        className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+                        onClick={() => setExpandedBookingId(expandedBookingId === booking.id ? null : booking.id)}
+                      >
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2 sm:gap-4">
+                          <h4 className="text-lg font-bold text-gray-900 break-words w-full sm:w-auto">
+                            {booking.tripType === 'Tour' 
+                              ? `${booking.fromLocation} \u2192 ${booking.destinations}`
+                              : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
+                          </h4>
+                          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.rideStatus)}`}>
+                              {booking.rideStatus}
+                            </span>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPaymentColor(booking.paymentStatus)}`}>
+                              {booking.paymentStatus}
+                            </span>
+                            {expandedBookingId === booking.id ? (
+                              <ChevronUp className="w-5 h-5 text-gray-400 ml-auto sm:ml-0" />
+                            ) : (
+                              <ChevronDown className="w-5 h-5 text-gray-400 ml-auto sm:ml-0" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="w-4 h-4 text-indigo-400" />
+                            {format(new Date(booking.rideDate), 'MMM d, yyyy')}
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="w-4 h-4 text-red-400" />
+                            {format(new Date(booking.rideDate), 'h:mm a')}
+                          </div>
+                          <div className="flex items-center gap-1.5 font-medium text-gray-900">
+                            ₹{parseFloat(booking.fareAmount).toFixed(2)}
+                          </div>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-6">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="w-4 h-4 text-indigo-400" />
-                          {format(new Date(booking.rideDate), 'MMM d, yyyy')}
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="w-4 h-4 text-red-400" />
-                          {format(new Date(booking.rideDate), 'h:mm a')}
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Car className="w-4 h-4 text-blue-400" />
-                          {booking.suggestedVehicle || 'Sedan'}
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Users className="w-4 h-4 text-purple-400" />
-                          {booking.numberOfPeople} Passenger{booking.numberOfPeople > 1 ? 's' : ''}
-                        </div>
-                      </div>
-                      <div className="border-t border-gray-100 pt-4 flex justify-between items-end">
-                        <div>
-                          <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Total Amount</p>
-                          <p className="text-2xl font-bold text-gray-900">₹{parseFloat(booking.fareAmount).toFixed(2)}</p>
-                        </div>
-                        {booking.rideStatus === 'Pending' && (
-                          <button
-                            onClick={() => {
-                              if (canCancelRide(booking.rideDate, booking.rideStatus)) {
-                                handleCancelRide(booking.id);
-                              } else {
-                                alert('Rides can only be cancelled up to 2 hours before the departure time.');
-                              }
-                            }}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                              canCancelRide(booking.rideDate, booking.rideStatus)
-                                ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            }`}
-                            title={!canCancelRide(booking.rideDate, booking.rideStatus) ? 'Rides can only be cancelled 2 hours before departure' : ''}
+
+                      {/* Expandable Body */}
+                      <AnimatePresence>
+                        {expandedBookingId === booking.id && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="border-t border-gray-100 bg-gray-50"
                           >
-                            Cancel Ride
-                          </button>
+                            <div className="p-6">
+                              <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-6">
+                                <div className="flex items-center gap-1.5">
+                                  <Car className="w-4 h-4 text-blue-400" />
+                                  {booking.suggestedVehicle || 'Sedan'} {booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <Users className="w-4 h-4 text-purple-400" />
+                                  {booking.numberOfPeople} Passenger{booking.numberOfPeople > 1 ? 's' : ''}
+                                </div>
+                              </div>
+
+                              {/* Driver Details Section */}
+                              {booking.driverDetails ? (
+                                <div className="mb-6 p-4 bg-white rounded-lg border border-indigo-100 shadow-sm">
+                                  <h5 className="text-sm font-semibold text-indigo-900 mb-2">Driver & Vehicle Details</h5>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                      <p className="text-xs text-indigo-700 uppercase tracking-wider">Driver Name</p>
+                                      <p className="text-sm font-medium text-indigo-900">{booking.driverDetails.name}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-indigo-700 uppercase tracking-wider">Phone Number</p>
+                                      <p className="text-sm font-medium text-indigo-900">{booking.driverDetails.phone}</p>
+                                    </div>
+                                    {booking.vehicleDetails && (
+                                      <div className="sm:col-span-2">
+                                        <p className="text-xs text-indigo-700 uppercase tracking-wider">Vehicle Assigned</p>
+                                        <p className="text-sm font-medium text-indigo-900">{booking.vehicleDetails.name} ({booking.vehicleDetails.number})</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : booking.visibilityMessage ? (
+                                <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100 shadow-sm">
+                                  <p className="text-sm text-blue-700 flex items-center gap-2">
+                                    <Info className="w-5 h-5 flex-shrink-0" />
+                                    {booking.visibilityMessage}
+                                  </p>
+                                </div>
+                              ) : null}
+
+                              <div className="flex justify-between items-end">
+                                <div>
+                                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Booking ID</p>
+                                  <p className="text-sm font-medium text-gray-900">#{booking.id}</p>
+                                </div>
+                                <div className="flex flex-col items-end gap-2">
+                                  <div className="flex gap-2">
+                                    {booking.rideStatus === 'Completed' && (
+                                      <button
+                                        onClick={() => setRebookModal({ isOpen: true, booking })}
+                                        className="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
+                                      >
+                                        Rebook Ride
+                                      </button>
+                                    )}
+                                    {(booking.rideStatus === 'Pending' || booking.rideStatus === 'Confirmed' || booking.rideStatus === 'Assigned') && (
+                                      <button
+                                        onClick={() => handleCancel(booking.id)}
+                                        className="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-red-100 text-red-600 hover:bg-red-200"
+                                      >
+                                        Cancel Ride
+                                      </button>
+                                    )}
+                                  </div>
+                                  {cancelMessage && cancelMessage.id === booking.id && (
+                                    <p className={`text-xs max-w-[200px] text-right ${cancelMessage.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>
+                                      {cancelMessage.text}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
                         )}
-                      </div>
+                      </AnimatePresence>
                     </div>
                   ))
                 )}
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
-    </div>
+
+      {/* Rebook Modal */}
+      <AnimatePresence>
+        {rebookModal.isOpen && rebookModal.booking && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden"
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold text-gray-900">Rebook Ride</h3>
+                  <button 
+                    onClick={() => setRebookModal({ isOpen: false, booking: null })}
+                    className="text-gray-400 hover:text-gray-500"
+                  >
+                    <span className="sr-only">Close</span>
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  <p className="text-sm text-gray-600 mb-2">
+                    <span className="font-medium text-gray-900">From:</span> {rebookModal.booking.fromLocation}
+                  </p>
+                  <p className="text-sm text-gray-600 mb-2">
+                    <span className="font-medium text-gray-900">To:</span> {rebookModal.booking.tripType === 'Tour' ? rebookModal.booking.destinations : rebookModal.booking.toLocation}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium text-gray-900">Vehicle:</span> {rebookModal.booking.suggestedVehicle} {rebookModal.booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
+                  </p>
+                </div>
+
+                <form onSubmit={handleRebookSubmit} className="space-y-4">
+                  {rebookError && (
+                    <div className="p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-100">
+                      {rebookError}
+                    </div>
+                  )}
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Select New Date</label>
+                    <input
+                      type="date"
+                      required
+                      min={new Date().toISOString().split('T')[0]}
+                      value={rebookDate}
+                      onChange={(e) => setRebookDate(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Select New Time</label>
+                    <div className="flex gap-2 items-center">
+                      <select
+                        value={rebookTimeHour}
+                        onChange={(e) => setRebookTimeHour(e.target.value)}
+                        className="block w-full flex-1 border border-gray-300 rounded-xl shadow-sm py-2.5 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
+                      >
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
+                          <option key={h} value={h.toString().padStart(2, '0')}>{h.toString().padStart(2, '0')}</option>
+                        ))}
+                      </select>
+                      <span className="flex items-center text-gray-500 font-bold">:</span>
+                      <select
+                        value={rebookTimeMinute}
+                        onChange={(e) => setRebookTimeMinute(e.target.value)}
+                        className="block w-full flex-1 border border-gray-300 rounded-xl shadow-sm py-2.5 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
+                      >
+                        {['00', '15', '30', '45'].map(m => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={rebookTimeAmPm}
+                        onChange={(e) => setRebookTimeAmPm(e.target.value)}
+                        className="block w-full flex-1 border border-gray-300 rounded-xl shadow-sm py-2.5 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
+                      >
+                        <option value="AM">AM</option>
+                        <option value="PM">PM</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setRebookModal({ isOpen: false, booking: null })}
+                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={rebookLoading || !rebookDate}
+                      className="flex-1 px-4 py-2.5 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
+                    >
+                      {rebookLoading ? (
+                        <RefreshCw className="w-5 h-5 animate-spin" />
+                      ) : (
+                        'Confirm Rebook'
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Booking Success Modal */}
+      <AnimatePresence>
+        {bookingSuccessData && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden"
+            >
+              <div className="p-6 text-center">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
+                  className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4"
+                >
+                  <CheckCircle className="w-8 h-8 text-green-500" />
+                </motion.div>
+                
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Confirmed!</h2>
+                <p className="text-gray-500 mb-6">Your ride has been successfully scheduled.</p>
+
+                <div className="bg-gray-50 rounded-xl p-4 text-left border border-gray-100 mb-6">
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Route</span>
+                      <span className="font-medium text-gray-900 text-right">
+                        {bookingSuccessData.tripType === 'Tour' 
+                          ? `${bookingSuccessData.fromLocation} \u2192 ${bookingSuccessData.destinations}`
+                          : `${bookingSuccessData.fromLocation} \u2192 ${bookingSuccessData.toLocation}`}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Departure</span>
+                      <span className="font-medium text-gray-900 text-right">
+                        {format(new Date(bookingSuccessData.rideDate), 'dd/MM/yyyy hh:mm a')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3 mb-8">
+                  <div className="p-3 bg-indigo-50 text-indigo-700 rounded-lg text-sm border border-indigo-100 flex items-start gap-2 text-left">
+                    <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                    <p>We will contact you shortly.</p>
+                  </div>
+                  <div className="p-3 bg-blue-50 text-blue-700 rounded-lg text-sm border border-blue-100 flex items-start gap-2 text-left">
+                    <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                    <p>Driver information will be given to you before 1 hour of the departure time.</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 w-full">
+                  <button
+                    onClick={() => {
+                      setActiveTab('bookings');
+                      setBookingSuccessData(null);
+                    }}
+                    className="flex-1 justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                  >
+                    Go to My Bookings
+                  </button>
+                  <button
+                    onClick={() => setBookingSuccessData(null)}
+                    className="flex-1 justify-center py-2.5 px-4 border border-indigo-600 rounded-md shadow-sm text-sm font-medium text-indigo-600 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                  >
+                    Book Another
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }

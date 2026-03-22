@@ -4,7 +4,8 @@ import { createServer as createViteServer } from 'vite';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
-import { initSheets, getDoc, autoResizeSheet } from './server/sheets.js';
+import { initSheets, getDoc, getCachedRows, invalidateCache } from './server/sheets.js';
+import { setupFleetRoutes } from './server/fleet.js';
 import cityAutocompleteRouter from './server/cityAutocomplete.js';
 import PDFDocument from 'pdfkit';
 import { GoogleGenAI } from "@google/genai";
@@ -27,43 +28,6 @@ async function startServer() {
   
   app.use('/api', cityAutocompleteRouter);
 
-  app.get("/api/generate-hero", async (req, res) => {
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
-          parts: [
-            {
-              text: 'Ultra-wide cinematic hero background for a travel booking website, highly detailed luxury road trip theme with scenic mountain highway sunset, panoramic view, soft atmospheric lighting, premium modern aesthetic, subtle motion blur on road, ultra high resolution, vibrant colors that blend well with deep purple gradients, spacious negative space on left side for text overlay, crisp and professional UI hero image.',
-            },
-          ],
-        },
-        config: {
-          imageConfig: {
-            aspectRatio: "16:9"
-          }
-        }
-      });
-
-      for (const part of response.candidates[0].content.parts) {
-        if (part.inlineData) {
-          const base64EncodeString = part.inlineData.data;
-          const publicDir = path.join(process.cwd(), 'public');
-          if (!fs.existsSync(publicDir)) {
-            fs.mkdirSync(publicDir);
-          }
-          fs.writeFileSync(path.join(publicDir, 'hero-bg.png'), Buffer.from(base64EncodeString, 'base64'));
-          return res.json({ status: "success", message: "Image saved to public/hero-bg.png" });
-        }
-      }
-      res.status(500).json({ status: "error", message: "No image generated" });
-    } catch (error: any) {
-      console.error("Error generating image:", error);
-      res.status(500).json({ status: "error", message: error.message });
-    }
-  });
-
   // Initialize Google Sheets
   await initSheets();
 
@@ -76,6 +40,8 @@ async function startServer() {
   });
 
   // API Routes
+  setupFleetRoutes(app, io);
+
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', sheetsReady: !!getDoc() });
   });
@@ -101,8 +67,9 @@ async function startServer() {
     const userRole = role || 'customer';
     
     try {
-      const sheet = doc.sheetsByTitle['Users'];
-      const rows = await sheet.getRows();
+      const targetSheetName = userRole === 'staff' ? 'Staff' : 'Users';
+      const sheet = doc.sheetsByTitle[targetSheetName];
+      const rows = await getCachedRows(targetSheetName);
       const existingUser = rows.find(r => r.get('email') === email);
       
       if (existingUser) {
@@ -119,7 +86,7 @@ async function startServer() {
         role: userRole,
         createdAt: new Date().toISOString()
       });
-      await autoResizeSheet(sheet);
+      invalidateCache(targetSheetName);
 
       res.json({ id, name, email, phone: phone || '', role: userRole });
     } catch (error) {
@@ -135,20 +102,27 @@ async function startServer() {
     const { name, email, phone } = req.body;
     
     try {
-      const usersSheet = doc.sheetsByTitle['Users'];
-      const userRows = await usersSheet.getRows();
-      
-      const user = userRows.find(r => 
+      const userRows = await getCachedRows('Users');
+      let user = userRows.find(r => 
         r.get('email') === email && 
         r.get('name') === name && 
         r.get('phone') === phone
       );
       
       if (!user) {
+        const staffRows = await getCachedRows('Staff');
+        user = staffRows.find(r => 
+          r.get('email') === email && 
+          r.get('name') === name && 
+          r.get('phone') === phone
+        );
+      }
+      
+      if (!user) {
         return res.status(404).json({ error: 'No matching account found with these details.' });
       }
 
-      res.json({ success: true, userId: user.get('id') });
+      res.json({ success: true, userId: user.get('id'), isStaff: user.get('role') === 'staff' });
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Failed to verify details' });
@@ -159,13 +133,12 @@ async function startServer() {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
-    const { userId, newPassword } = req.body;
+    const { userId, newPassword, isStaff } = req.body;
     
     try {
-      const usersSheet = doc.sheetsByTitle['Users'];
-      const userRows = await usersSheet.getRows();
+      const rows = await getCachedRows(isStaff ? 'Staff' : 'Users');
       
-      const user = userRows.find(r => r.get('id') === userId);
+      const user = rows.find(r => r.get('id') === userId);
       
       if (!user) {
         return res.status(404).json({ error: 'User not found.' });
@@ -173,6 +146,7 @@ async function startServer() {
 
       user.set('password', newPassword);
       await user.save();
+      invalidateCache(isStaff ? 'Staff' : 'Users');
 
       res.json({ success: true });
     } catch (error) {
@@ -188,14 +162,11 @@ async function startServer() {
     const { email, password } = req.body;
     
     try {
-      const usersSheet = doc.sheetsByTitle['Users'];
-      const staffSheet = doc.sheetsByTitle['Staff'];
-      
-      const userRows = await usersSheet.getRows();
+      const userRows = await getCachedRows('Users');
       let user = userRows.find(r => r.get('email') === email && r.get('password') === password);
       
       if (!user) {
-        const staffRows = await staffSheet.getRows();
+        const staffRows = await getCachedRows('Staff');
         user = staffRows.find(r => r.get('email') === email && r.get('password') === password);
       }
       
@@ -222,14 +193,11 @@ async function startServer() {
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
     try {
-      const usersSheet = doc.sheetsByTitle['Users'];
-      const staffSheet = doc.sheetsByTitle['Staff'];
-      
-      const userRows = await usersSheet.getRows();
+      const userRows = await getCachedRows('Users');
       let user = userRows.find(r => r.get('id') === req.params.id);
       
       if (!user) {
-        const staffRows = await staffSheet.getRows();
+        const staffRows = await getCachedRows('Staff');
         user = staffRows.find(r => r.get('id') === req.params.id);
       }
       
@@ -264,12 +232,12 @@ async function startServer() {
       await usersSheet.setHeaderRow(['id', 'name', 'email', 'phone', 'password', 'role', 'createdAt']);
       await staffSheet.setHeaderRow(['id', 'name', 'email', 'phone', 'password', 'role', 'createdAt']);
       
-      const userRows = await usersSheet.getRows();
+      const userRows = await getCachedRows('Users');
       let user = userRows.find(r => r.get('id') === req.params.id);
       let isStaff = false;
       
       if (!user) {
-        const staffRows = await staffSheet.getRows();
+        const staffRows = await getCachedRows('Staff');
         user = staffRows.find(r => r.get('id') === req.params.id);
         isStaff = true;
       }
@@ -278,11 +246,52 @@ async function startServer() {
         return res.status(404).json({ error: 'User not found' });
       }
 
+      const oldEmail = user.get('email');
       user.set('name', name);
       user.set('email', email);
       user.set('phone', phone || '');
       await user.save();
-      await autoResizeSheet(isStaff ? staffSheet : usersSheet);
+      invalidateCache(isStaff ? 'Staff' : 'Users');
+
+      // If it's a staff member, also try to update their corresponding driver record
+      if (isStaff) {
+        try {
+          const driversSheet = doc.sheetsByTitle['drivers'];
+          if (driversSheet) {
+            const driverRows = await getCachedRows('drivers');
+            // Try to find by old email
+            const driverRow = driverRows.find(r => r.get('email') === oldEmail);
+            if (driverRow) {
+              driverRow.set('name', name);
+              driverRow.set('email', email);
+              driverRow.set('phone', phone || '');
+              await driverRow.save();
+              invalidateCache('drivers');
+            }
+          }
+          
+          // Update assignedDriverEmail in Bookings if email changed
+          if (oldEmail !== email) {
+            const bookingsSheet = doc.sheetsByTitle['Bookings'];
+            if (bookingsSheet) {
+              const bookingRows = await getCachedRows('Bookings');
+              let updatedBookings = false;
+              for (const row of bookingRows) {
+                if (row.get('assignedDriverEmail') === oldEmail) {
+                  row.set('assignedDriverEmail', email);
+                  await row.save();
+                  updatedBookings = true;
+                }
+              }
+              if (updatedBookings) {
+                invalidateCache('Bookings');
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Failed to update corresponding driver record:', err);
+        }
+      }
 
       res.json({
         id: user.get('id'),
@@ -305,28 +314,37 @@ async function startServer() {
     const { 
       userId, userName, userEmail, fromLocation, toLocation, rideDate, rideType, numberOfPeople, fareAmount,
       tripType, returnDate, weddingDetails, intercityDetails, airportDetails, customRequirements,
-      destinations, numberOfDays, numberOfCars, estimatedKM, suggestedVehicle
+      destinations, numberOfDays, numberOfCars, estimatedKM, suggestedVehicle, isAC
     } = req.body;
     
     try {
       const sheet = doc.sheetsByTitle['Bookings'];
       const id = Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9);
       
-      // Format the date to 12-hour format
+      // Format the date to ISO format with IST offset
       let formattedDate = rideDate;
       if (rideDate) {
         try {
-          const dateObj = new Date(rideDate);
-          if (!isNaN(dateObj.getTime())) {
-            // Format: MM/DD/YYYY, hh:mm A
-            formattedDate = dateObj.toLocaleString('en-US', {
-              month: '2-digit',
-              day: '2-digit',
-              year: 'numeric',
-              hour: 'numeric',
-              minute: '2-digit',
-              hour12: true
-            });
+          // Expected format: "YYYY-MM-DD HH:MM AM/PM"
+          const match = rideDate.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{1,2}):(\d{2})\s+(AM|PM)$/i);
+          if (match) {
+            const [_, datePart, hourStr, minStr, ampm] = match;
+            let hour = parseInt(hourStr, 10);
+            if (ampm.toUpperCase() === 'PM' && hour < 12) hour += 12;
+            if (ampm.toUpperCase() === 'AM' && hour === 12) hour = 0;
+            formattedDate = `${datePart}T${String(hour).padStart(2, '0')}:${minStr}:00+05:30`;
+          } else {
+            // Fallback for other formats
+            const dateObj = new Date(rideDate);
+            if (!isNaN(dateObj.getTime())) {
+              const year = dateObj.getFullYear();
+              const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+              const day = String(dateObj.getDate()).padStart(2, '0');
+              const hours = String(dateObj.getHours()).padStart(2, '0');
+              const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+              const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+              formattedDate = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+05:30`;
+            }
           }
         } catch (e) {
           console.error('Error formatting date:', e);
@@ -354,22 +372,28 @@ async function startServer() {
         numberOfCars: numberOfCars || 'N/A',
         estimatedKM: estimatedKM || 'N/A',
         suggestedVehicle: suggestedVehicle || 'N/A',
+        isAC: isAC ? 'Yes' : 'No',
         weddingDetails: weddingDetails ? JSON.stringify(weddingDetails) : 'N/A',
         intercityDetails: intercityDetails ? JSON.stringify(intercityDetails) : 'N/A',
         airportDetails: airportDetails ? JSON.stringify(airportDetails) : 'N/A',
-        customRequirements: customRequirements || 'N/A'
+        customRequirements: customRequirements || 'N/A',
+        assignedDriverEmail: '',
+        assignedVehicleId: ''
       };
 
       // Ensure headers include new fields
+      if (sheet.columnCount < 30) {
+        await sheet.resize({ rowCount: sheet.rowCount, columnCount: 30 });
+      }
       await sheet.setHeaderRow([
         'id', 'userId', 'userName', 'userEmail', 'fromLocation', 'toLocation', 'rideDate', 
         'rideType', 'numberOfPeople', 'rideStatus', 'paymentStatus', 'fareAmount', 'timestamp',
         'tripType', 'returnDate', 'destinations', 'numberOfDays', 'numberOfCars', 'estimatedKM', 'suggestedVehicle',
-        'weddingDetails', 'intercityDetails', 'airportDetails', 'customRequirements'
+        'isAC', 'weddingDetails', 'intercityDetails', 'airportDetails', 'customRequirements', 'assignedDriverEmail', 'assignedVehicleId'
       ]);
 
       await sheet.addRow(newBooking);
-      await autoResizeSheet(sheet);
+      invalidateCache('Bookings');
       
       // Notify all clients about the new booking
       io.emit('booking:created', newBooking);
@@ -385,45 +409,106 @@ async function startServer() {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
-    const { userId } = req.query;
+    const { userId, isAdmin, forceRefresh } = req.query;
+    const isUserAdmin = isAdmin === 'true';
+    const isForceRefresh = forceRefresh === 'true';
     
     try {
       const sheet = doc.sheetsByTitle['Bookings'];
       const usersSheet = doc.sheetsByTitle['Users'];
       
-      const rows = await sheet.getRows();
-      const userRows = await usersSheet.getRows();
+      const vehiclesSheet = doc.sheetsByTitle['vehicles'];
+      const driversSheet = doc.sheetsByTitle['drivers'];
+      
+      const rows = await getCachedRows('Bookings', isForceRefresh);
+      const userRows = await getCachedRows('Users', isForceRefresh);
       
       const userPhones: Record<string, string> = {};
       userRows.forEach(r => {
         userPhones[r.get('id')] = r.get('phone') || '';
       });
+
+      let vehicleRows: any[] = [];
+      let driverRows: any[] = [];
+      if (vehiclesSheet) vehicleRows = await getCachedRows('vehicles', isForceRefresh);
+      if (driversSheet) driverRows = await getCachedRows('drivers', isForceRefresh);
       
+      const nowIST = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+
       let bookings = rows
         .filter(r => r.get('id'))
-        .map(r => ({
-        id: r.get('id'),
-        userId: r.get('userId'),
-        userName: r.get('userName'),
-        userPhone: userPhones[r.get('userId')] || '',
-        userEmail: r.get('userEmail'),
-        fromLocation: r.get('fromLocation'),
-        toLocation: r.get('toLocation'),
-        destinations: r.get('destinations'),
-        rideDate: r.get('rideDate'),
-        returnDate: r.get('returnDate'),
-        tripType: r.get('tripType'),
-        rideType: r.get('rideType'),
-        numberOfPeople: r.get('numberOfPeople'),
-        numberOfDays: r.get('numberOfDays'),
-        numberOfCars: r.get('numberOfCars'),
-        estimatedKM: r.get('estimatedKM'),
-        suggestedVehicle: r.get('suggestedVehicle'),
-        rideStatus: r.get('rideStatus'),
-        paymentStatus: r.get('paymentStatus'),
-        fareAmount: r.get('fareAmount'),
-        timestamp: r.get('timestamp')
-      }));
+        .map(r => {
+          const rideDateStr = r.get('rideDate');
+          const rideStatus = r.get('rideStatus');
+          const assignedDriverEmail = r.get('assignedDriverEmail');
+          const assignedVehicleId = r.get('assignedVehicleId');
+          
+          let driverDetails = null;
+          let vehicleDetails = null;
+          let visibilityMessage = null;
+          let showDetails = isUserAdmin;
+
+          if (assignedDriverEmail || assignedVehicleId) {
+            if (rideDateStr && (rideStatus === 'Assigned' || rideStatus === 'Ongoing' || rideStatus === 'Completed')) {
+              showDetails = true;
+            }
+            
+            if (showDetails) {
+              if (assignedDriverEmail) {
+                const driver = driverRows.find(d => d.get('email') === assignedDriverEmail);
+                if (driver) {
+                  driverDetails = {
+                    name: driver.get('name'),
+                    phone: driver.get('phone')
+                  };
+                }
+              }
+              if (assignedVehicleId) {
+                const vehicle = vehicleRows.find(v => v.get('vehicleId') === assignedVehicleId);
+                if (vehicle) {
+                  vehicleDetails = {
+                    name: vehicle.get('vehicleName'),
+                    number: vehicle.get('vehicleNumber')
+                  };
+                }
+              }
+            }
+          }
+
+          if (!isUserAdmin && rideStatus === 'Confirmed' && !driverDetails) {
+            visibilityMessage = "Driver information will be given to you before 1 hour of the departure time.";
+          }
+
+          return {
+            id: r.get('id'),
+            userId: r.get('userId'),
+            userName: r.get('userName'),
+            userPhone: userPhones[r.get('userId')] || '',
+            userEmail: r.get('userEmail'),
+            fromLocation: r.get('fromLocation'),
+            toLocation: r.get('toLocation'),
+            destinations: r.get('destinations'),
+            rideDate: rideDateStr,
+            returnDate: r.get('returnDate'),
+            tripType: r.get('tripType'),
+            rideType: r.get('rideType'),
+            numberOfPeople: r.get('numberOfPeople'),
+            numberOfDays: r.get('numberOfDays'),
+            numberOfCars: r.get('numberOfCars'),
+            estimatedKM: r.get('estimatedKM'),
+            suggestedVehicle: r.get('suggestedVehicle'),
+            isAC: r.get('isAC'),
+            rideStatus,
+            paymentStatus: r.get('paymentStatus'),
+            fareAmount: r.get('fareAmount'),
+            timestamp: r.get('timestamp'),
+            driverDetails,
+            vehicleDetails,
+            visibilityMessage,
+            assignedDriverEmail: showDetails ? assignedDriverEmail : undefined,
+            assignedVehicleId: showDetails ? assignedVehicleId : undefined
+          };
+        });
 
       if (userId) {
         bookings = bookings.filter(b => b.userId === userId);
@@ -445,47 +530,79 @@ async function startServer() {
     
     try {
       const sheet = doc.sheetsByTitle['Bookings'];
-      const rows = await sheet.getRows();
+      const rows = await getCachedRows('Bookings');
       const row = rows.find(r => r.get('id') === id);
       
       if (!row) {
         return res.status(404).json({ error: 'Booking not found' });
       }
 
-      // 2-Hour Cancellation Rule
       if (rideStatus === 'Cancelled') {
         const rideDateStr = row.get('rideDate');
         if (rideDateStr) {
-          let rideTime = new Date(rideDateStr);
-          // If the date string doesn't contain timezone info, assume it's PST (-0800)
-          if (!rideDateStr.includes('Z') && !rideDateStr.includes('+') && !rideDateStr.includes('-')) {
-            rideTime = new Date(`${rideDateStr} PST`);
-          }
-          
-          const currentTime = new Date();
-          const diffInMs = rideTime.getTime() - currentTime.getTime();
-          const diffInHours = diffInMs / (1000 * 60 * 60);
+          const rideTime = new Date(rideDateStr);
+          const nowIST = new Date(
+            new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+          );
+
+          const diffInHours = (rideTime.getTime() - nowIST.getTime()) / (1000 * 60 * 60);
 
           if (diffInHours < 2) {
-            const message = diffInHours < 0 
-              ? "You cannot cancel a ride that has already started or is in the past."
-              : "You can cancel the ride only up to 2 hours before departure.";
-              
             return res.status(400).json({
               error: "Cancellation not allowed",
-              message: message
+              message: "You can cancel the ride only up to 2 hours before departure."
             });
           }
         }
       }
 
       const oldPaymentStatus = row.get('paymentStatus');
+      const oldRideStatus = row.get('rideStatus');
+
+      if (oldRideStatus === 'Completed' && oldPaymentStatus === 'Paid') {
+        return res.status(400).json({ error: 'Cannot modify a completed and paid ride.' });
+      }
 
       if (rideStatus) row.set('rideStatus', rideStatus);
       if (paymentStatus) row.set('paymentStatus', paymentStatus);
       
       await row.save();
-      await autoResizeSheet(sheet);
+      invalidateCache('Bookings');
+
+      // Automatic Status Reset for Driver and Vehicle
+      if (rideStatus && (rideStatus === 'Completed' || rideStatus === 'Cancelled') && oldRideStatus !== rideStatus) {
+        try {
+          const assignedDriverEmail = row.get('assignedDriverEmail');
+          const assignedVehicleId = row.get('assignedVehicleId');
+
+          if (assignedDriverEmail || assignedVehicleId) {
+            const driversSheet = doc.sheetsByTitle['drivers'];
+            const vehiclesSheet = doc.sheetsByTitle['vehicles'];
+
+            if (assignedDriverEmail && driversSheet) {
+              const driverRows = await getCachedRows('drivers');
+              const driverRow = driverRows.find(r => r.get('email') === assignedDriverEmail);
+              if (driverRow) {
+                driverRow.set('status', 'Available');
+                await driverRow.save();
+                invalidateCache('drivers');
+              }
+            }
+
+            if (assignedVehicleId && vehiclesSheet) {
+              const vehicleRows = await getCachedRows('vehicles');
+              const vehicleRow = vehicleRows.find(r => r.get('vehicleId') === assignedVehicleId);
+              if (vehicleRow) {
+                vehicleRow.set('status', 'Available');
+                await vehicleRow.save();
+                invalidateCache('vehicles');
+              }
+            }
+          }
+        } catch (resetError) {
+          console.error('Failed to reset driver/vehicle status:', resetError);
+        }
+      }
 
       // Log revenue if payment status changed to Paid
       if (paymentStatus === 'Paid' && oldPaymentStatus !== 'Paid') {
@@ -496,7 +613,7 @@ async function startServer() {
           const year = date.getFullYear().toString();
           
           const revenueSheet = doc.sheetsByTitle['Revenue Logs'];
-          const revRows = await revenueSheet.getRows();
+          const revRows = await getCachedRows('Revenue Logs');
           const revRow = revRows.find(r => r.get('month') === month && r.get('year') === year);
           
           if (revRow) {
@@ -512,7 +629,7 @@ async function startServer() {
               timestamp: new Date().toISOString()
             });
           }
-          await autoResizeSheet(revenueSheet);
+          invalidateCache('Revenue Logs');
         } catch (revError) {
           console.error('Failed to log revenue:', revError);
         }
@@ -541,14 +658,17 @@ async function startServer() {
     }
   });
 
+  // Drivers and Vehicles Routes
   // Revenue Logs Route
   app.get('/api/revenue', async (req, res) => {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
+    const isForceRefresh = req.query.forceRefresh === 'true';
+
     try {
       const sheet = doc.sheetsByTitle['Revenue Logs'];
-      const rows = await sheet.getRows();
+      const rows = await getCachedRows('Revenue Logs', isForceRefresh);
       
       const data = rows.map(r => ({
         month: r.get('month'),
@@ -570,7 +690,7 @@ async function startServer() {
 
     try {
       const sheet = doc.sheetsByTitle['Bookings'];
-      const rows = await sheet.getRows();
+      const rows = await getCachedRows('Bookings');
       
       const bookings = rows.map(r => ({
         rideStatus: r.get('rideStatus'),
@@ -581,6 +701,7 @@ async function startServer() {
       const totalRides = bookings.length;
       const completedRides = bookings.filter(b => b.rideStatus === 'Completed').length;
       const pendingRides = bookings.filter(b => b.rideStatus === 'Pending').length;
+      const confirmedRides = bookings.filter(b => b.rideStatus === 'Confirmed').length;
       const totalRevenue = bookings.filter(b => b.paymentStatus === 'Paid').reduce((sum, b) => sum + b.fareAmount, 0);
 
       const pdfDoc = new PDFDocument();
@@ -600,6 +721,7 @@ async function startServer() {
       pdfDoc.text(`Total Rides: ${totalRides}`);
       pdfDoc.text(`Completed Rides: ${completedRides}`);
       pdfDoc.text(`Pending Rides: ${pendingRides}`);
+      pdfDoc.text(`Confirmed Rides: ${confirmedRides}`);
       pdfDoc.moveDown();
       
       pdfDoc.fontSize(16).text(`Total Revenue: $${totalRevenue.toFixed(2)}`, { underline: true });
@@ -612,92 +734,97 @@ async function startServer() {
   });
 
   app.get('/calculate-distance', async (req, res) => {
-    const { from, to, tripType, departureDate, returnDate, vehicle } = req.query;
+    const { from, to, destinations, isAC } = req.query;
     
-    if (!from || !to) {
-      return res.status(400).json({ error: 'Both from and to are required' });
+    if (!from) {
+      return res.status(400).json({ error: 'from is required' });
+    }
+    
+    if (!to && !destinations) {
+      return res.status(400).json({ error: 'Either to or destinations is required' });
     }
 
     try {
-      // Use Open-Meteo for geocoding as it's more reliable from cloud environments
-      const fromUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(from as string)}&count=1&language=en&format=json`;
-      const fromRes = await axios.get(fromUrl, { timeout: 10000 });
-      
-      if (!fromRes.data || !fromRes.data.results || fromRes.data.results.length === 0) {
-        return res.status(400).json({ error: 'Origin city not found' });
-      }
-      const fromLat = fromRes.data.results[0].latitude;
-      const fromLon = fromRes.data.results[0].longitude;
-
-      const toUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(to as string)}&count=1&language=en&format=json`;
-      const toRes = await axios.get(toUrl, { timeout: 10000 });
-      
-      if (!toRes.data || !toRes.data.results || toRes.data.results.length === 0) {
-        return res.status(400).json({ error: 'Destination city not found' });
-      }
-      const toLat = toRes.data.results[0].latitude;
-      const toLon = toRes.data.results[0].longitude;
-
-      let distanceKm = 0;
-
-      // Calculate Haversine distance * 1.3 (approximate road detour factor)
-      const R = 6371; // Radius of the earth in km
-      const dLat = (toLat - fromLat) * Math.PI / 180;
-      const dLon = (toLon - fromLon) * Math.PI / 180;
-      const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(fromLat * Math.PI / 180) * Math.cos(toLat * Math.PI / 180) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2); 
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-      const straightLineDistance = R * c;
-      const oneWayDistance = straightLineDistance * 1.3; // Add 30% for road curves
-      distanceKm = oneWayDistance * 2; // Double the distance to account for vehicle returning to hometown
-
-      const distanceRounded = distanceKm.toFixed(2);
-      
-      // Base Fare Formula
-      const baseFare = distanceKm * 13;
-      const roundedFare = Math.ceil(baseFare / 500) * 500;
-      
-      // Halt Logic (Only For Round Trip)
-      let haltDays = 0;
-      let haltCharges = 0;
-      
-      if (tripType === 'Round-trip' && departureDate && returnDate) {
-        const depDate = new Date(departureDate as string);
-        const retDate = new Date(returnDate as string);
-        
-        // Check if both dates are the same calendar day
-        if (depDate.toDateString() !== retDate.toDateString()) {
-          const timeDiff = retDate.getTime() - depDate.getTime();
-          haltDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-          
-          // Vehicle Halt Rates
-          let vehicleHaltRate = 1000; // default for dzire/sedan
-          const vehicleStr = (vehicle as string || '').toLowerCase();
-          if (vehicleStr.includes('ertiga')) {
-            vehicleHaltRate = 1500;
-          } else if (vehicleStr.includes('van') || vehicleStr.includes('traveller')) {
-            vehicleHaltRate = 3000;
-          }
-          
-          haltCharges = haltDays * vehicleHaltRate;
+      // Helper function to get coordinates
+      const getCoordinates = async (city: string) => {
+        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`;
+        const res = await axios.get(url, { timeout: 10000 });
+        if (!res.data || !res.data.results || res.data.results.length === 0) {
+          throw new Error(`City not found: ${city}`);
         }
+        return {
+          lat: res.data.results[0].latitude,
+          lon: res.data.results[0].longitude
+        };
+      };
+
+      // Helper function to calculate distance between two coordinates
+      const calculateLegDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+        const R = 6371; // Radius of the earth in km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = 
+          Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+          Math.sin(dLon/2) * Math.sin(dLon/2); 
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+        const straightLineDistance = R * c;
+        return straightLineDistance * 1.3; // Add 30% for road curves
+      };
+
+      const fromCoords = await getCoordinates(from as string);
+      const seoniCoords = await getCoordinates('Seoni');
+      
+      let totalDistance = 0;
+      const fromCity = (from as string).trim().toLowerCase();
+      
+      let waypoints: { lat: number, lon: number }[] = [];
+      
+      if (destinations) {
+        const destArray = JSON.parse(destinations as string);
+        for (const dest of destArray) {
+          waypoints.push(await getCoordinates(dest));
+        }
+      } else if (to) {
+        waypoints.push(await getCoordinates(to as string));
       }
       
-      const finalPrice = roundedFare + haltCharges;
+      if (waypoints.length === 0) {
+        return res.status(400).json({ error: 'No valid destinations provided' });
+      }
+
+      // Calculate total distance
+      let currentCoords = fromCoords;
+      
+      if (fromCity !== 'seoni') {
+        // Seoni -> pickup
+        totalDistance += calculateLegDistance(seoniCoords.lat, seoniCoords.lon, fromCoords.lat, fromCoords.lon);
+      }
+      
+      // pickup -> dest1 -> dest2 -> ... -> destN
+      for (const wp of waypoints) {
+        totalDistance += calculateLegDistance(currentCoords.lat, currentCoords.lon, wp.lat, wp.lon);
+        currentCoords = wp;
+      }
+      
+      // destN -> Seoni
+      totalDistance += calculateLegDistance(currentCoords.lat, currentCoords.lon, seoniCoords.lat, seoniCoords.lon);
+
+      const distanceRounded = totalDistance.toFixed(2);
+      const perKmRate = isAC === 'true' ? 14 : 13;
+      const basePrice = totalDistance * perKmRate;
+      const finalPrice = Math.ceil(basePrice / 500) * 500;
 
       return res.json({
         distance: distanceRounded,
-        baseFare: roundedFare,
-        haltDays,
-        haltCharges,
-        finalPrice,
-        price: finalPrice // keep price for backwards compatibility
+        price: finalPrice.toFixed(2)
       });
-    } catch (error) {
+    } catch (error: any) {
+      if (error.message && error.message.startsWith('City not found:')) {
+        return res.status(400).json({ error: error.message });
+      }
       console.error('Distance calculation error:', error);
-      return res.status(500).json({ error: 'Failed to calculate distance' });
+      return res.status(500).json({ error: error.message || 'Failed to calculate distance' });
     }
   });
 

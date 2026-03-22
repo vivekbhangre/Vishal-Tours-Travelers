@@ -28,18 +28,28 @@ export async function initSheets() {
     await doc.updateProperties({ defaultFormat: { wrapStrategy: 'CLIP' } });
 
     // Ensure sheets exist
-    const requiredSheets = ['Users', 'Bookings', 'Staff', 'Revenue Logs'];
+    const requiredSheets = ['Users', 'Bookings', 'Staff', 'Revenue Logs', 'vehicles', 'drivers'];
     for (const title of requiredSheets) {
       let sheet = doc.sheetsByTitle[title];
       if (!sheet) {
-        sheet = await doc.addSheet({ title });
+        let headerValues: string[] = [];
         if (title === 'Users' || title === 'Staff') {
-          await sheet.setHeaderRow(['id', 'name', 'email', 'phone', 'password', 'role', 'createdAt']);
+          headerValues = ['id', 'name', 'email', 'phone', 'password', 'role', 'createdAt'];
         } else if (title === 'Bookings') {
-          await sheet.setHeaderRow(['id', 'userId', 'userName', 'fromLocation', 'toLocation', 'rideDate', 'rideType', 'numberOfPeople', 'rideStatus', 'paymentStatus', 'fareAmount', 'timestamp']);
+          headerValues = [
+            'id', 'userId', 'userName', 'userEmail', 'fromLocation', 'toLocation', 'rideDate', 
+            'rideType', 'numberOfPeople', 'rideStatus', 'paymentStatus', 'fareAmount', 'timestamp',
+            'tripType', 'returnDate', 'destinations', 'numberOfDays', 'numberOfCars', 'estimatedKM', 'suggestedVehicle',
+            'isAC', 'weddingDetails', 'intercityDetails', 'airportDetails', 'customRequirements', 'assignedDriverEmail', 'assignedVehicleId'
+          ];
         } else if (title === 'Revenue Logs') {
-          await sheet.setHeaderRow(['id', 'month', 'year', 'amount', 'timestamp']);
+          headerValues = ['id', 'month', 'year', 'amount', 'timestamp'];
+        } else if (title === 'vehicles') {
+          headerValues = ['vehicleId', 'vehicleName', 'vehicleNumber', 'vehicleType', 'seatingCapacity', 'status', 'nextServiceDate'];
+        } else if (title === 'drivers') {
+          headerValues = ['id', 'name', 'email', 'phone', 'assignedVehicleId', 'status'];
         }
+        sheet = await doc.addSheet({ title, headerValues });
       }
     }
       
@@ -75,13 +85,45 @@ export async function initSheets() {
       console.log('Created default staff account');
     }
 
+    // Format all cells to CLIP to ensure data is displayed in one line
+    const requests = requiredSheets.map(title => {
+      const sheet = doc!.sheetsByTitle[title];
+      if (!sheet) return null;
+      return {
+        repeatCell: {
+          range: {
+            sheetId: sheet.sheetId,
+          },
+          cell: {
+            userEnteredFormat: {
+              wrapStrategy: 'CLIP'
+            }
+          },
+          fields: 'userEnteredFormat.wrapStrategy'
+        }
+      };
+    }).filter(Boolean);
+
+    if (requests.length > 0) {
+      try {
+        await (doc as any).sheetsApi.post(':batchUpdate', {
+          json: { requests }
+        });
+      } catch (err) {
+        console.error('Error applying wrapStrategy to all sheets:', err);
+      }
+    }
+
     // Format all sheets
     for (const title of requiredSheets) {
       const sheet = doc.sheetsByTitle[title];
       if (sheet) {
         try {
+          if (sheet.columnCount < 30) {
+            await sheet.resize({ rowCount: sheet.rowCount, columnCount: 30 });
+          }
           await sheet.loadHeaderRow();
-          await sheet.loadCells('A1:Z1');
+          await sheet.loadCells('A1:AD1');
           for (let i = 0; i < sheet.headerValues.length; i++) {
             const cell = sheet.getCell(0, i);
             cell.textFormat = { bold: true };
@@ -104,14 +146,29 @@ export async function initSheets() {
   }
 }
 
-export async function autoResizeSheet(sheet: any) {
-  try {
-    await sheet.autoResizeDimensions('COLUMNS', { startIndex: 0, endIndex: sheet.columnCount });
-  } catch (err) {
-    console.error(`Error resizing sheet ${sheet.title}:`, err);
-  }
-}
-
 export function getDoc() {
   return doc;
+}
+
+const rowCache = new Map<string, { data: any[], timestamp: number }>();
+const CACHE_TTL = 15000; // 15 seconds
+
+export async function getCachedRows(sheetTitle: string, forceRefresh: boolean = false) {
+  const now = Date.now();
+  const cached = rowCache.get(sheetTitle);
+  if (!forceRefresh && cached && (now - cached.timestamp < CACHE_TTL)) {
+    return cached.data;
+  }
+
+  if (!doc) throw new Error('Google Sheets not configured');
+  const sheet = doc.sheetsByTitle[sheetTitle];
+  if (!sheet) return [];
+
+  const rows = await sheet.getRows();
+  rowCache.set(sheetTitle, { data: rows, timestamp: now });
+  return rows;
+}
+
+export function invalidateCache(sheetTitle: string) {
+  rowCache.delete(sheetTitle);
 }

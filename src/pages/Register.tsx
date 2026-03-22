@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
-import { Map } from 'lucide-react';
+import { Map, Eye, EyeOff } from 'lucide-react';
+import { motion } from 'motion/react';
 
 export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -18,6 +20,22 @@ export default function Register() {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    if (name.trim().length < 2) {
+      setError('Name must be at least 2 characters long');
+      setLoading(false);
+      return;
+    }
+    if (!/^\+?[\d\s-]{10,15}$/.test(phone)) {
+      setError('Please enter a valid phone number (10-15 digits)');
+      setLoading(false);
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
 
     try {
       const user = await api.register({ name, email, phone, password, role: 'customer' });
@@ -31,9 +49,14 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen relative flex flex-col justify-center py-12 sm:px-6 lg:px-8 overflow-hidden">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="min-h-[100dvh] relative flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300 overflow-y-auto"
+    >
       {/* Background Image */}
-      <div className="absolute inset-0 z-0">
+      <div className="fixed inset-0 z-0">
         <img
           className="w-full h-full object-cover"
           src="https://images.unsplash.com/photo-1494783367193-149034c05e8f?auto=format&fit=crop&w=1920&q=80"
@@ -44,9 +67,9 @@ export default function Register() {
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/80 via-purple-900/60 to-black/80 z-10"></div>
       </div>
 
-      <div className="relative z-20 sm:mx-auto sm:w-full sm:max-w-md">
+      <div className="relative z-20 w-full max-w-md mx-auto">
         <div 
-          className="rounded-[24px] p-8 sm:p-12 shadow-2xl"
+          className="rounded-[24px] p-6 sm:p-12 shadow-2xl w-full"
           style={{
             background: 'rgba(255, 255, 255, 0.12)',
             backdropFilter: 'blur(20px)',
@@ -69,7 +92,7 @@ export default function Register() {
             </Link>
           </p>
 
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <form className="mt-6 sm:mt-8 space-y-3 sm:space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="bg-red-500/20 border border-red-500/50 text-white px-4 py-3 rounded-xl relative backdrop-blur-sm" role="alert">
                 <span className="block sm:inline">{error}</span>
@@ -88,7 +111,7 @@ export default function Register() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="appearance-none block w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
+                  className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
                   placeholder="John Doe"
                 />
               </div>
@@ -107,7 +130,7 @@ export default function Register() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
+                  className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
                   placeholder="you@example.com"
                 />
               </div>
@@ -126,7 +149,7 @@ export default function Register() {
                   required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="appearance-none block w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
+                  className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
                   placeholder="+1 (555) 000-0000"
                 />
               </div>
@@ -136,18 +159,29 @@ export default function Register() {
               <label htmlFor="password" className="block text-sm font-medium text-gray-200 ml-1">
                 Password
               </label>
-              <div className="mt-2">
+              <div className="mt-2 relative">
                 <input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
+                  className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm pr-10"
                   placeholder="••••••••"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" aria-hidden="true" />
+                  ) : (
+                    <Eye className="h-5 w-5" aria-hidden="true" />
+                  )}
+                </button>
               </div>
             </div>
 
@@ -163,6 +197,6 @@ export default function Register() {
           </form>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

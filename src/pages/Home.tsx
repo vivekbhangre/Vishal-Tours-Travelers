@@ -3,12 +3,18 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { MapPin, Calendar, CreditCard, ShieldCheck, Phone, Mail, Instagram } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { motion } from 'motion/react';
 
 export default function Home() {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="min-h-screen bg-gray-50 flex flex-col transition-colors duration-300"
+    >
       <Navbar />
       
       {/* Main Content Wrapper to push footer to bottom if content is short */}
@@ -196,6 +202,6 @@ export default function Home() {
           </div>
         </div>
       </footer>
-    </div>
+    </motion.div>
   );
 }

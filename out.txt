@@ -1,0 +1,58 @@
+524:      default: return 'bg-gray-50 text-gray-600 border border-gray-100';
+545:              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Customer Dashboard</h1>
+551:                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+557:                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'bookings' ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+574:                      <h3 className="text-lg font-bold text-gray-900">{profileName}</h3>
+575:                      <p className="text-sm text-gray-500">Customer</p>
+602:                      <label htmlFor="profileName" className="block text-sm font-medium text-gray-700">Name</label>
+613:                      <label htmlFor="profileEmail" className="block text-sm font-medium text-gray-700">Email</label>
+624:                      <label htmlFor="profilePhone" className="block text-sm font-medium text-gray-700">Phone</label>
+644:                        className="flex-1 flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+655:                <h3 className="text-lg font-bold text-gray-900 mb-6">Book a Ride</h3>
+675:                        <h2 className="text-2xl font-bold text-gray-900">🎉 Thank You for Booking!</h2>
+676:                        <p className="text-gray-500 mt-2">Your ride has been successfully scheduled.</p>
+680:                        <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-3 mb-4">Booking Details</h3>
+684:                            <span className="text-gray-500 block mb-1">Booking ID</span>
+685:                            <span className="font-medium text-gray-900 text-base">#{bookingSuccessData.id.slice(-6)}</span>
+689:                            <span className="text-gray-500 block mb-1">Route</span>
+690:                            <span className="font-medium text-gray-900 text-base">
+698:                            <span className="text-gray-500 block mb-1">Departure</span>
+699:                            <span className="font-medium text-gray-900 text-base">
+728:                          className="flex-1 justify-center py-2.5 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+758:                                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+768:                      <label htmlFor="fromLocation" className="block text-sm font-medium text-gray-700">From</label>
+789:                              className="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-indigo-600 hover:text-white"
+806:                      <label htmlFor="toLocation" className="block text-sm font-medium text-gray-700">To</label>
+827:                              className="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-indigo-600 hover:text-white"
+855:                              <label className="block text-sm font-medium text-gray-700">Destination {index + 1}</label>
+877:                                      className="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-indigo-600 hover:text-white"
+920:                    <label htmlFor="rideDate" className="block text-sm font-medium text-gray-700">
+942:                        <span className="flex items-center text-gray-500 font-bold">:</span>
+974:                        <label htmlFor="returnDate" className="block text-sm font-medium text-gray-700 mt-4">Return Date & Time</label>
+994:                            <span className="flex items-center text-gray-500 font-bold">:</span>
+1028:                            <label htmlFor="numberOfDays" className="block text-sm font-medium text-gray-700">Number of Days</label>
+1040:                            <label htmlFor="numberOfCars" className="block text-sm font-medium text-gray-700">Number of Cars Required</label>
+1060:                      <label htmlFor="rideType" className="block text-sm font-medium text-gray-700">Ride Type</label>
+1078:                        <label htmlFor="numberOfPeople" className="block text-sm font-medium text-gray-700">Number of People</label>
+1099:                            <label className="block text-sm font-medium text-gray-700">Or Choose Your Preferred Vehicle</label>
+1135:                                  <h4 className="text-sm font-medium text-gray-900">AC Vehicle</h4>
+1165:                          <label htmlFor="weddingDate" className="block text-sm font-medium text-gray-700">Wedding Date</label>
+1175:                          <label htmlFor="eventLocation" className="block text-sm font-medium text-gray-700">Event Location</label>
+1186:                            <label htmlFor="vehiclesRequired" className="block text-sm font-medium text-gray-700">Number of Vehicles</label>
+1197:                            <label className="block text-sm font-medium text-gray-700 mb-1">Decoration Required?</label>
+1221:                          <label className="block text-sm font-medium text-gray-700 mb-1">Pickup Type</label>
+1243:                        <label htmlFor="customRequirements" className="block text-sm font-medium text-gray-700">Please describe your requirements</label>
+1310:                  <p className="text-xs text-center text-gray-500 mt-3 flex items-center justify-center gap-1.5">
+1323:                  <h3 className="text-xl font-bold text-gray-900">My Bookings</h3>
+1330:                    className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors disabled:opacity-50"
+1337:              <p className="text-sm text-gray-500 mb-6 flex items-center gap-1.5">
+1344:                  <div className="p-4 text-center text-gray-500 bg-white rounded-2xl shadow-sm border border-gray-100">Loading bookings...</div>
+1346:                  <div className="p-4 text-center text-gray-500 bg-white rounded-2xl shadow-sm border border-gray-100">No bookings found. Book a ride to get started!</div>
+1356:                          <h4 className="text-lg font-bold text-gray-900">
+1369:                              <ChevronUp className="w-5 h-5 text-gray-400" />
+1371:                              <ChevronDown className="w-5 h-5 text-gray-400" />
+1375:                        <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+1384:                          <div className="flex items-center gap-1.5 font-medium text-gray-900">
+1401:                              <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-6">
+1444:                                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Booking ID</p>
+1445:                                  <p className="text-sm font-medium text-gray-900">#{booking.id.slice(-6)}</p>

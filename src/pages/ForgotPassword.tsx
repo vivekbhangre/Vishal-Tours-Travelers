@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
-import { Map } from 'lucide-react';
+import { Map, Eye, EyeOff } from 'lucide-react';
+import { motion } from 'motion/react';
 
 export default function ForgotPassword() {
   const [step, setStep] = useState(1);
@@ -10,9 +11,12 @@ export default function ForgotPassword() {
   const [phone, setPhone] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState('');
+  const [isStaff, setIsStaff] = useState(false);
   const navigate = useNavigate();
 
   const handleVerify = async (e: React.FormEvent) => {
@@ -20,10 +24,22 @@ export default function ForgotPassword() {
     setError('');
     setLoading(true);
 
+    if (name.trim().length < 2) {
+      setError('Name must be at least 2 characters long');
+      setLoading(false);
+      return;
+    }
+    if (!/^\+?[\d\s-]{10,15}$/.test(phone)) {
+      setError('Please enter a valid phone number (10-15 digits)');
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await api.verifyReset({ name, email, phone });
       if (res.success) {
         setUserId(res.userId);
+        setIsStaff(res.isStaff);
         setStep(2);
       }
     } catch (err: any) {
@@ -37,6 +53,11 @@ export default function ForgotPassword() {
     e.preventDefault();
     setError('');
 
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -45,7 +66,7 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
-      await api.resetPassword({ userId, newPassword });
+      await api.resetPassword({ userId, newPassword, isStaff });
       navigate('/login', { state: { message: 'Password reset successfully. Please login with your new password.' } });
     } catch (err: any) {
       setError(err.message || 'Failed to reset password');
@@ -55,9 +76,14 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen relative flex flex-col justify-center py-12 sm:px-6 lg:px-8 overflow-hidden">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="min-h-[100dvh] relative flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300 overflow-y-auto"
+    >
       {/* Background Image */}
-      <div className="absolute inset-0 z-0">
+      <div className="fixed inset-0 z-0">
         <img
           className="w-full h-full object-cover"
           src="https://images.unsplash.com/photo-1494783367193-149034c05e8f?auto=format&fit=crop&w=1920&q=80"
@@ -68,9 +94,9 @@ export default function ForgotPassword() {
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/80 via-purple-900/60 to-black/80 z-10"></div>
       </div>
 
-      <div className="relative z-20 sm:mx-auto sm:w-full sm:max-w-md">
+      <div className="relative z-20 w-full max-w-md mx-auto">
         <div 
-          className="rounded-[24px] p-8 sm:p-12 shadow-2xl"
+          className="rounded-[24px] p-6 sm:p-12 shadow-2xl w-full"
           style={{
             background: 'rgba(255, 255, 255, 0.12)',
             backdropFilter: 'blur(20px)',
@@ -90,7 +116,7 @@ export default function ForgotPassword() {
             {step === 1 ? 'Enter your details to verify your account.' : 'Please enter your new password below.'}
           </p>
 
-          <form className="mt-8 space-y-6" onSubmit={step === 1 ? handleVerify : handleReset}>
+          <form className="mt-6 sm:mt-8 space-y-3 sm:space-y-6" onSubmit={step === 1 ? handleVerify : handleReset}>
             {error && (
               <div className="bg-red-500/20 border border-red-500/50 text-white px-4 py-3 rounded-xl relative backdrop-blur-sm" role="alert">
                 <span className="block sm:inline">{error}</span>
@@ -111,7 +137,7 @@ export default function ForgotPassword() {
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="appearance-none block w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
+                      className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
                       placeholder="John Doe"
                     />
                   </div>
@@ -129,7 +155,7 @@ export default function ForgotPassword() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="appearance-none block w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
+                      className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
                       placeholder="you@example.com"
                     />
                   </div>
@@ -147,7 +173,7 @@ export default function ForgotPassword() {
                       required
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="appearance-none block w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
+                      className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
                       placeholder="+1 (555) 000-0000"
                     />
                   </div>
@@ -159,17 +185,28 @@ export default function ForgotPassword() {
                   <label htmlFor="newPassword" className="block text-sm font-medium text-gray-200 ml-1">
                     New Password
                   </label>
-                  <div className="mt-2">
+                  <div className="mt-2 relative">
                     <input
                       id="newPassword"
                       name="newPassword"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       required
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="appearance-none block w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
+                      className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm pr-10"
                       placeholder="••••••••"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" aria-hidden="true" />
+                      ) : (
+                        <Eye className="h-5 w-5" aria-hidden="true" />
+                      )}
+                    </button>
                   </div>
                 </div>
 
@@ -177,17 +214,28 @@ export default function ForgotPassword() {
                   <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-200 ml-1">
                     Confirm Password
                   </label>
-                  <div className="mt-2">
+                  <div className="mt-2 relative">
                     <input
                       id="confirmPassword"
                       name="confirmPassword"
-                      type="password"
+                      type={showConfirmPassword ? "text" : "password"}
                       required
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="appearance-none block w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
+                      className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm pr-10"
                       placeholder="••••••••"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-5 w-5" aria-hidden="true" />
+                      ) : (
+                        <Eye className="h-5 w-5" aria-hidden="true" />
+                      )}
+                    </button>
                   </div>
                 </div>
               </>
@@ -213,6 +261,6 @@ export default function ForgotPassword() {
           </form>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
