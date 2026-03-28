@@ -4,6 +4,7 @@ import { createServer as createViteServer } from 'vite';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import dotenv from 'dotenv';
 import { initSheets, getDoc, getCachedRows, invalidateCache } from './server/sheets.js';
 import { setupFleetRoutes } from './server/fleet.js';
 import cityAutocompleteRouter from './server/cityAutocomplete.js';
@@ -11,6 +12,8 @@ import PDFDocument from 'pdfkit';
 import { GoogleGenAI } from "@google/genai";
 import fs from "fs";
 import path from "path";
+
+dotenv.config();
 
 async function startServer() {
   const app = express();
@@ -822,7 +825,7 @@ async function startServer() {
       const distanceRounded = totalDistance.toFixed(2);
       const perKmRate = isAC === 'true' ? 14 : 13;
       const basePrice = totalDistance * perKmRate;
-      const finalPrice = Math.ceil(basePrice / 500) * 500;
+      const finalPrice = Math.ceil(basePrice / 100) * 100;
 
       return res.json({
         distance: distanceRounded,
