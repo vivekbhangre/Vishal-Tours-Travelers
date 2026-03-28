@@ -178,8 +178,11 @@ export const setupFleetRoutes = (app: any, io: any) => {
       }
 
       const driverRows = await getCachedRows('drivers');
-      const driverRow = driverRows.find(r => r.get('id') === driverId || `row-${r.rowNumber}` === driverId);
-      if (!driverRow) return res.status(404).json({ error: 'Driver not found' });
+      let driverRow = null;
+      if (driverId) {
+        driverRow = driverRows.find(r => r.get('id') === driverId || `row-${r.rowNumber}` === driverId);
+        if (!driverRow) return res.status(404).json({ error: 'Driver not found' });
+      }
       
       const vehicleRows = await getCachedRows('vehicles');
       const vehicleRow = vehicleRows.find(r => r.get('vehicleId') === vehicleId || `row-${r.rowNumber}` === vehicleId);
@@ -199,7 +202,7 @@ export const setupFleetRoutes = (app: any, io: any) => {
         if (r.get('id') === rideId) return false;
         if (!['Assigned', 'Ongoing'].includes(r.get('rideStatus'))) return false;
         
-        const isSameDriver = r.get('assignedDriverEmail') === driverRow.get('email');
+        const isSameDriver = driverRow ? r.get('assignedDriverEmail') === driverRow.get('email') : false;
         const isSameVehicle = r.get('assignedVehicleId') === vehicleId;
         
         if (!isSameDriver && !isSameVehicle) return false;
@@ -218,7 +221,7 @@ export const setupFleetRoutes = (app: any, io: any) => {
       const oldDriverEmail = rideRow.get('assignedDriverEmail');
       const oldVehicleId = rideRow.get('assignedVehicleId');
       
-      if (oldDriverEmail && oldDriverEmail !== driverRow.get('email')) {
+      if (oldDriverEmail && (!driverRow || oldDriverEmail !== driverRow.get('email'))) {
         const oldDriverRow = driverRows.find(r => r.get('email') === oldDriverEmail);
         if (oldDriverRow) {
           oldDriverRow.set('status', 'Available');
@@ -237,9 +240,11 @@ export const setupFleetRoutes = (app: any, io: any) => {
       }
 
       // Update new driver and vehicle status
-      driverRow.set('status', 'Busy');
-      await driverRow.save();
-      invalidateCache('drivers');
+      if (driverRow) {
+        driverRow.set('status', 'Busy');
+        await driverRow.save();
+        invalidateCache('drivers');
+      }
       
       vehicleRow.set('status', 'In Use');
       await vehicleRow.save();
@@ -247,7 +252,7 @@ export const setupFleetRoutes = (app: any, io: any) => {
 
       // Update ride
       rideRow.set('rideStatus', 'Assigned');
-      rideRow.set('assignedDriverEmail', driverRow.get('email'));
+      rideRow.set('assignedDriverEmail', driverRow ? driverRow.get('email') : '');
       rideRow.set('assignedVehicleId', vehicleId);
       await rideRow.save();
       invalidateCache('Bookings');

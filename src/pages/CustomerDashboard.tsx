@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import { api, socket } from '../lib/api';
@@ -6,6 +6,20 @@ import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle, Calendar, Clock, Car, Users, MapPin, Grid, RefreshCw, Info, ChevronDown, ChevronUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import debounce from 'lodash.debounce';
+
+interface LocationData {
+  name: string;
+  city: string;
+  district?: string;
+  state: string;
+  country: string;
+  lat: number;
+  lng: number;
+  displayName: string;
+  primaryText?: string;
+  secondaryText?: string;
+}
 
 const AVAILABLE_VEHICLES = [
   { name: 'Swift Dzire', capacity: 4, quantity: 1 },
@@ -49,11 +63,11 @@ export default function CustomerDashboard() {
   // Tour Fields
   const [destinations, setDestinations] = useState<string[]>(['']);
   const [activeDestinationIndex, setActiveDestinationIndex] = useState<number | null>(null);
-  const [destinationSuggestions, setDestinationSuggestions] = useState<{ [key: number]: string[] }>({});
+  const [destinationSuggestions, setDestinationSuggestions] = useState<{ [key: number]: LocationData[] }>({});
   
   // Car Renting Fields
-  const [numberOfDays, setNumberOfDays] = useState(1);
-  const [numberOfCars, setNumberOfCars] = useState(1);
+  const [numberOfDays, setNumberOfDays] = useState<number | ''>(1);
+  const [numberOfCars, setNumberOfCars] = useState<number | ''>(1);
   
   // Shared
   const [estimatedKM, setEstimatedKM] = useState(0);
@@ -82,6 +96,56 @@ export default function CustomerDashboard() {
   const [profileError, setProfileError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
   const [cancelMessage, setCancelMessage] = useState<{id: string, text: string, type: 'success' | 'error'} | null>(null);
+  const [cancelModal, setCancelModal] = useState<{ isOpen: boolean, booking: any | null, refundInfo: any | null }>({ isOpen: false, booking: null, refundInfo: null });
+
+  const calculateRefund = (rideDateStr: string, fareAmount: number, numberOfDays: number | string) => {
+    let rideDate = new Date(rideDateStr);
+    
+    if (isNaN(rideDate.getTime())) {
+      try {
+        let match = rideDateStr.match(/(\d{4}-\d{2}-\d{2})\s+(\d{1,2}):(\d{2})\s+(AM|PM)/i);
+        if (match) {
+          const [_, datePart, hourStr, minStr, ampm] = match;
+          let hour = parseInt(hourStr, 10);
+          if (ampm.toUpperCase() === 'PM' && hour < 12) hour += 12;
+          if (ampm.toUpperCase() === 'AM' && hour === 12) hour = 0;
+          rideDate = new Date(`${datePart}T${hour.toString().padStart(2, '0')}:${minStr}:00`);
+        } else {
+          match = rideDateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2})\s+(AM|PM)/i);
+          if (match) {
+            const [_, month, day, year, hourStr, minStr, ampm] = match;
+            let hour = parseInt(hourStr, 10);
+            if (ampm.toUpperCase() === 'PM' && hour < 12) hour += 12;
+            if (ampm.toUpperCase() === 'AM' && hour === 12) hour = 0;
+            rideDate = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hour.toString().padStart(2, '0')}:${minStr}:00`);
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing date:', e);
+      }
+    }
+
+    if (isNaN(rideDate.getTime())) {
+      return { refundPercent: 0, refundAmount: 0, message: "Could not determine ride date." };
+    }
+    
+    const now = new Date();
+    const diffInMs = rideDate.getTime() - now.getTime();
+    const diffInHours = diffInMs / (1000 * 60 * 60);
+    
+    const days = typeof numberOfDays === 'number' ? numberOfDays : (parseInt(numberOfDays as string) || 1);
+    const isMultiDay = days > 1;
+
+    if (diffInHours < 24) {
+      return { refundPercent: 0, refundAmount: 0, message: "No refund for cancellations within 24 hours of departure." };
+    } else if (diffInHours >= 24 && diffInHours <= 72) {
+      const percent = isMultiDay ? 25 : 50;
+      return { refundPercent: percent, refundAmount: (fareAmount * percent) / 100, message: `${percent}% refund applied.` };
+    } else {
+      const percent = isMultiDay ? 50 : 85;
+      return { refundPercent: percent, refundAmount: (fareAmount * percent) / 100, message: `${percent}% refund applied.` };
+    }
+  };
   const [expandedBookingId, setExpandedBookingId] = useState<string | null>(null);
   const [rebookModal, setRebookModal] = useState<{ isOpen: boolean, booking: any | null }>({ isOpen: false, booking: null });
   const [rebookDate, setRebookDate] = useState('');
@@ -92,10 +156,14 @@ export default function CustomerDashboard() {
   const [rebookError, setRebookError] = useState('');
 
   // Autocomplete State
-  const [fromSuggestions, setFromSuggestions] = useState<string[]>([]);
-  const [toSuggestions, setToSuggestions] = useState<string[]>([]);
+  const [fromLocationData, setFromLocationData] = useState<LocationData | null>(null);
+  const [toLocationData, setToLocationData] = useState<LocationData | null>(null);
+  const [destinationData, setDestinationData] = useState<(LocationData | null)[]>([null]);
+  const [fromSuggestions, setFromSuggestions] = useState<LocationData[]>([]);
+  const [toSuggestions, setToSuggestions] = useState<LocationData[]>([]);
   const [showFromSuggestions, setShowFromSuggestions] = useState(false);
   const [showToSuggestions, setShowToSuggestions] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('customerActiveTab', activeTab);
@@ -125,80 +193,47 @@ export default function CustomerDashboard() {
     };
   }, [user]);
 
-  useEffect(() => {
-    const fetchSuggestions = async (input: string, setter: (s: string[]) => void) => {
-      if (!input || input.length < 2) {
-        setter([]);
-        return;
-      }
-      try {
-        const res = await fetch(`/api/city-suggestions?q=${encodeURIComponent(input)}`);
-        if (res.ok) {
-          const data = await res.json();
-          setter(data.suggestions);
+  const fetchLocationSuggestions = useMemo(
+    () =>
+      debounce(async (input: string, setter: (s: LocationData[]) => void, currentRideType: string) => {
+        if (!input || input.length < 2) {
+          setter([]);
+          return;
         }
-      } catch (e) {
-        console.error('Failed to fetch city suggestions', e);
-      }
-    };
-
-    const timer = setTimeout(() => {
-      if (showFromSuggestions) fetchSuggestions(fromLocation, setFromSuggestions);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [fromLocation, showFromSuggestions]);
+        try {
+          const res = await fetch(`/api/location?q=${encodeURIComponent(input)}&rideType=${encodeURIComponent(currentRideType)}`);
+          if (res.ok) {
+            const data = await res.json();
+            setter(data);
+          }
+        } catch (e) {
+          console.error('Failed to fetch location suggestions', e);
+        }
+      }, 300),
+    []
+  );
 
   useEffect(() => {
-    const fetchSuggestions = async (input: string, setter: (s: string[]) => void) => {
-      if (!input || input.length < 2) {
-        setter([]);
-        return;
-      }
-      try {
-        const res = await fetch(`/api/city-suggestions?q=${encodeURIComponent(input)}`);
-        if (res.ok) {
-          const data = await res.json();
-          setter(data.suggestions);
-        }
-      } catch (e) {
-        console.error('Failed to fetch city suggestions', e);
-      }
-    };
-
-    const timer = setTimeout(() => {
-      if (showToSuggestions) fetchSuggestions(toLocation, setToSuggestions);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [toLocation, showToSuggestions]);
+    if (showFromSuggestions) fetchLocationSuggestions(fromLocation, setFromSuggestions, rideType);
+  }, [fromLocation, showFromSuggestions, fetchLocationSuggestions, rideType]);
 
   useEffect(() => {
-    const fetchSuggestions = async (input: string, index: number) => {
-      if (!input || input.length < 2) {
-        setDestinationSuggestions(prev => ({ ...prev, [index]: [] }));
-        return;
-      }
-      try {
-        const res = await fetch(`/api/city-suggestions?q=${encodeURIComponent(input)}`);
-        if (res.ok) {
-          const data = await res.json();
-          setDestinationSuggestions(prev => ({ ...prev, [index]: data.suggestions }));
-        }
-      } catch (e) {
-        console.error('Failed to fetch city suggestions', e);
-      }
-    };
+    if (showToSuggestions) fetchLocationSuggestions(toLocation, setToSuggestions, rideType);
+  }, [toLocation, showToSuggestions, fetchLocationSuggestions, rideType]);
 
-    const timer = setTimeout(() => {
-      if (activeDestinationIndex !== null) {
-        fetchSuggestions(destinations[activeDestinationIndex], activeDestinationIndex);
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [destinations, activeDestinationIndex]);
+  useEffect(() => {
+    if (activeDestinationIndex !== null) {
+      fetchLocationSuggestions(destinations[activeDestinationIndex], (suggestions) => {
+        setDestinationSuggestions(prev => ({ ...prev, [activeDestinationIndex]: suggestions }));
+      }, rideType);
+    }
+  }, [destinations, activeDestinationIndex, fetchLocationSuggestions, rideType]);
 
   useEffect(() => {
     if (tripType === 'Car Renting') {
-      setEstimatedPrice(numberOfDays * 2000 * numberOfCars);
+      const days = Number(numberOfDays) || 1;
+      const cars = Number(numberOfCars) || 1;
+      setEstimatedPrice(days * 2000 * cars);
       return;
     }
 
@@ -221,25 +256,71 @@ export default function CustomerDashboard() {
       return;
     }
 
-    const calculateDistance = async () => {
+    const calculateDistance = () => {
       setIsCalculatingDistance(true);
       try {
-        let url = `/calculate-distance?from=${encodeURIComponent(fromLocation)}&isAC=${isAC}`;
-        if (tripType === 'Tour') {
-          url += `&destinations=${encodeURIComponent(JSON.stringify(validDestinations))}`;
-        } else {
-          url += `&to=${encodeURIComponent(toLocation)}`;
-        }
+        const calculateLegDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+          const R = 6371; // Radius of the earth in km
+          const dLat = (lat2 - lat1) * Math.PI / 180;
+          const dLon = (lon2 - lon1) * Math.PI / 180;
+          const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2); 
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+          const straightLineDistance = R * c;
+          return straightLineDistance * 1.3; // Add 30% for road curves
+        };
 
-        const response = await fetch(url);
-        if (response.ok) {
-          const data = await response.json();
-          setEstimatedKM(parseFloat(data.distance));
-          setEstimatedPrice(parseFloat(data.price));
-        } else {
+        const seoniCoords = { lat: 22.0869, lng: 79.5433 };
+        let totalDistance = 0;
+        
+        if (!fromLocationData) {
           setEstimatedKM(0);
           setEstimatedPrice(0);
+          setIsCalculatingDistance(false);
+          return;
         }
+
+        let currentCoords = fromLocationData;
+        const fromCity = fromLocationData.city?.toLowerCase() || fromLocationData.name?.toLowerCase() || '';
+
+        if (fromCity !== 'seoni') {
+          totalDistance += calculateLegDistance(seoniCoords.lat, seoniCoords.lng, fromLocationData.lat, fromLocationData.lng);
+        }
+
+        let waypoints: LocationData[] = [];
+        if (tripType === 'Tour') {
+          waypoints = destinationData.filter((d): d is LocationData => d !== null);
+          if (waypoints.length === 0) {
+            setEstimatedKM(0);
+            setEstimatedPrice(0);
+            setIsCalculatingDistance(false);
+            return;
+          }
+        } else {
+          if (!toLocationData) {
+            setEstimatedKM(0);
+            setEstimatedPrice(0);
+            setIsCalculatingDistance(false);
+            return;
+          }
+          waypoints = [toLocationData];
+        }
+
+        for (const wp of waypoints) {
+          totalDistance += calculateLegDistance(currentCoords.lat, currentCoords.lng, wp.lat, wp.lng);
+          currentCoords = wp;
+        }
+
+        totalDistance += calculateLegDistance(currentCoords.lat, currentCoords.lng, seoniCoords.lat, seoniCoords.lng);
+
+        const perKmRate = isAC ? 14 : 13;
+        const basePrice = totalDistance * perKmRate;
+        const finalPrice = Math.ceil(basePrice / 100) * 100;
+
+        setEstimatedKM(parseFloat(totalDistance.toFixed(2)));
+        setEstimatedPrice(finalPrice);
       } catch (error) {
         console.error('Failed to calculate distance:', error);
         setEstimatedKM(0);
@@ -249,9 +330,9 @@ export default function CustomerDashboard() {
       }
     };
 
-    const timeoutId = setTimeout(calculateDistance, 1000);
+    const timeoutId = setTimeout(calculateDistance, 500);
     return () => clearTimeout(timeoutId);
-  }, [fromLocation, toLocation, tripType, numberOfDays, numberOfCars, destinations, isAC]);
+  }, [fromLocationData, toLocationData, destinationData, tripType, numberOfDays, numberOfCars, isAC]);
 
   useEffect(() => {
     let recommended = '';
@@ -354,15 +435,21 @@ export default function CustomerDashboard() {
     setBookingError('');
     setBookingLoading(true);
 
-    if (rideType === 'Wedding') {
+    if (tripType === 'Wedding') {
       if (!weddingDate || !eventLocation) {
         setBookingError('Please fill in all wedding details (date and location).');
         setBookingLoading(false);
         return;
       }
-    } else if (rideType === 'Car Renting') {
-      if (!fromLocation || !rideDate) {
-        setBookingError('Please fill in pickup location and date.');
+      const vehicles = parseInt(vehiclesRequired);
+      if (isNaN(vehicles) || vehicles < 1 || vehicles > 10) {
+        setBookingError('Number of vehicles must be between 1 and 10.');
+        setBookingLoading(false);
+        return;
+      }
+    } else if (tripType === 'Car Renting') {
+      if (!rideDate) {
+        setBookingError('Please fill in the date.');
         setBookingLoading(false);
         return;
       }
@@ -372,13 +459,38 @@ export default function CustomerDashboard() {
         setBookingLoading(false);
         return;
       }
-      if (tripType === 'Round Trip' && !returnDate) {
+      if (!fromLocationData || (!toLocationData && tripType !== 'Tour')) {
+        setBookingError('Please select locations from the dropdown suggestions to calculate the fare.');
+        setBookingLoading(false);
+        return;
+      }
+      if (tripType === 'Round-trip' && !returnDate) {
         setBookingError('Please select a return date for round trip.');
         setBookingLoading(false);
         return;
       }
-      if (tripType === 'Multi-city' && destinations.some(d => !d)) {
+      if (tripType === 'Tour' && destinations.some(d => !d)) {
         setBookingError('Please fill in all destination cities.');
+        setBookingLoading(false);
+        return;
+      }
+      if (tripType === 'Tour' && destinationData.some(d => !d)) {
+        setBookingError('Please select all destinations from the dropdown suggestions.');
+        setBookingLoading(false);
+        return;
+      }
+    }
+
+    if (tripType === 'Car Renting') {
+      const days = Number(numberOfDays) || 1;
+      const cars = Number(numberOfCars) || 1;
+      if (days < 1 || days > 30) {
+        setBookingError('Number of days must be between 1 and 30.');
+        setBookingLoading(false);
+        return;
+      }
+      if (cars < 1 || cars > 10) {
+        setBookingError('Number of vehicles must be between 1 and 10.');
         setBookingLoading(false);
         return;
       }
@@ -400,15 +512,23 @@ export default function CustomerDashboard() {
       }
 
       const vehicleObj = AVAILABLE_VEHICLES.find(v => v.name === selectedVehicle);
-      if (vehicleObj && vehicleObj.capacity < numberOfPeople && !confirmCapacity) {
+      if (vehicleObj && vehicleObj.quantity <= 0) {
+        setBookingError('The selected vehicle is currently unavailable.');
+        setBookingLoading(false);
+        return;
+      }
+      if (vehicleObj && vehicleObj.capacity < numberOfPeople && !confirmCapacity && tripType !== 'Car Renting') {
         setBookingError('Please confirm that you want to proceed with a vehicle that may not accommodate all passengers.');
         setBookingLoading(false);
         return;
       }
       
       let finalEstimatedPrice = 0;
+      const days = Number(numberOfDays) || 1;
+      const cars = Number(numberOfCars) || 1;
+      
       if (tripType === 'Car Renting') {
-        finalEstimatedPrice = (numberOfDays * 2000 * numberOfCars);
+        finalEstimatedPrice = (days * 2000 * cars);
       } else {
         finalEstimatedPrice = estimatedPrice || (estimatedKM * (isAC ? 14 : 13));
       }
@@ -451,8 +571,8 @@ export default function CustomerDashboard() {
         rideType,
         numberOfPeople,
         fareAmount: finalEstimatedPrice,
-        numberOfDays: tripType === 'Car Renting' ? numberOfDays : 'N/A',
-        numberOfCars: tripType === 'Car Renting' ? numberOfCars : 'N/A',
+        numberOfDays: tripType === 'Car Renting' ? days : 'N/A',
+        numberOfCars: tripType === 'Car Renting' ? cars : 'N/A',
         estimatedKM: tripType !== 'Car Renting' ? estimatedKM : 'N/A',
         suggestedVehicle: selectedVehicle,
         isAC,
@@ -462,7 +582,9 @@ export default function CustomerDashboard() {
       });
 
       setFromLocation('');
+      setFromLocationData(null);
       setToLocation('');
+      setToLocationData(null);
       setRideDate('');
       setRideTimeHour('12');
       setRideTimeMinute('00');
@@ -477,6 +599,7 @@ export default function CustomerDashboard() {
       setReturnTimeMinute('00');
       setReturnTimeAmPm('AM');
       setDestinations(['']);
+      setDestinationData([null]);
       setNumberOfDays(1);
       setNumberOfCars(1);
       setEstimatedKM(0);
@@ -486,6 +609,7 @@ export default function CustomerDashboard() {
       setDecorationRequired('No');
       setPickupType('Arrival');
       setCustomRequirements('');
+      setAcceptedTerms(false);
       
       setBookingSuccessData(newBooking);
       
@@ -808,27 +932,45 @@ export default function CustomerDashboard() {
                         value={fromLocation}
                         onChange={(e) => {
                           setFromLocation(e.target.value);
+                          setFromLocationData(null);
                           setShowFromSuggestions(true);
                         }}
                         onFocus={() => setShowFromSuggestions(true)}
-                        onBlur={() => setTimeout(() => setShowFromSuggestions(false), 200)}
+                        onBlur={() => {
+                          setTimeout(() => {
+                            if (!fromLocationData && fromSuggestions.length > 0 && fromLocation.length > 0) {
+                              setFromLocation(fromSuggestions[0].displayName);
+                              setFromLocationData(fromSuggestions[0]);
+                            }
+                            setShowFromSuggestions(false);
+                          }, 200);
+                        }}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                         placeholder="Pickup location"
                         autoComplete="off"
                       />
                       {showFromSuggestions && fromSuggestions.length > 0 && (
                         <ul className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-                          {fromSuggestions.map((city, idx) => (
+                          {fromSuggestions.map((loc, idx) => (
                             <li
                               key={idx}
-                              className="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-indigo-600 hover:text-white"
+                              className="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50 hover:text-indigo-900"
                               onMouseDown={(e) => {
                                 e.preventDefault(); // Prevent input from losing focus immediately
-                                setFromLocation(city);
+                                setFromLocation(loc.displayName);
+                                setFromLocationData(loc);
                                 setShowFromSuggestions(false);
                               }}
                             >
-                              {city}
+                              <div className="flex items-center">
+                                <MapPin className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                <div className="flex flex-col">
+                                  <span className="font-medium truncate">{loc.primaryText || loc.displayName}</span>
+                                  {loc.secondaryText && (
+                                    <span className="text-xs text-gray-500 truncate">{loc.secondaryText}</span>
+                                  )}
+                                </div>
+                              </div>
                             </li>
                           ))}
                         </ul>
@@ -846,27 +988,45 @@ export default function CustomerDashboard() {
                         value={toLocation}
                         onChange={(e) => {
                           setToLocation(e.target.value);
+                          setToLocationData(null);
                           setShowToSuggestions(true);
                         }}
                         onFocus={() => setShowToSuggestions(true)}
-                        onBlur={() => setTimeout(() => setShowToSuggestions(false), 200)}
+                        onBlur={() => {
+                          setTimeout(() => {
+                            if (!toLocationData && toSuggestions.length > 0 && toLocation.length > 0) {
+                              setToLocation(toSuggestions[0].displayName);
+                              setToLocationData(toSuggestions[0]);
+                            }
+                            setShowToSuggestions(false);
+                          }, 200);
+                        }}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                         placeholder="Drop-off location"
                         autoComplete="off"
                       />
                       {showToSuggestions && toSuggestions.length > 0 && (
                         <ul className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-                          {toSuggestions.map((city, idx) => (
+                          {toSuggestions.map((loc, idx) => (
                             <li
                               key={idx}
-                              className="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-indigo-600 hover:text-white"
+                              className="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50 hover:text-indigo-900"
                               onMouseDown={(e) => {
                                 e.preventDefault(); // Prevent input from losing focus immediately
-                                setToLocation(city);
+                                setToLocation(loc.displayName);
+                                setToLocationData(loc);
                                 setShowToSuggestions(false);
                               }}
                             >
-                              {city}
+                              <div className="flex items-center">
+                                <MapPin className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                <div className="flex flex-col">
+                                  <span className="font-medium truncate">{loc.primaryText || loc.displayName}</span>
+                                  {loc.secondaryText && (
+                                    <span className="text-xs text-gray-500 truncate">{loc.secondaryText}</span>
+                                  )}
+                                </div>
+                              </div>
                             </li>
                           ))}
                         </ul>
@@ -896,29 +1056,60 @@ export default function CustomerDashboard() {
                                   const newDests = [...destinations];
                                   newDests[index] = e.target.value;
                                   setDestinations(newDests);
+                                  
+                                  const newData = [...destinationData];
+                                  newData[index] = null;
+                                  setDestinationData(newData);
+                                  
                                   setActiveDestinationIndex(index);
                                 }}
                                 onFocus={() => setActiveDestinationIndex(index)}
-                                onBlur={() => setTimeout(() => setActiveDestinationIndex(null), 200)}
+                                onBlur={() => {
+                                  setTimeout(() => {
+                                    if (!destinationData[index] && destinationSuggestions[index] && destinationSuggestions[index].length > 0 && destinations[index].length > 0) {
+                                      const newDestinations = [...destinations];
+                                      newDestinations[index] = destinationSuggestions[index][0].displayName;
+                                      setDestinations(newDestinations);
+                                      
+                                      const newData = [...destinationData];
+                                      newData[index] = destinationSuggestions[index][0];
+                                      setDestinationData(newData);
+                                    }
+                                    setActiveDestinationIndex(null);
+                                  }, 200);
+                                }}
                                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                 placeholder={`Destination ${index + 1}`}
                                 autoComplete="off"
                               />
                               {activeDestinationIndex === index && destinationSuggestions[index] && destinationSuggestions[index].length > 0 && (
                                 <ul className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-                                  {destinationSuggestions[index].map((city, idx) => (
+                                  {destinationSuggestions[index].map((loc, idx) => (
                                     <li
                                       key={idx}
-                                      className="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-indigo-600 hover:text-white"
+                                      className="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50 hover:text-indigo-900"
                                       onMouseDown={(e) => {
                                         e.preventDefault(); // Prevent input from losing focus immediately
                                         const newDests = [...destinations];
-                                        newDests[index] = city;
+                                        newDests[index] = loc.displayName;
                                         setDestinations(newDests);
+                                        
+                                        const newData = [...destinationData];
+                                        newData[index] = loc;
+                                        setDestinationData(newData);
+                                        
                                         setActiveDestinationIndex(null);
                                       }}
                                     >
-                                      {city}
+                                      <div className="flex items-center">
+                                        <MapPin className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                        <div className="flex flex-col">
+                                          <span className="font-medium truncate">{loc.primaryText || loc.displayName}</span>
+                                          {loc.secondaryText && (
+                                            <span className="text-xs text-gray-500 truncate">{loc.secondaryText}</span>
+                                          )}
+                                        </div>
+                                      </div>
                                     </li>
                                   ))}
                                 </ul>
@@ -929,6 +1120,7 @@ export default function CustomerDashboard() {
                                 type="button"
                                 onClick={() => {
                                   setDestinations(destinations.filter((_, i) => i !== index));
+                                  setDestinationData(destinationData.filter((_, i) => i !== index));
                                   const newSuggestions = { ...destinationSuggestions };
                                   delete newSuggestions[index];
                                   setDestinationSuggestions(newSuggestions);
@@ -942,7 +1134,10 @@ export default function CustomerDashboard() {
                         ))}
                         <button
                           type="button"
-                          onClick={() => setDestinations([...destinations, ''])}
+                          onClick={() => {
+                            setDestinations([...destinations, '']);
+                            setDestinationData([...destinationData, null]);
+                          }}
                           className="text-sm text-indigo-600 font-medium hover:text-indigo-800"
                         >
                           + Add another destination
@@ -1066,23 +1261,39 @@ export default function CustomerDashboard() {
                               id="numberOfDays"
                               required={tripType === 'Car Renting'}
                               min="1"
+                              max="30"
                               value={numberOfDays}
                               onChange={(e) => setNumberOfDays(parseInt(e.target.value) || 1)}
                               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             />
                           </div>
                           <div>
-                            <label htmlFor="numberOfCars" className="block text-sm font-medium text-gray-700">Number of Cars Required</label>
+                            <label htmlFor="numberOfCars" className="block text-sm font-medium text-gray-700">Number of Vehicles</label>
                             <input
                               type="number"
                               id="numberOfCars"
                               required={tripType === 'Car Renting'}
                               min="1"
+                              max="10"
                               value={numberOfCars}
                               onChange={(e) => setNumberOfCars(parseInt(e.target.value) || 1)}
                               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             />
                           </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Select Vehicle</label>
+                          <select
+                            value={selectedVehicle}
+                            onChange={(e) => setSelectedVehicle(e.target.value)}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
+                          >
+                            {AVAILABLE_VEHICLES.map(v => (
+                              <option key={v.name} value={v.name} disabled={v.quantity <= 0}>
+                                {v.name} (Up to {v.capacity} passengers) - {v.quantity > 0 ? 'Available' : 'Currently Unavailable'}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       </motion.div>
                     )}
@@ -1131,7 +1342,7 @@ export default function CustomerDashboard() {
                           </div>
                           
                           <div className="space-y-3">
-                            <label className="block text-sm font-medium text-gray-700">Or Choose Your Preferred Vehicle</label>
+                            <label className="block text-sm font-medium text-gray-700">Vehicle Selection</label>
                             <select
                               value={selectedVehicle}
                               onChange={(e) => {
@@ -1141,8 +1352,8 @@ export default function CustomerDashboard() {
                               className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
                             >
                               {AVAILABLE_VEHICLES.map(v => (
-                                <option key={v.name} value={v.name}>
-                                  {v.name} (Up to {v.capacity} passengers)
+                                <option key={v.name} value={v.name} disabled={v.quantity <= 0}>
+                                  {v.name} (Up to {v.capacity} passengers) - {v.quantity > 0 ? 'Available' : 'Currently Unavailable'}
                                 </option>
                               ))}
                             </select>
@@ -1218,13 +1429,26 @@ export default function CustomerDashboard() {
                         </div>
                         <div className="flex gap-6">
                           <div className="flex-1">
-                            <label htmlFor="vehiclesRequired" className="block text-sm font-medium text-gray-700">Number of Vehicles</label>
+                            <label htmlFor="vehiclesRequired" className="block text-sm font-medium text-gray-700">Number of Vehicles (Max 10)</label>
                             <input
                               type="number"
                               id="vehiclesRequired"
                               min="1"
+                              max="10"
                               value={vehiclesRequired}
-                              onChange={(e) => setVehiclesRequired(e.target.value)}
+                              onChange={(e) => {
+                                const valStr = e.target.value;
+                                if (valStr === '') {
+                                  setVehiclesRequired('');
+                                  return;
+                                }
+                                const val = parseInt(valStr);
+                                if (!isNaN(val)) {
+                                  if (val > 10) setVehiclesRequired('10');
+                                  else if (val < 1) setVehiclesRequired('1');
+                                  else setVehiclesRequired(val.toString());
+                                }
+                              }}
                               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             />
                           </div>
@@ -1334,18 +1558,36 @@ export default function CustomerDashboard() {
                       )}
                     </AnimatePresence>
                   </motion.div>
+                  <div className="mt-6 mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200 text-sm text-gray-700">
+                    <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-1.5">
+                      <Info className="w-4 h-4 text-indigo-600" />
+                      Cancellation Policy & Terms
+                    </h4>
+                    <ul className="list-disc pl-5 space-y-1 mb-4 text-xs text-gray-600">
+                      <li><strong>Less than 24 hours</strong> before departure: No refund.</li>
+                      <li><strong>24 to 72 hours</strong> before departure: 50% refund (25% for multi-day trips).</li>
+                      <li><strong>More than 72 hours</strong> before departure: 85% refund (50% for multi-day trips).</li>
+                    </ul>
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={acceptedTerms}
+                        onChange={(e) => setAcceptedTerms(e.target.checked)}
+                        className="mt-1 w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                      />
+                      <span className="text-sm font-medium text-gray-900">
+                        I have read and agree to the Cancellation Policy & Terms.
+                      </span>
+                    </label>
+                  </div>
                   
                   <button
                     type="submit"
-                    disabled={bookingLoading}
-                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                    disabled={bookingLoading || !acceptedTerms}
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:hover:bg-gray-400"
                   >
-                    {bookingLoading ? 'Booking...' : 'Book Ride'}
+                    {bookingLoading ? (tripType === 'Car Renting' ? 'Renting...' : 'Booking...') : (tripType === 'Car Renting' ? 'Rent Vehicle' : 'Book Ride')}
                   </button>
-                  <p className="text-xs text-center text-gray-500 mt-3 flex items-center justify-center gap-1.5">
-                    <Info className="w-3.5 h-3.5" />
-                    You can cancel your ride before 2 hours of departure time.
-                  </p>
                 </motion.form>
                 </AnimatePresence>
               </div>
@@ -1368,10 +1610,6 @@ export default function CustomerDashboard() {
                   </button>
                 </div>
               </div>
-              <p className="text-sm text-gray-500 mb-6 flex items-center gap-1.5">
-                <Info className="w-4 h-4" />
-                You can cancel your ride before 2 hours of departure time.
-              </p>
               
               <div className="space-y-4">
                 {loading ? (
@@ -1388,7 +1626,9 @@ export default function CustomerDashboard() {
                       >
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2 sm:gap-4">
                           <h4 className="text-lg font-bold text-gray-900 break-words w-full sm:w-auto">
-                            {booking.tripType === 'Tour' 
+                            {booking.tripType === 'Car Renting'
+                              ? `Car Rental: ${booking.numberOfDays} days, ${booking.numberOfCars} cars`
+                              : booking.tripType === 'Tour' 
                               ? `${booking.fromLocation} \u2192 ${booking.destinations}`
                               : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
                           </h4>
@@ -1437,10 +1677,12 @@ export default function CustomerDashboard() {
                                   <Car className="w-4 h-4 text-blue-400" />
                                   {booking.suggestedVehicle || 'Sedan'} {booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
                                 </div>
+                              {booking.tripType !== 'Car Renting' && (
                                 <div className="flex items-center gap-1.5">
                                   <Users className="w-4 h-4 text-purple-400" />
                                   {booking.numberOfPeople} Passenger{booking.numberOfPeople > 1 ? 's' : ''}
                                 </div>
+                              )}
                               </div>
 
                               {/* Driver Details Section */}
@@ -1490,7 +1732,10 @@ export default function CustomerDashboard() {
                                     )}
                                     {(booking.rideStatus === 'Pending' || booking.rideStatus === 'Confirmed' || booking.rideStatus === 'Assigned') && (
                                       <button
-                                        onClick={() => handleCancel(booking.id)}
+                                        onClick={() => {
+                                          const refundInfo = calculateRefund(booking.rideDate, booking.fareAmount, booking.numberOfDays);
+                                          setCancelModal({ isOpen: true, booking, refundInfo });
+                                        }}
                                         className="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-red-100 text-red-600 hover:bg-red-200"
                                       >
                                         Cancel Ride
@@ -1516,6 +1761,79 @@ export default function CustomerDashboard() {
           )}
         </div>
       </div>
+
+      {/* Cancel Modal */}
+      <AnimatePresence>
+        {cancelModal.isOpen && cancelModal.booking && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden"
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold text-gray-900">Cancel Ride</h3>
+                  <button 
+                    onClick={() => setCancelModal({ isOpen: false, booking: null, refundInfo: null })}
+                    className="text-gray-400 hover:text-gray-500"
+                  >
+                    <span className="sr-only">Close</span>
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  <p className="text-sm text-gray-600 mb-2">
+                    <span className="font-medium text-gray-900">Route:</span> {cancelModal.booking.tripType === 'Car Renting' ? `Car Rental: ${cancelModal.booking.numberOfDays} days, ${cancelModal.booking.numberOfCars} cars` : cancelModal.booking.tripType === 'Tour' ? `${cancelModal.booking.fromLocation} \u2192 ${cancelModal.booking.destinations}` : `${cancelModal.booking.fromLocation} \u2192 ${cancelModal.booking.toLocation}`}
+                  </p>
+                  <p className="text-sm text-gray-600 mb-2">
+                    <span className="font-medium text-gray-900">Departure:</span> {cancelModal.booking.rideDate}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium text-gray-900">Fare:</span> ₹{cancelModal.booking.fareAmount}
+                  </p>
+                </div>
+
+                {cancelModal.refundInfo && (
+                  <div className={`mb-6 p-4 rounded-xl border ${cancelModal.refundInfo.refundPercent > 0 ? 'bg-green-50 border-green-100 text-green-800' : 'bg-red-50 border-red-100 text-red-800'}`}>
+                    <h4 className="font-semibold mb-1">Cancellation Policy</h4>
+                    <p className="text-sm mb-2">{cancelModal.refundInfo.message}</p>
+                    <div className="flex justify-between items-center font-bold">
+                      <span>Estimated Refund:</span>
+                      <span>₹{cancelModal.refundInfo.refundAmount.toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-3 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setCancelModal({ isOpen: false, booking: null, refundInfo: null })}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    Keep Ride
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleCancel(cancelModal.booking.id);
+                      setCancelModal({ isOpen: false, booking: null, refundInfo: null });
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-xl hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  >
+                    Confirm Cancellation
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Rebook Modal */}
       <AnimatePresence>
@@ -1544,10 +1862,7 @@ export default function CustomerDashboard() {
                 
                 <div className="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
                   <p className="text-sm text-gray-600 mb-2">
-                    <span className="font-medium text-gray-900">From:</span> {rebookModal.booking.fromLocation}
-                  </p>
-                  <p className="text-sm text-gray-600 mb-2">
-                    <span className="font-medium text-gray-900">To:</span> {rebookModal.booking.tripType === 'Tour' ? rebookModal.booking.destinations : rebookModal.booking.toLocation}
+                    <span className="font-medium text-gray-900">Route:</span> {rebookModal.booking.tripType === 'Car Renting' ? `Car Rental: ${rebookModal.booking.numberOfDays} days, ${rebookModal.booking.numberOfCars} cars` : rebookModal.booking.tripType === 'Tour' ? `${rebookModal.booking.fromLocation} \u2192 ${rebookModal.booking.destinations}` : `${rebookModal.booking.fromLocation} \u2192 ${rebookModal.booking.toLocation}`}
                   </p>
                   <p className="text-sm text-gray-600">
                     <span className="font-medium text-gray-900">Vehicle:</span> {rebookModal.booking.suggestedVehicle} {rebookModal.booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
@@ -1662,7 +1977,9 @@ export default function CustomerDashboard() {
                     <div className="flex justify-between">
                       <span className="text-gray-500">Route</span>
                       <span className="font-medium text-gray-900 text-right">
-                        {bookingSuccessData.tripType === 'Tour' 
+                        {bookingSuccessData.tripType === 'Car Renting'
+                          ? `Car Rental: ${bookingSuccessData.numberOfDays} days, ${bookingSuccessData.numberOfCars} cars`
+                          : bookingSuccessData.tripType === 'Tour' 
                           ? `${bookingSuccessData.fromLocation} \u2192 ${bookingSuccessData.destinations}`
                           : `${bookingSuccessData.fromLocation} \u2192 ${bookingSuccessData.toLocation}`}
                       </span>

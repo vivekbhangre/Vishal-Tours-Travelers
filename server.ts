@@ -28,8 +28,8 @@ async function startServer() {
   
   app.use('/api', cityAutocompleteRouter);
 
-  // Initialize Google Sheets
-  await initSheets();
+  // Initialize Google Sheets in the background to prevent blocking server startup
+  initSheets().catch(console.error);
 
   // Socket.io for real-time updates
   io.on('connection', (socket) => {
@@ -475,8 +475,14 @@ async function startServer() {
             }
           }
 
-          if (!isUserAdmin && rideStatus === 'Confirmed' && !driverDetails) {
-            visibilityMessage = "Driver information will be given to you before 1 hour of the departure time.";
+          if (!isUserAdmin && rideStatus === 'Confirmed') {
+            if (r.get('tripType') === 'Car Renting') {
+              if (!vehicleDetails) {
+                visibilityMessage = "Vehicle information will be given to you before 1 hour of the start time.";
+              }
+            } else if (!driverDetails) {
+              visibilityMessage = "Driver information will be given to you before 1 hour of the departure time.";
+            }
           }
 
           return {
@@ -747,7 +753,10 @@ async function startServer() {
     try {
       // Helper function to get coordinates
       const getCoordinates = async (city: string) => {
-        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`;
+        // Clean up city name for better geocoding results
+        let searchCity = city.replace(/ Railway Station/i, '').replace(/ Airport/i, '').replace(/ Bus Station/i, '').replace(/ Bus Stand/i, '').trim();
+        
+        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(searchCity)}&count=1&language=en&format=json`;
         const res = await axios.get(url, { timeout: 10000 });
         if (!res.data || !res.data.results || res.data.results.length === 0) {
           throw new Error(`City not found: ${city}`);
@@ -837,6 +846,9 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     app.use(express.static('dist'));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(process.cwd(), 'dist', 'index.html'));
+    });
   }
 
   httpServer.listen(PORT, '0.0.0.0', () => {

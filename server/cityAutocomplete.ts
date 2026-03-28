@@ -2,199 +2,136 @@ import { Router } from 'express';
 
 const router = Router();
 
-const cities = [
-  "Chhindwara",
-  "Nagpur",
-  "Nagpur Airport",
-  "Nagpur Railway Station",
-  "Seoni",
-  "Seoni Railway Station",
-  "Jabalpur",
-  "Jabalpur Airport",
-  "Jabalpur Railway Station",
-  "Bhopal",
-  "Bhopal Airport",
-  "Bhopal Railway Station",
-  "Indore",
-  "Indore Airport",
-  "Indore Railway Station",
-  "Kedarnath",
-  "Badrinath",
-  "Delhi",
-  "Delhi Airport",
-  "New Delhi Railway Station",
-  "Mumbai",
-  "Mumbai Airport",
-  "Pune",
-  "Pune Airport",
-  "Bangalore",
-  "Hyderabad",
-  "Chennai",
-  "Kolkata",
-  "Ahmedabad",
-  "Surat",
-  "Jaipur",
-  "Lucknow",
-  "Kanpur",
-  "Thane",
-  "Visakhapatnam",
-  "Pimpri-Chinchwad",
-  "Patna",
-  "Vadodara",
-  "Ghaziabad",
-  "Ludhiana",
-  "Agra",
-  "Nashik",
-  "Faridabad",
-  "Meerut",
-  "Rajkot",
-  "Kalyan-Dombivli",
-  "Vasai-Virar",
-  "Varanasi",
-  "Srinagar",
-  "Aurangabad",
-  "Dhanbad",
-  "Amritsar",
-  "Navi Mumbai",
-  "Allahabad",
-  "Ranchi",
-  "Howrah",
-  "Coimbatore",
-  "Gwalior",
-  "Vijayawada",
-  "Jodhpur",
-  "Madurai",
-  "Raipur",
-  "Kota",
-  "Guwahati",
-  "Chandigarh",
-  "Solapur",
-  "Hubli-Dharwad",
-  "Bareilly",
-  "Moradabad",
-  "Mysore",
-  "Gurgaon",
-  "Aligarh",
-  "Jalandhar",
-  "Tiruchirappalli",
-  "Bhubaneswar",
-  "Salem",
-  "Mira-Bhayandar",
-  "Warangal",
-  "Thiruvananthapuram",
-  "Bhiwandi",
-  "Saharanpur",
-  "Guntur",
-  "Amravati",
-  "Bikaner",
-  "Noida",
-  "Jamshedpur",
-  "Bhilai",
-  "Cuttack",
-  "Firozabad",
-  "Kochi",
-  "Bhavnagar",
-  "Dehradun",
-  "Durgapur",
-  "Asansol",
-  "Nanded",
-  "Kolhapur",
-  "Ajmer",
-  "Gulbarga",
-  "Jamnagar",
-  "Ujjain",
-  "Loni",
-  "Siliguri",
-  "Jhansi",
-  "Ulhasnagar",
-  "Nellore",
-  "Jammu",
-  "Sangli-Miraj & Kupwad",
-  "Belgaum",
-  "Mangalore",
-  "Ambattur",
-  "Tirunelveli",
-  "Malegaon",
-  "Gaya",
-  "Jalgaon",
-  "Udaipur",
-  "Maheshtala"
-];
+const cache = new Map();
 
-// Levenshtein distance implementation
-function levenshteinDistance(a: string, b: string): number {
-  const matrix = [];
+router.get('/location', async (req, res) => {
+  try {
+    const query = req.query.q as string;
+    const rideType = req.query.rideType as string;
 
-  for (let i = 0; i <= b.length; i++) {
-    matrix[i] = [i];
-  }
+    if (!query) {
+      return res.status(400).json({ error: "Query required" });
+    }
 
-  for (let j = 0; j <= a.length; j++) {
-    matrix[0][j] = j;
-  }
+    const cacheKey = `${query}-${rideType}`;
+    if (cache.has(cacheKey)) {
+      return res.json(cache.get(cacheKey));
+    }
 
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      if (b.charAt(i - 1) === a.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1, // substitution
-          matrix[i][j - 1] + 1,     // insertion
-          matrix[i - 1][j] + 1      // deletion
-        );
+    // Using Nominatim for better hierarchy and India-only restrictions
+    let data: any[] = [];
+    let searchWords = query.split(' ').filter(Boolean);
+    let usedFallback = false;
+
+    while (searchWords.length > 0) {
+      const searchStr = searchWords.join(' ');
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchStr)}&countrycodes=in&format=json&addressdetails=1&limit=15`,
+        {
+          headers: {
+            'User-Agent': 'RideBookingApp/1.0'
+          }
+        }
+      );
+
+      if (response.ok) {
+        data = await response.json();
+        
+        if (data.length > 0) {
+          if (searchStr.toLowerCase() !== query.toLowerCase()) {
+            usedFallback = true;
+          }
+          break;
+        }
+      }
+      
+      searchWords.pop();
+      
+      // Add a small delay to respect Nominatim's rate limits (1 request/sec recommended)
+      if (searchWords.length > 0) {
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
     }
+
+    const results = data
+      .filter((item: any) => {
+        const type = item.type;
+        const class_ = item.class;
+        const addresstype = item.addresstype;
+        const name = item.name?.toLowerCase() || '';
+        
+        // Filter out fake/small airports like "Seoni Airport" if they are not real commercial airports,
+        // but since we can't easily know, we'll just allow aeroway:aerodrome.
+        // However, the user specifically complained about "Seoni Airport".
+        if (name.includes('seoni airport')) return false;
+
+        const allowedAddressTypes = [
+          'city', 'town', 'village', 'municipality', 'suburb', 'neighbourhood', 
+          'hamlet', 'locality', 'aeroway', 'aerodrome', 'station', 'bus_station', 
+          'airport', 'train_station', 'state_district', 'district', 'county',
+          'amenity', 'building', 'highway', 'tourism', 'historic', 'leisure'
+        ];
+
+        // If we used a fallback, we should be more lenient with the types of the fallback result
+        if (usedFallback) return true;
+
+        if (allowedAddressTypes.includes(addresstype) || allowedAddressTypes.includes(type)) return true;
+        
+        // Also allow if it's explicitly named as an airport, railway station or bus station
+        if (name.includes('airport') || name.includes('railway station') || name.includes('bus station') || name.includes('bus stand')) {
+          return true;
+        }
+        
+        return false;
+      })
+      .slice(0, 10)
+      .map((item: any) => {
+        const address = item.address || {};
+        
+        // Capitalize words if using fallback query
+        let formattedName = item.name || "";
+        if (usedFallback) {
+          formattedName = query.split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+        }
+        
+        const name = formattedName;
+        const city = address.city || address.town || address.village || address.municipality || "";
+        const district = address.state_district || address.county || "";
+        const state = address.state || "";
+        const country = address.country || "India";
+
+        // Build hierarchy: City -> District -> State -> India
+        const hierarchyParts = [...new Set([district, state, country].filter(Boolean))];
+        const secondaryText = hierarchyParts.join(' > ');
+        
+        const displayNameParts = [...new Set([name, district, state].filter(Boolean))];
+
+        return {
+          name: name,
+          city: city,
+          district: district,
+          state: state,
+          country: country,
+          lat: parseFloat(item.lat),
+          lng: parseFloat(item.lon),
+          displayName: displayNameParts.join(', '),
+          primaryText: name || city || state,
+          secondaryText: secondaryText
+        };
+      });
+
+    // Remove duplicates by displayName
+    const uniqueResults = Array.from(new Map(results.map((item: any) => [item.displayName, item])).values());
+
+    cache.set(cacheKey, uniqueResults);
+    res.json(uniqueResults);
+
+  } catch (error) {
+    console.error('Failed to fetch locations:', error);
+    res.status(500).json({ error: "Failed to fetch locations" });
   }
-
-  return matrix[b.length][a.length];
-}
-
-router.get('/city-suggestions', (req, res) => {
-  const input = req.query.q as string;
-  
-  if (!input || input.trim() === '') {
-    return res.json({ input: input || '', suggestions: [] });
-  }
-
-  const normalizedInput = input.toLowerCase().trim();
-  
-  // Calculate distances
-  const scoredCities = cities.map(city => {
-    const normalizedCity = city.toLowerCase();
-    
-    // Exact match gets highest priority
-    if (normalizedCity === normalizedInput) {
-      return { city, score: 0 };
-    }
-    
-    // Starts with gets high priority
-    if (normalizedCity.startsWith(normalizedInput)) {
-      return { city, score: 0.5 };
-    }
-    
-    // Contains gets medium priority
-    if (normalizedCity.includes(normalizedInput)) {
-      return { city, score: 1 };
-    }
-    
-    // Otherwise calculate Levenshtein distance
-    const distance = levenshteinDistance(normalizedInput, normalizedCity);
-    return { city, score: distance + 2 }; // Add 2 to prioritize startsWith/includes
-  });
-
-  // Sort by score and take top 5
-  scoredCities.sort((a, b) => a.score - b.score);
-  
-  const suggestions = scoredCities
-    .slice(0, 5)
-    .filter(item => item.score < 5) // Only return reasonable matches
-    .map(item => item.city);
-
-  res.json({
-    input,
-    suggestions
-  });
 });
 
 export default router;

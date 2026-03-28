@@ -365,7 +365,9 @@ export default function AdminDashboard() {
                           <div>
                             <div className="text-sm font-medium text-gray-900">{booking.userName}</div>
                             <div className="text-sm text-gray-500 mt-1">
-                              {booking.tripType === 'Tour' 
+                              {booking.tripType === 'Car Renting'
+                                ? `Car Rental: ${booking.numberOfDays} days, ${booking.numberOfCars} cars`
+                                : booking.tripType === 'Tour' 
                                 ? `${booking.fromLocation} \u2192 ${booking.destinations}`
                                 : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
                             </div>
@@ -425,10 +427,12 @@ export default function AdminDashboard() {
                                 <span className="text-xs text-gray-500 uppercase block">Distance</span>
                                 <span className="font-medium text-gray-900">{booking.estimatedKM}</span>
                               </div>
-                              <div>
-                                <span className="text-xs text-gray-500 uppercase block">Passengers</span>
-                                <span className="font-medium text-gray-900">{booking.numberOfPeople}</span>
-                              </div>
+                              {booking.tripType !== 'Car Renting' && (
+                                <div>
+                                  <span className="text-xs text-gray-500 uppercase block">Passengers</span>
+                                  <span className="font-medium text-gray-900">{booking.numberOfPeople}</span>
+                                </div>
+                              )}
                               <div className="col-span-2">
                                 <span className="text-xs text-gray-500 uppercase block">Contact</span>
                                 <span className="font-medium text-gray-900">{booking.userPhone} | {booking.userEmail}</span>
@@ -521,7 +525,9 @@ export default function AdminDashboard() {
                             {booking.userName}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {booking.tripType === 'Tour' 
+                            {booking.tripType === 'Car Renting'
+                              ? `Car Rental: ${booking.numberOfDays} days, ${booking.numberOfCars} cars`
+                              : booking.tripType === 'Tour' 
                               ? `${booking.fromLocation} \u2192 ${booking.destinations}`
                               : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
                           </td>

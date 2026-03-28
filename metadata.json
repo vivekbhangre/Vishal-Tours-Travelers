@@ -1,5 +1,5 @@
 {
-  "name": "Vishal Tour & Travelers",
-  "description": "A touring and traveling website with Admin, Staff/Driver, and Customer modules, real-time sync, and Google Sheets integration.",
+  "name": "Vishal Tours & Travels",
+  "description": "A hybrid, scalable, and fully free location suggestion system for India, combining local datasets, Photon API, and Nominatim API.",
   "requestFramePermissions": []
 }

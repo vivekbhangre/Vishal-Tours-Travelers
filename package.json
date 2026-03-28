@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "start": "node server.js",
+    "start": "tsx server.ts",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
@@ -23,6 +23,7 @@
     "express": "^4.21.2",
     "google-auth-library": "^10.6.1",
     "google-spreadsheet": "^5.2.0",
+    "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
     "pdfkit": "^0.17.2",
@@ -37,6 +38,7 @@
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^4.17.21",
+    "@types/lodash.debounce": "^4.0.9",
     "@types/node": "^22.14.0",
     "@types/pdfkit": "^0.17.5",
     "autoprefixer": "^10.4.21",
