@@ -37,6 +37,7 @@ function AppRoutes() {
       } />
       
       <Route path="/admin" element={<AdminLogin />} />
+      <Route path="/admin/login" element={<Navigate to="/admin" replace />} />
       <Route path="/dashboard/admin" element={
         <ProtectedRoute allowedRoles={['admin']}>
           <AdminDashboard />
@@ -44,6 +45,7 @@ function AppRoutes() {
       } />
       
       <Route path="/staff" element={<StaffLogin />} />
+      <Route path="/staff/login" element={<Navigate to="/staff" replace />} />
       <Route path="/dashboard/staff" element={
         <ProtectedRoute allowedRoles={['staff']}>
           <StaffDashboard />
