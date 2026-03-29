@@ -28,6 +28,43 @@ const AVAILABLE_VEHICLES = [
   { name: 'Force Traveller (22 Seater)', capacity: 22, quantity: 1 },
 ];
 
+const getInitialDateTime = () => {
+  const now = new Date();
+  now.setHours(now.getHours() + 1); // Default to 1 hour from now
+
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const dateStr = `${year}-${month}-${day}`;
+
+  let hour = now.getHours();
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12;
+  hour = hour ? hour : 12;
+  const hourStr = String(hour).padStart(2, '0');
+
+  let minute = now.getMinutes();
+  let minuteStr = '00';
+  if (minute <= 15) minuteStr = '15';
+  else if (minute <= 30) minuteStr = '30';
+  else if (minute <= 45) minuteStr = '45';
+  else {
+    minuteStr = '00';
+    now.setHours(now.getHours() + 1);
+    let newHour = now.getHours();
+    const newAmPm = newHour >= 12 ? 'PM' : 'AM';
+    newHour = newHour % 12;
+    newHour = newHour ? newHour : 12;
+    return {
+      date: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`,
+      hour: String(newHour).padStart(2, '0'),
+      minute: minuteStr,
+      ampm: newAmPm
+    };
+  }
+
+  return { date: dateStr, hour: hourStr, minute: minuteStr, ampm };
+};
 
 export default function CustomerDashboard() {
   const { user } = useAuth();
@@ -39,10 +76,10 @@ export default function CustomerDashboard() {
   const [loading, setLoading] = useState(true);
   const [fromLocation, setFromLocation] = useState('');
   const [toLocation, setToLocation] = useState('');
-  const [rideDate, setRideDate] = useState('');
-  const [rideTimeHour, setRideTimeHour] = useState('12');
-  const [rideTimeMinute, setRideTimeMinute] = useState('00');
-  const [rideTimeAmPm, setRideTimeAmPm] = useState('AM');
+  const [rideDate, setRideDate] = useState<string>(() => getInitialDateTime().date);
+  const [rideTimeHour, setRideTimeHour] = useState<string>(() => getInitialDateTime().hour);
+  const [rideTimeMinute, setRideTimeMinute] = useState<string>(() => getInitialDateTime().minute);
+  const [rideTimeAmPm, setRideTimeAmPm] = useState<string>(() => getInitialDateTime().ampm);
   const [rideType, setRideType] = useState('Intercity');
   const [numberOfPeople, setNumberOfPeople] = useState(1);
   const [bookingError, setBookingError] = useState('');
@@ -55,10 +92,10 @@ export default function CustomerDashboard() {
 
   // New Booking Fields
   const [tripType, setTripType] = useState('One-way');
-  const [returnDate, setReturnDate] = useState('');
-  const [returnTimeHour, setReturnTimeHour] = useState('12');
-  const [returnTimeMinute, setReturnTimeMinute] = useState('00');
-  const [returnTimeAmPm, setReturnTimeAmPm] = useState('AM');
+  const [returnDate, setReturnDate] = useState<string>(() => getInitialDateTime().date);
+  const [returnTimeHour, setReturnTimeHour] = useState<string>(() => getInitialDateTime().hour);
+  const [returnTimeMinute, setReturnTimeMinute] = useState<string>(() => getInitialDateTime().minute);
+  const [returnTimeAmPm, setReturnTimeAmPm] = useState<string>(() => getInitialDateTime().ampm);
 
   // Tour Fields
   const [destinations, setDestinations] = useState<string[]>(['']);
@@ -441,6 +478,14 @@ export default function CustomerDashboard() {
         setBookingLoading(false);
         return;
       }
+      const wDate = new Date(weddingDate);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      if (wDate < now) {
+        setBookingError('Wedding date cannot be in the past.');
+        setBookingLoading(false);
+        return;
+      }
       const vehicles = parseInt(vehiclesRequired);
       if (isNaN(vehicles) || vehicles < 1 || vehicles > 10) {
         setBookingError('Number of vehicles must be between 1 and 10.');
@@ -534,6 +579,17 @@ export default function CustomerDashboard() {
       }
 
       const formattedRideDate = `${rideDate} ${rideTimeHour}:${rideTimeMinute} ${rideTimeAmPm}`;
+      
+      if (rideDate) {
+        const depDate = new Date(formattedRideDate);
+        const now = new Date();
+        if (depDate < now) {
+          setBookingError('Departure date and time cannot be in the past.');
+          setBookingLoading(false);
+          return;
+        }
+      }
+
       let formattedReturnDate = '';
 
       if (tripType === 'Round-trip') {
@@ -633,6 +689,13 @@ export default function CustomerDashboard() {
       const b = rebookModal.booking;
       const rideDate = new Date(`${rebookDate} ${rebookTimeHour}:${rebookTimeMinute} ${rebookTimeAmPm}`);
       
+      const now = new Date();
+      if (rideDate < now) {
+        setRebookError('New date and time cannot be in the past.');
+        setRebookLoading(false);
+        return;
+      }
+
       const newBooking = {
         userId: user?.id,
         userName: user?.name,
@@ -1155,6 +1218,7 @@ export default function CustomerDashboard() {
                         type="date"
                         id="rideDate"
                         required
+                        min={new Date().toISOString().split('T')[0]}
                         value={rideDate}
                         onChange={(e) => setRideDate(e.target.value)}
                         className="block w-full sm:flex-1 min-w-[150px] border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
@@ -1207,6 +1271,7 @@ export default function CustomerDashboard() {
                             type="date"
                             id="returnDate"
                             required={tripType === 'Round-trip'}
+                            min={rideDate || new Date().toISOString().split('T')[0]}
                             value={returnDate}
                             onChange={(e) => setReturnDate(e.target.value)}
                             className="block w-full sm:flex-1 min-w-[150px] border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
@@ -1412,6 +1477,7 @@ export default function CustomerDashboard() {
                           <input
                             type="date"
                             id="weddingDate"
+                            min={new Date().toISOString().split('T')[0]}
                             value={weddingDate}
                             onChange={(e) => setWeddingDate(e.target.value)}
                             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
