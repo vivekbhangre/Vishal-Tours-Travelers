@@ -499,7 +499,7 @@ export default function CustomerDashboard() {
         return;
       }
     } else {
-      if (!fromLocation || !toLocation || !rideDate) {
+      if (!fromLocation || (!toLocation && tripType !== 'Tour') || !rideDate) {
         setBookingError('Please fill in pickup, dropoff, and date.');
         setBookingLoading(false);
         return;
@@ -1184,8 +1184,15 @@ export default function CustomerDashboard() {
                                 onClick={() => {
                                   setDestinations(destinations.filter((_, i) => i !== index));
                                   setDestinationData(destinationData.filter((_, i) => i !== index));
-                                  const newSuggestions = { ...destinationSuggestions };
-                                  delete newSuggestions[index];
+                                  const newSuggestions: { [key: number]: LocationData[] } = {};
+                                  Object.keys(destinationSuggestions).forEach((key) => {
+                                    const k = parseInt(key);
+                                    if (k < index) {
+                                      newSuggestions[k] = destinationSuggestions[k];
+                                    } else if (k > index) {
+                                      newSuggestions[k - 1] = destinationSuggestions[k];
+                                    }
+                                  });
                                   setDestinationSuggestions(newSuggestions);
                                 }}
                                 className="mb-1 px-3 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200"
