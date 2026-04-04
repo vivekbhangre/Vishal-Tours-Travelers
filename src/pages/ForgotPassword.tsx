@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
+import { validateEmail, validatePassword, validateName, validatePhone } from '../lib/validation';
 import { Map, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -22,18 +23,26 @@ export default function ForgotPassword() {
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
-    if (name.trim().length < 2) {
-      setError('Name must be at least 2 characters long');
-      setLoading(false);
+    const nameError = validateName(name);
+    if (nameError) {
+      setError(nameError);
       return;
     }
-    if (!/^\+?[\d\s-]{10,15}$/.test(phone)) {
-      setError('Please enter a valid phone number (10-15 digits)');
-      setLoading(false);
+
+    const emailError = validateEmail(email, true);
+    if (emailError) {
+      setError(emailError);
       return;
     }
+
+    const phoneError = validatePhone(phone);
+    if (phoneError) {
+      setError(phoneError);
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const res = await api.verifyReset({ name, email, phone });
@@ -53,8 +62,9 @@ export default function ForgotPassword() {
     e.preventDefault();
     setError('');
 
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters long');
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
@@ -90,8 +100,9 @@ export default function ForgotPassword() {
           alt="Cinematic mountain highway sunset"
           referrerPolicy="no-referrer"
         />
-        {/* Dark purple gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/80 via-purple-900/60 to-black/80 z-10"></div>
+        {/* Dark gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent z-10"></div>
+        <div className="absolute inset-0 bg-indigo-900/20 mix-blend-multiply z-10"></div>
       </div>
 
       <div className="relative z-20 w-full max-w-md mx-auto">

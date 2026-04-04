@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import { api, socket } from '../lib/api';
+import { validateEmail, validateName, validatePhone } from '../lib/validation';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle, Calendar, Clock, Car, Users, MapPin, Grid, RefreshCw, Info, ChevronDown, ChevronUp } from 'lucide-react';
@@ -420,18 +421,26 @@ export default function CustomerDashboard() {
     e.preventDefault();
     setProfileError('');
     setProfileSuccess('');
-    setProfileLoading(true);
 
-    if (profileName.trim().length < 2) {
-      setProfileError('Name must be at least 2 characters long');
-      setProfileLoading(false);
+    const nameError = validateName(profileName);
+    if (nameError) {
+      setProfileError(nameError);
       return;
     }
-    if (!/^\+?[\d\s-]{10,15}$/.test(profilePhone)) {
-      setProfileError('Please enter a valid phone number (10-15 digits)');
-      setProfileLoading(false);
+
+    const emailError = validateEmail(profileEmail, true);
+    if (emailError) {
+      setProfileError(emailError);
       return;
     }
+
+    const phoneError = validatePhone(profilePhone);
+    if (phoneError) {
+      setProfileError(phoneError);
+      return;
+    }
+
+    setProfileLoading(true);
 
     try {
       if (!user) return;

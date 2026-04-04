@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
+import { validateEmail, validateName, validatePhone } from '../lib/validation';
 import { Save, User, Mail, Phone } from 'lucide-react';
 
 export default function ProfileSection() {
@@ -15,8 +16,27 @@ export default function ProfileSection() {
     e.preventDefault();
     if (!user) return;
     
-    setLoading(true);
     setMessage({ type: '', text: '' });
+
+    const nameError = validateName(name);
+    if (nameError) {
+      setMessage({ type: 'error', text: nameError });
+      return;
+    }
+
+    const emailError = validateEmail(email, user.role === 'customer');
+    if (emailError) {
+      setMessage({ type: 'error', text: emailError });
+      return;
+    }
+
+    const phoneError = validatePhone(phone);
+    if (phoneError) {
+      setMessage({ type: 'error', text: phoneError });
+      return;
+    }
+
+    setLoading(true);
     
     try {
       const updatedData = { name, email, phone };

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import ProfileSection from '../components/ProfileSection';
 import { api, socket } from '../lib/api';
+import { validateEmail, validateName, validatePhone, validateVehicleNumber } from '../lib/validation';
 import { format } from 'date-fns';
 import { Download, TrendingUp, RefreshCw, ChevronDown, Car } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -860,16 +861,21 @@ export default function AdminDashboard() {
                       const phone = formData.get('phone') as string;
                       const email = formData.get('email') as string;
 
-                      if (name.trim().length < 2) {
-                        alert('Driver name must be at least 2 characters long.');
+                      const nameError = validateName(name);
+                      if (nameError) {
+                        alert(nameError);
                         return;
                       }
-                      if (!/^\+?[\d\s-]{10,15}$/.test(phone)) {
-                        alert('Please enter a valid phone number (10-15 digits).');
+
+                      const phoneError = validatePhone(phone);
+                      if (phoneError) {
+                        alert(phoneError);
                         return;
                       }
-                      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                        alert('Please enter a valid email address.');
+
+                      const emailError = validateEmail(email, false);
+                      if (emailError) {
+                        alert(emailError);
                         return;
                       }
 
@@ -984,12 +990,15 @@ export default function AdminDashboard() {
                       const name = formData.get('name') as string;
                       const number = formData.get('number') as string;
 
-                      if (name.trim().length < 2) {
-                        alert('Vehicle name must be at least 2 characters long.');
+                      const nameError = validateName(name);
+                      if (nameError) {
+                        alert(nameError);
                         return;
                       }
-                      if (number.trim().length < 4) {
-                        alert('Vehicle number must be at least 4 characters long.');
+
+                      const numberError = validateVehicleNumber(number);
+                      if (numberError) {
+                        alert(numberError);
                         return;
                       }
 

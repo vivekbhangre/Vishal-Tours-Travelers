@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
+import { validateEmail, validatePassword } from '../lib/validation';
 import { Map, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -28,13 +29,20 @@ export default function Login() {
     e.preventDefault();
     setError('');
     setSuccess('');
-    setLoading(true);
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      setLoading(false);
+    
+    const emailError = validateEmail(email, true);
+    if (emailError) {
+      setError(emailError);
       return;
     }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const user = await api.login({ email, password });
@@ -74,8 +82,9 @@ export default function Login() {
           alt="Cinematic mountain highway sunset"
           referrerPolicy="no-referrer"
         />
-        {/* Dark purple gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/80 via-purple-900/60 to-black/80 z-10"></div>
+        {/* Dark gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent z-10"></div>
+        <div className="absolute inset-0 bg-indigo-900/20 mix-blend-multiply z-10"></div>
       </div>
 
       <div className="relative z-20 w-full max-w-md mx-auto">

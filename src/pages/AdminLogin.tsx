@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
+import { validateEmail, validatePassword } from '../lib/validation';
 import { ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -17,13 +18,21 @@ export default function AdminLogin() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      setLoading(false);
+    
+    // For admin, we might not want to restrict domains, so pass false
+    const emailError = validateEmail(email, false);
+    if (emailError) {
+      setError(emailError);
       return;
     }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const user = await api.login({ email, password });
@@ -56,8 +65,9 @@ export default function AdminLogin() {
           alt="Cinematic mountain highway sunset"
           referrerPolicy="no-referrer"
         />
-        {/* Dark purple gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/80 via-purple-900/60 to-black/80 z-10"></div>
+        {/* Dark gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent z-10"></div>
+        <div className="absolute inset-0 bg-indigo-900/20 mix-blend-multiply z-10"></div>
       </div>
 
       <div className="relative z-20 w-full max-w-md mx-auto">
