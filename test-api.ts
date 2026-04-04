@@ -1,50 +1,26 @@
-import axios from 'axios';
-
-async function fetchWithFallback(query) {
-  let currentQuery = query;
-  let words = currentQuery.split(' ').filter(Boolean);
-  
-  while (words.length > 0) {
-    const searchStr = words.join(' ');
-    try {
-      const res = await axios.get(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchStr)}&countrycodes=in&format=json&addressdetails=1&limit=15`, {
-        headers: { 'User-Agent': 'RideBookingApp/1.0' }
-      });
-      
-      let data = res.data;
-      if (data.length > 0) {
-        // If we found a fallback, let's modify the results to reflect the original query
-        if (searchStr !== query) {
-          data = data.map(item => {
-            const address = item.address || {};
-            const city = address.city || address.town || address.village || address.municipality || "";
-            const district = address.state_district || address.county || "";
-            const state = address.state || "";
-            
-            const displayNameParts = [...new Set([query, district, state].filter(Boolean))];
-            
-            return {
-              ...item,
-              name: query,
-              displayName: displayNameParts.join(', '),
-              primaryText: query
-            };
-          });
-        }
-        return data;
-      }
-    } catch (e) {
-      console.error(e.message);
-    }
-    
-    words.pop(); // remove last word and try again
-  }
-  
-  return [];
-}
+import fetch from 'node-fetch';
 
 async function run() {
-  const r1 = await fetchWithFallback("seoni bus stand");
-  console.log("seoni bus stand:", r1.map(r => r.displayName || r.display_name));
+  const res = await fetch('http://localhost:3000/api/bookings');
+  const bookings: any[] = await res.json() as any[];
+  const cancelled = bookings.find((b: any) => b.rideStatus === 'Cancelled');
+  if (cancelled) {
+    console.log('Found cancelled booking:', cancelled.id);
+    const updateRes1 = await fetch(`http://localhost:3000/api/bookings/${cancelled.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refundStatus: 'Processed', isAdmin: true })
+    });
+    console.log('Update 1 (Processed) response:', updateRes1.status);
+    
+    const updateRes2 = await fetch(`http://localhost:3000/api/bookings/${cancelled.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refundStatus: 'Pending', isAdmin: true })
+    });
+    console.log('Update 2 (Pending) response:', updateRes2.status, await updateRes2.text());
+  } else {
+    console.log('No cancelled bookings found');
+  }
 }
 run();

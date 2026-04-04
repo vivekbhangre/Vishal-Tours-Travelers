@@ -40,7 +40,7 @@ export async function initSheets() {
             'id', 'userId', 'userName', 'userEmail', 'fromLocation', 'toLocation', 'rideDate', 
             'rideType', 'numberOfPeople', 'rideStatus', 'paymentStatus', 'fareAmount', 'timestamp',
             'tripType', 'returnDate', 'destinations', 'numberOfDays', 'numberOfCars', 'estimatedKM', 'suggestedVehicle',
-            'isAC', 'weddingDetails', 'intercityDetails', 'airportDetails', 'customRequirements', 'assignedDriverEmail', 'assignedVehicleId'
+            'isAC', 'weddingDetails', 'intercityDetails', 'airportDetails', 'customRequirements', 'assignedDriverEmail', 'assignedVehicleId', 'assignments', 'refundStatus', 'refundAmount'
           ];
         } else if (title === 'Revenue Logs') {
           headerValues = ['id', 'month', 'year', 'amount', 'timestamp'];
@@ -123,6 +123,23 @@ export async function initSheets() {
             await sheet.resize({ rowCount: sheet.rowCount, columnCount: 30 });
           }
           await sheet.loadHeaderRow();
+          
+          if (title === 'Bookings') {
+            const currentHeaders = sheet.headerValues;
+            let headersUpdated = false;
+            if (!currentHeaders.includes('refundStatus')) {
+              currentHeaders.push('refundStatus');
+              headersUpdated = true;
+            }
+            if (!currentHeaders.includes('refundAmount')) {
+              currentHeaders.push('refundAmount');
+              headersUpdated = true;
+            }
+            if (headersUpdated) {
+              await sheet.setHeaderRow(currentHeaders);
+            }
+          }
+
           await sheet.loadCells('A1:AD1');
           for (let i = 0; i < sheet.headerValues.length; i++) {
             const cell = sheet.getCell(0, i);
@@ -151,7 +168,8 @@ export function getDoc() {
 }
 
 const rowCache = new Map<string, { data: any[], timestamp: number }>();
-const CACHE_TTL = 15000; // 15 seconds
+const fetchPromises = new Map<string, Promise<any[]>>();
+const CACHE_TTL = 30000; // 30 seconds
 
 export async function getCachedRows(sheetTitle: string, forceRefresh: boolean = false) {
   const now = Date.now();
@@ -160,15 +178,47 @@ export async function getCachedRows(sheetTitle: string, forceRefresh: boolean = 
     return cached.data;
   }
 
+  // If a fetch is already in progress for this sheet, wait for it
+  // Even if forceRefresh is true, we should just wait for the in-progress fetch to finish
+  // to avoid hitting Google Sheets API rate limits with concurrent identical requests.
+  if (fetchPromises.has(sheetTitle)) {
+    return fetchPromises.get(sheetTitle)!;
+  }
+
   if (!doc) throw new Error('Google Sheets not configured');
   const sheet = doc.sheetsByTitle[sheetTitle];
   if (!sheet) return [];
 
-  const rows = await sheet.getRows();
-  rowCache.set(sheetTitle, { data: rows, timestamp: now });
-  return rows;
+  const fetchPromise = sheet.getRows().then(rows => {
+    rowCache.set(sheetTitle, { data: rows, timestamp: Date.now() });
+    fetchPromises.delete(sheetTitle);
+    return rows;
+  }).catch(err => {
+    fetchPromises.delete(sheetTitle);
+    throw err;
+  });
+
+  fetchPromises.set(sheetTitle, fetchPromise);
+  return fetchPromise;
 }
 
 export function invalidateCache(sheetTitle: string) {
   rowCache.delete(sheetTitle);
+}
+
+export function startCacheWarmer() {
+  setInterval(async () => {
+    if (!doc) return;
+    const requiredSheets = ['Users', 'Bookings', 'Staff', 'Revenue Logs', 'vehicles', 'drivers'];
+    for (const title of requiredSheets) {
+      if (doc.sheetsByTitle[title]) {
+        try {
+          // Fetch in background to keep cache fresh
+          await getCachedRows(title, true);
+        } catch (err) {
+          console.error(`Cache warmer failed for ${title}:`, err);
+        }
+      }
+    }
+  }, 25000); // Every 25 seconds
 }

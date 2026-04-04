@@ -9,14 +9,25 @@ export const setupFleetRoutes = (app: any, io: any) => {
       const sheet = doc.sheetsByTitle['vehicles'];
       if (!sheet) return res.json([]);
       const forceRefresh = req.query.forceRefresh === 'true';
-      const rows = await getCachedRows('vehicles', forceRefresh);
+      const [rows, rideRows] = await Promise.all([
+        getCachedRows('vehicles', forceRefresh),
+        getCachedRows('Bookings', forceRefresh)
+      ]);
       
-      const rideRows = await getCachedRows('Bookings', forceRefresh);
       const activeRides = rideRows.filter(r => ['Assigned', 'Ongoing'].includes(r.get('rideStatus')));
 
       res.json(rows.map(r => {
         const vehicleId = r.get('vehicleId') || `row-${r.rowNumber}`;
-        const isBusy = vehicleId && activeRides.some(ride => ride.get('assignedVehicleId') === vehicleId);
+        const isBusy = vehicleId && activeRides.some(ride => {
+          const assignmentsStr = ride.get('assignments');
+          if (assignmentsStr) {
+            try {
+              const assignments = JSON.parse(assignmentsStr);
+              if (assignments.some((a: any) => a.vehicleId === vehicleId)) return true;
+            } catch(e) {}
+          }
+          return ride.get('assignedVehicleId') === vehicleId;
+        });
         const currentStatus = r.get('status');
         
         return {
@@ -87,14 +98,25 @@ export const setupFleetRoutes = (app: any, io: any) => {
       const sheet = doc.sheetsByTitle['drivers'];
       if (!sheet) return res.json([]);
       const forceRefresh = req.query.forceRefresh === 'true';
-      const rows = await getCachedRows('drivers', forceRefresh);
+      const [rows, rideRows] = await Promise.all([
+        getCachedRows('drivers', forceRefresh),
+        getCachedRows('Bookings', forceRefresh)
+      ]);
       
-      const rideRows = await getCachedRows('Bookings', forceRefresh);
       const activeRides = rideRows.filter(r => ['Assigned', 'Ongoing'].includes(r.get('rideStatus')));
 
       res.json(rows.map(r => {
         const email = r.get('email');
-        const isBusy = email && activeRides.some(ride => ride.get('assignedDriverEmail') === email);
+        const isBusy = email && activeRides.some(ride => {
+          const assignmentsStr = ride.get('assignments');
+          if (assignmentsStr) {
+            try {
+              const assignments = JSON.parse(assignmentsStr);
+              if (assignments.some((a: any) => a.driverEmail === email)) return true;
+            } catch(e) {}
+          }
+          return ride.get('assignedDriverEmail') === email;
+        });
         const currentStatus = r.get('status');
         
         return {
@@ -161,8 +183,18 @@ export const setupFleetRoutes = (app: any, io: any) => {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
     
-    const { driverId, vehicleId } = req.body;
+    const { assignments } = req.body; // Array of { driverId, vehicleId }
     const rideId = req.params.id;
+    
+    // Legacy support
+    let finalAssignments = assignments || [];
+    if (!assignments && req.body.driverId && req.body.vehicleId) {
+      finalAssignments = [{ driverId: req.body.driverId, vehicleId: req.body.vehicleId }];
+    }
+
+    if (finalAssignments.length === 0) {
+      return res.status(400).json({ error: 'No assignments provided' });
+    }
     
     try {
       const ridesSheet = doc.sheetsByTitle['Bookings'];
@@ -177,99 +209,157 @@ export const setupFleetRoutes = (app: any, io: any) => {
         return res.status(400).json({ error: 'Cannot assign driver to completed or cancelled ride' });
       }
 
-      const driverRows = await getCachedRows('drivers');
-      let driverRow = null;
-      if (driverId) {
-        driverRow = driverRows.find(r => r.get('id') === driverId || `row-${r.rowNumber}` === driverId);
-        if (!driverRow) return res.status(404).json({ error: 'Driver not found' });
-      }
-      
-      const vehicleRows = await getCachedRows('vehicles');
-      const vehicleRow = vehicleRows.find(r => r.get('vehicleId') === vehicleId || `row-${r.rowNumber}` === vehicleId);
-      if (!vehicleRow) return res.status(404).json({ error: 'Vehicle not found' });
+      const [driverRows, vehicleRows] = await Promise.all([
+        getCachedRows('drivers'),
+        getCachedRows('vehicles')
+      ]);
 
-      // Check maintenance
-      if (vehicleRow.get('status') === 'Maintenance') {
-        return res.status(400).json({ error: 'Vehicle is in maintenance' });
+      const oldAssignmentsStr = rideRow.get('assignments');
+      let oldAssignments = [];
+      if (oldAssignmentsStr) {
+        try { oldAssignments = JSON.parse(oldAssignmentsStr); } catch(e) {}
+      } else if (rideRow.get('assignedDriverEmail') || rideRow.get('assignedVehicleId')) {
+        oldAssignments = [{ driverEmail: rideRow.get('assignedDriverEmail'), vehicleId: rideRow.get('assignedVehicleId') }];
+      }
+
+      // Validate all assignments
+      const processedAssignments = [];
+      for (const a of finalAssignments) {
+        let driverRow = null;
+        if (a.driverId) {
+          driverRow = driverRows.find(r => r.get('id') === a.driverId || `row-${r.rowNumber}` === a.driverId);
+          if (!driverRow) return res.status(404).json({ error: `Driver ${a.driverId} not found` });
+          
+          if (driverRow.get('status') === 'Inactive') {
+             return res.status(400).json({ error: `Driver ${driverRow.get('name')} is inactive` });
+          }
+        }
+        
+        let vehicleRow = null;
+        if (a.vehicleId) {
+          vehicleRow = vehicleRows.find(r => r.get('vehicleId') === a.vehicleId || `row-${r.rowNumber}` === a.vehicleId);
+          if (!vehicleRow) return res.status(404).json({ error: `Vehicle ${a.vehicleId} not found` });
+          
+          if (vehicleRow.get('status') === 'Maintenance') {
+            return res.status(400).json({ error: `Vehicle ${vehicleRow.get('vehicleName')} is in maintenance` });
+          }
+        }
+
+        processedAssignments.push({
+          driverId: a.driverId,
+          vehicleId: a.vehicleId,
+          driverEmail: driverRow ? driverRow.get('email') : '',
+          driverRow,
+          vehicleRow
+        });
       }
 
       // Check overlapping rides
+      const getRideEnd = (row: any) => {
+        const start = new Date(row.get('rideDate')).getTime();
+        const tripType = row.get('tripType');
+        
+        if (tripType === 'Car Renting') {
+          const days = parseInt(row.get('numberOfDays') || '1', 10);
+          return start + (days * 24 * 60 * 60 * 1000);
+        } else if (tripType === 'Round-trip') {
+          const returnDate = row.get('returnDate');
+          if (returnDate && returnDate !== 'N/A') {
+            const retTime = new Date(returnDate).getTime();
+            if (!isNaN(retTime)) return retTime;
+          }
+        }
+        
+        return start + (4 * 60 * 60 * 1000); // Default 4 hours
+      };
+
       const rideStart = new Date(rideRow.get('rideDate')).getTime();
-      // Assuming a ride takes 4 hours for overlap check if no end time is specified
-      const rideEnd = rideStart + (4 * 60 * 60 * 1000); 
+      const rideEnd = getRideEnd(rideRow); 
 
       const overlappingRide = rideRows.find(r => {
         if (r.get('id') === rideId) return false;
         if (!['Assigned', 'Ongoing'].includes(r.get('rideStatus'))) return false;
         
-        const isSameDriver = driverRow ? r.get('assignedDriverEmail') === driverRow.get('email') : false;
-        const isSameVehicle = r.get('assignedVehicleId') === vehicleId;
+        const rAssignmentsStr = r.get('assignments');
+        let rAssignments = [];
+        if (rAssignmentsStr) {
+          try { rAssignments = JSON.parse(rAssignmentsStr); } catch(e) {}
+        } else if (r.get('assignedDriverEmail') || r.get('assignedVehicleId')) {
+          rAssignments = [{ driverEmail: r.get('assignedDriverEmail'), vehicleId: r.get('assignedVehicleId') }];
+        }
+
+        let hasOverlap = false;
+        for (const pa of processedAssignments) {
+          for (const ra of rAssignments) {
+            const isSameDriver = pa.driverEmail && pa.driverEmail === ra.driverEmail;
+            const isSameVehicle = pa.vehicleId && pa.vehicleId === ra.vehicleId;
+            if (isSameDriver || isSameVehicle) {
+              hasOverlap = true;
+              break;
+            }
+          }
+          if (hasOverlap) break;
+        }
         
-        if (!isSameDriver && !isSameVehicle) return false;
+        if (!hasOverlap) return false;
         
         const rStart = new Date(r.get('rideDate')).getTime();
-        const rEnd = rStart + (4 * 60 * 60 * 1000);
+        const rEnd = getRideEnd(r);
         
         return (rStart < rideEnd) && (rEnd > rideStart);
       });
 
       if (overlappingRide) {
-        return res.status(400).json({ error: 'Driver or vehicle already assigned to overlapping ride.' });
+        return res.status(400).json({ error: 'One or more drivers/vehicles already assigned to overlapping ride.' });
       }
-
-      // If reassignment, free up old driver/vehicle
-      const oldDriverEmail = rideRow.get('assignedDriverEmail');
-      const oldVehicleId = rideRow.get('assignedVehicleId');
-      
-      if (oldDriverEmail && (!driverRow || oldDriverEmail !== driverRow.get('email'))) {
-        const oldDriverRow = driverRows.find(r => r.get('email') === oldDriverEmail);
-        if (oldDriverRow) {
-          oldDriverRow.set('status', 'Available');
-          await oldDriverRow.save();
-          invalidateCache('drivers');
-        }
-      }
-      
-      if (oldVehicleId && oldVehicleId !== vehicleId) {
-        const oldVehicleRow = vehicleRows.find(r => r.get('vehicleId') === oldVehicleId || `row-${r.rowNumber}` === oldVehicleId);
-        if (oldVehicleRow) {
-          oldVehicleRow.set('status', 'Available');
-          await oldVehicleRow.save();
-          invalidateCache('vehicles');
-        }
-      }
-
-      // Update new driver and vehicle status
-      if (driverRow) {
-        driverRow.set('status', 'Busy');
-        await driverRow.save();
-        invalidateCache('drivers');
-      }
-      
-      vehicleRow.set('status', 'In Use');
-      await vehicleRow.save();
-      invalidateCache('vehicles');
 
       // Update ride
+      const savedAssignments = processedAssignments.map(pa => ({
+        driverEmail: pa.driverEmail,
+        vehicleId: pa.vehicleId
+      }));
+
       rideRow.set('rideStatus', 'Assigned');
-      rideRow.set('assignedDriverEmail', driverRow ? driverRow.get('email') : '');
-      rideRow.set('assignedVehicleId', vehicleId);
+      rideRow.set('assignments', JSON.stringify(savedAssignments));
+      
+      if (savedAssignments.length > 0) {
+        rideRow.set('assignedDriverEmail', savedAssignments[0].driverEmail || '');
+        rideRow.set('assignedVehicleId', savedAssignments[0].vehicleId || '');
+      } else {
+        rideRow.set('assignedDriverEmail', '');
+        rideRow.set('assignedVehicleId', '');
+      }
+      
       await rideRow.save();
       invalidateCache('Bookings');
 
       const updatedRide = {
         id: rideRow.get('id'),
+        userId: rideRow.get('userId'),
         rideStatus: 'Assigned',
-        assignedDriverEmail: driverRow.get('email'),
-        assignedVehicleId: vehicleId,
-        driverDetails: {
-          name: driverRow.get('name'),
-          phone: driverRow.get('phone')
-        },
-        vehicleDetails: {
-          name: vehicleRow.get('vehicleName'),
-          number: vehicleRow.get('vehicleNumber')
-        }
+        assignments: savedAssignments.map((fa, idx) => ({
+          driverEmail: fa.driverEmail,
+          vehicleId: fa.vehicleId,
+          driverDetails: processedAssignments[idx].driverRow ? {
+            name: processedAssignments[idx].driverRow.get('name'),
+            phone: processedAssignments[idx].driverRow.get('phone')
+          } : null,
+          vehicleDetails: processedAssignments[idx].vehicleRow ? {
+            name: processedAssignments[idx].vehicleRow.get('vehicleName'),
+            number: processedAssignments[idx].vehicleRow.get('vehicleNumber')
+          } : null
+        })),
+        // legacy fields
+        assignedDriverEmail: savedAssignments[0]?.driverEmail || '',
+        assignedVehicleId: savedAssignments[0]?.vehicleId || '',
+        driverDetails: processedAssignments[0]?.driverRow ? {
+          name: processedAssignments[0].driverRow.get('name'),
+          phone: processedAssignments[0].driverRow.get('phone')
+        } : null,
+        vehicleDetails: processedAssignments[0]?.vehicleRow ? {
+          name: processedAssignments[0].vehicleRow.get('vehicleName'),
+          number: processedAssignments[0].vehicleRow.get('vehicleNumber')
+        } : null
       };
 
       io.emit('booking:updated', updatedRide);

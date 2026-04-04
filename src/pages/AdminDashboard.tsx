@@ -3,7 +3,7 @@ import Navbar from '../components/Navbar';
 import ProfileSection from '../components/ProfileSection';
 import { api, socket } from '../lib/api';
 import { format } from 'date-fns';
-import { Download, TrendingUp, RefreshCw, ChevronDown } from 'lucide-react';
+import { Download, TrendingUp, RefreshCw, ChevronDown, Car } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'motion/react';
 
@@ -33,8 +33,7 @@ export default function AdminDashboard() {
   // Assignment Modal State
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
-  const [selectedDriverId, setSelectedDriverId] = useState('');
-  const [selectedVehicleId, setSelectedVehicleId] = useState('');
+  const [assignments, setAssignments] = useState<{driverId: string, vehicleId: string}[]>([{driverId: '', vehicleId: ''}]);
   const [assigning, setAssigning] = useState(false);
   const [assignError, setAssignError] = useState('');
   const [addingDriver, setAddingDriver] = useState(false);
@@ -74,9 +73,14 @@ export default function AdminDashboard() {
       setBookings(prev => [...prev, newBooking]);
     });
 
+    socket.on('revenue:updated', () => {
+      fetchRevenue(true);
+    });
+
     return () => {
       socket.off('booking:updated');
       socket.off('booking:created');
+      socket.off('revenue:updated');
     };
   }, []);
 
@@ -137,44 +141,115 @@ export default function AdminDashboard() {
     api.downloadMonthlyReport();
   };
 
-  const handleUpdateStatus = async (id: string, field: 'rideStatus' | 'paymentStatus', value: string) => {
+  const handleUpdateStatus = async (id: string, field: 'rideStatus' | 'paymentStatus' | 'refundStatus' | 'refundAmount', value: string) => {
+    console.log(`handleUpdateStatus called with id: ${id}, field: ${field}, value: ${value}`);
+    
+    const booking = bookings.find(b => b.id === id);
+    let payload: any = { [field]: value, isAdmin: true };
+
+    if (field === 'rideStatus' && value === 'Cancelled' && booking) {
+      const rideDate = new Date(booking.rideDate);
+      const now = new Date();
+      const diffInHours = (rideDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+      const fareAmount = parseFloat(booking.fareAmount || '0');
+      const days = typeof booking.numberOfDays === 'number' ? booking.numberOfDays : (parseInt(booking.numberOfDays as string) || 1);
+      const isMultiDay = days > 1;
+
+      let refundAmount = 0;
+      if (diffInHours >= 24 && diffInHours <= 72) {
+        const percent = isMultiDay ? 25 : 50;
+        refundAmount = (fareAmount * percent) / 100;
+      } else if (diffInHours > 72) {
+        const percent = isMultiDay ? 50 : 85;
+        refundAmount = (fareAmount * percent) / 100;
+      }
+
+      if (refundAmount > 0) {
+        payload.refundStatus = 'No Refund';
+        payload.refundAmount = refundAmount;
+        
+        // Automatically update to Pending after 10 seconds
+        setTimeout(async () => {
+          // Optimistic UI for the Pending update
+          setBookings(prev => prev.map(b => b.id === id ? { ...b, refundStatus: 'Pending' } : b));
+          try {
+            await api.updateBooking(id, { refundStatus: 'Pending', isAdmin: true });
+          } catch (err) {
+            console.error("Failed to automatically update refund status to Pending:", err);
+            // Revert optimistic update
+            fetchBookings();
+          }
+        }, 10000);
+      } else {
+        payload.refundStatus = 'No Refund';
+        payload.refundAmount = 0;
+      }
+    }
+
+    // Optimistic update
+    setBookings(prev => prev.map(b => b.id === id ? { ...b, ...payload } : b));
+    
     try {
-      await api.updateBooking(id, { [field]: value });
+      await api.updateBooking(id, payload);
+      console.log(`Successfully called api.updateBooking for ${field}`);
     } catch (error) {
       console.error('Failed to update booking:', error);
       alert('Failed to update booking status');
+      // Revert optimistic update by fetching bookings again
+      fetchBookings();
     }
   };
 
   const openAssignModal = (booking: any) => {
     setSelectedBookingId(booking.id);
     
-    // Pre-select if already assigned
-    if (booking.assignedDriverEmail) {
-      const driver = drivers.find(d => d.email === booking.assignedDriverEmail);
-      if (driver) setSelectedDriverId(driver.id);
-    } else {
-      setSelectedDriverId('');
-    }
-    
-    if (booking.assignedVehicleId) {
-      setSelectedVehicleId(booking.assignedVehicleId);
-    } else {
-      setSelectedVehicleId('');
+    const requestedCars = booking.tripType === 'Wedding' && booking.weddingDetails 
+      ? parseInt(booking.weddingDetails.vehiclesRequired) || 1 
+      : (booking.tripType === 'Tour' || booking.tripType === 'Car Renting' ? Number(booking.numberOfCars) || 1 : 1);
+
+    let initialAssignments = [];
+    if (booking.assignments && booking.assignments.length > 0) {
+      initialAssignments = booking.assignments.map((a: any) => ({
+        driverId: drivers.find(d => d.email === a.driverEmail)?.id || '',
+        vehicleId: a.vehicleId || ''
+      }));
+    } else if (booking.assignedDriverEmail || booking.assignedVehicleId) {
+      initialAssignments = [{
+        driverId: drivers.find(d => d.email === booking.assignedDriverEmail)?.id || '',
+        vehicleId: booking.assignedVehicleId || ''
+      }];
     }
 
+    while (initialAssignments.length < requestedCars) {
+      initialAssignments.push({ driverId: '', vehicleId: '' });
+    }
+    if (initialAssignments.length > requestedCars) {
+      initialAssignments = initialAssignments.slice(0, requestedCars);
+    }
+
+    setAssignments(initialAssignments);
     setAssignError('');
     setIsAssignModalOpen(true);
   };
 
   const handleAssignDriver = async () => {
-    if (!selectedBookingId || !selectedDriverId || !selectedVehicleId) return;
+    if (!selectedBookingId) return;
+    
+    const booking = bookings.find(b => b.id === selectedBookingId);
+    const isCarRenting = booking?.tripType === 'Car Renting';
+    
+    // Validate that all assignments have at least a driver or a vehicle
+    const isValid = assignments.every(a => a.driverId || a.vehicleId);
+    if (!isValid) {
+      setAssignError('Please select at least a driver or a vehicle for all required assignments.');
+      return;
+    }
     
     setAssigning(true);
     setAssignError('');
     
     try {
-      await api.assignDriver(selectedBookingId, selectedDriverId, selectedVehicleId);
+      await api.assignDriver(selectedBookingId, assignments[0].driverId, assignments[0].vehicleId, assignments);
       setIsAssignModalOpen(false);
       // Data will be updated via socket
     } catch (error: any) {
@@ -191,9 +266,16 @@ export default function AdminDashboard() {
   const confirmedRides = bookings.filter(b => b.rideStatus === 'Confirmed').length;
   const ongoingRides = bookings.filter(b => b.rideStatus === 'Ongoing').length;
   const cancelledRides = bookings.filter(b => b.rideStatus === 'Cancelled').length;
-  const totalRevenue = bookings.filter(b => b.paymentStatus === 'Paid').reduce((sum, b) => sum + parseFloat(b.fareAmount || '0'), 0);
+  const totalRevenue = bookings.filter(b => b.paymentStatus === 'Paid').reduce((sum, b) => {
+    const fare = parseFloat(b.fareAmount || '0');
+    const refund = b.refundStatus === 'Processed' ? parseFloat(b.refundAmount?.toString() || '0') : 0;
+    return sum + fare - refund;
+  }, 0);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string, refundStatus?: string) => {
+    if (status === 'Cancelled' && refundStatus === 'Processed') {
+      return 'bg-purple-100 text-purple-800';
+    }
     switch (status) {
       case 'Pending': return 'bg-yellow-100 text-yellow-800';
       case 'Confirmed': return 'bg-indigo-100 text-indigo-800';
@@ -390,13 +472,15 @@ export default function AdminDashboard() {
                                 <select
                                   value={booking.rideStatus}
                                   onChange={(e) => handleUpdateStatus(booking.id, 'rideStatus', e.target.value)}
-                                  className={`block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md ${getStatusColor(booking.rideStatus)}`}
+                                  className={`block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md ${getStatusColor(booking.rideStatus, booking.refundStatus)}`}
                                   disabled={!['Pending', 'Confirmed'].includes(booking.rideStatus)}
                                 >
                                   <option className="bg-white text-gray-900" value="Pending">Pending</option>
                                   <option className="bg-white text-gray-900" value="Confirmed">Confirmed</option>
                                   {!['Pending', 'Confirmed'].includes(booking.rideStatus) && (
-                                    <option className="bg-white text-gray-900" value={booking.rideStatus}>{booking.rideStatus}</option>
+                                    <option className="bg-white text-gray-900" value={booking.rideStatus}>
+                                      {booking.rideStatus === 'Cancelled' && booking.refundStatus === 'Processed' ? 'Refunded' : booking.rideStatus}
+                                    </option>
                                   )}
                                 </select>
                               </div>
@@ -421,7 +505,10 @@ export default function AdminDashboard() {
                               </div>
                               <div>
                                 <span className="text-xs text-gray-500 uppercase block">Vehicle</span>
-                                <span className="font-medium text-gray-900">{booking.suggestedVehicle} {booking.isAC === 'Yes' ? '(AC)' : ''}</span>
+                                <span className="font-medium text-gray-900 flex items-center gap-1.5">
+                                  <Car className="w-4 h-4 text-gray-400" />
+                                  {booking.suggestedVehicle} {booking.isAC === 'Yes' ? '(AC)' : ''}
+                                </span>
                               </div>
                               <div>
                                 <span className="text-xs text-gray-500 uppercase block">Distance</span>
@@ -433,10 +520,26 @@ export default function AdminDashboard() {
                                   <span className="font-medium text-gray-900">{booking.numberOfPeople}</span>
                                 </div>
                               )}
+                              {booking.tripType === 'Tour' && (
+                                <div>
+                                  <span className="text-xs text-gray-500 uppercase block">Vehicles</span>
+                                  <span className="font-medium text-gray-900">{booking.numberOfCars}</span>
+                                </div>
+                              )}
                               <div className="col-span-2">
                                 <span className="text-xs text-gray-500 uppercase block">Contact</span>
                                 <span className="font-medium text-gray-900">{booking.userPhone} | {booking.userEmail}</span>
                               </div>
+                              {booking.tripType === 'Wedding' && booking.weddingDetails && (
+                                <div className="col-span-2 bg-pink-50 p-3 rounded-md border border-pink-100 mt-2">
+                                  <span className="text-xs text-pink-600 uppercase font-bold block mb-2">💍 Wedding Details</span>
+                                  <div className="grid grid-cols-2 gap-2 text-sm">
+                                    <div><span className="text-gray-500">Location:</span> <span className="font-medium">{booking.weddingDetails.eventLocation}</span></div>
+                                    <div><span className="text-gray-500">Vehicles:</span> <span className="font-medium">{booking.weddingDetails.vehiclesRequired}</span></div>
+                                    <div className="col-span-2"><span className="text-gray-500">Decoration:</span> <span className="font-medium">{booking.weddingDetails.decorationRequired}</span></div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
 
                             <div className="flex justify-between items-center pt-3 border-t border-gray-100">
@@ -449,7 +552,33 @@ export default function AdminDashboard() {
                               </div>
                               <div className="text-right">
                                 <span className="text-xs text-gray-500 uppercase block mb-1">Driver</span>
-                                {booking.assignedDriverEmail || booking.assignedVehicleId ? (
+                                {booking.assignments && booking.assignments.length > 0 ? (
+                                  <div className="flex flex-col items-end space-y-2">
+                                    {booking.assignments.map((assignment: any, idx: number) => (
+                                      <div key={idx} className="flex flex-col items-end border-b border-gray-100 pb-1 last:border-0 last:pb-0">
+                                        {booking.assignments.length > 1 && <span className="text-[10px] text-gray-400 font-medium">Vehicle {idx + 1}</span>}
+                                        {assignment.driverDetails ? (
+                                          <span className="text-xs font-medium text-gray-900">{assignment.driverDetails.name}</span>
+                                        ) : assignment.driverEmail ? (
+                                          <span className="text-xs font-medium text-gray-900">{assignment.driverEmail}</span>
+                                        ) : null}
+                                        {assignment.vehicleDetails ? (
+                                          <span className="text-xs text-gray-500">{assignment.vehicleDetails.name} ({assignment.vehicleDetails.number})</span>
+                                        ) : assignment.vehicleId ? (
+                                          <span className="text-xs text-gray-500">{assignment.vehicleId}</span>
+                                        ) : null}
+                                      </div>
+                                    ))}
+                                    {!['Completed', 'Cancelled'].includes(booking.rideStatus) && (
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); openAssignModal(booking); }}
+                                        className="mt-1 text-xs text-indigo-600 hover:text-indigo-900 font-medium"
+                                      >
+                                        Change Assignment
+                                      </button>
+                                    )}
+                                  </div>
+                                ) : booking.assignedDriverEmail || booking.assignedVehicleId ? (
                                   <div className="flex flex-col items-end space-y-1">
                                     {booking.driverDetails ? (
                                       <span className="text-xs font-medium text-gray-900">{booking.driverDetails.name}</span>
@@ -476,7 +605,7 @@ export default function AdminDashboard() {
                                       onClick={(e) => { e.stopPropagation(); openAssignModal(booking); }}
                                       className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                                     >
-                                      Assign Driver
+                                      Assign Details
                                     </button>
                                   ) : (
                                     <span className="text-xs font-medium text-gray-400">Unassigned</span>
@@ -484,6 +613,34 @@ export default function AdminDashboard() {
                                 )}
                               </div>
                             </div>
+
+                            {booking.rideStatus === 'Cancelled' && (
+                              <div className="mt-4 p-3 bg-red-50 rounded-md border border-red-100">
+                                <h4 className="text-xs font-bold text-red-800 uppercase mb-2">Refund Details</h4>
+                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                  <div>
+                                    <span className="text-red-600 block text-xs">Status</span>
+                                    <select
+                                      value={booking.refundStatus || 'No Refund'}
+                                      onChange={(e) => handleUpdateStatus(booking.id, 'refundStatus', e.target.value)}
+                                      className="mt-1 block w-full pl-3 pr-10 py-1 text-xs border-red-300 focus:outline-none focus:ring-red-500 focus:border-red-500 rounded-md bg-white text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      disabled={booking.refundStatus === 'Processed'}
+                                    >
+                                      <option value="No Refund">No Refund</option>
+                                      <option value="Pending">Pending</option>
+                                      <option value="Processed">Processed</option>
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <span className="text-red-600 block text-xs">Amount (₹)</span>
+                                    <div className="mt-1 block w-full pl-3 pr-2 py-1 text-xs border border-red-200 rounded-md bg-red-50 text-red-900 font-bold">
+                                      {booking.refundAmount !== undefined && booking.refundAmount !== null ? parseFloat(booking.refundAmount.toString()).toFixed(2) : '0.00'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
                           </div>
                         )}
                       </div>
@@ -520,7 +677,8 @@ export default function AdminDashboard() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {filteredBookings.map((booking) => (
-                        <tr key={booking.id} className="hover:bg-gray-50">
+                        <React.Fragment key={booking.id}>
+                        <tr className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {booking.userName}
                           </td>
@@ -530,6 +688,16 @@ export default function AdminDashboard() {
                               : booking.tripType === 'Tour' 
                               ? `${booking.fromLocation} \u2192 ${booking.destinations}`
                               : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
+                            {booking.tripType === 'Tour' && <div className="text-xs text-indigo-600 mt-1">{booking.numberOfCars} Vehicle(s)</div>}
+                            {booking.tripType === 'Wedding' && booking.weddingDetails && (
+                              <div className="text-xs text-pink-600 mt-1">
+                                💍 {booking.weddingDetails.vehiclesRequired} Vehicle(s)
+                              </div>
+                            )}
+                            <div className="flex items-center gap-1.5 mt-1.5 text-xs text-gray-600">
+                              <Car className="w-3.5 h-3.5 text-gray-400" />
+                              {booking.suggestedVehicle || 'Sedan'} {booking.isAC === 'Yes' ? '(AC)' : ''}
+                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {format(new Date(booking.rideDate), 'PPp')}
@@ -538,13 +706,15 @@ export default function AdminDashboard() {
                             <select
                               value={booking.rideStatus}
                               onChange={(e) => handleUpdateStatus(booking.id, 'rideStatus', e.target.value)}
-                              className={`mt-1 block w-full min-w-[130px] pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md ${getStatusColor(booking.rideStatus)}`}
+                              className={`mt-1 block w-full min-w-[130px] pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md ${getStatusColor(booking.rideStatus, booking.refundStatus)}`}
                               disabled={!['Pending', 'Confirmed'].includes(booking.rideStatus)}
                             >
                               <option className="bg-white text-gray-900" value="Pending">Pending</option>
                               <option className="bg-white text-gray-900" value="Confirmed">Confirmed</option>
                               {!['Pending', 'Confirmed'].includes(booking.rideStatus) && (
-                                <option className="bg-white text-gray-900" value={booking.rideStatus}>{booking.rideStatus}</option>
+                                <option className="bg-white text-gray-900" value={booking.rideStatus}>
+                                  {booking.rideStatus === 'Cancelled' && booking.refundStatus === 'Processed' ? 'Refunded' : booking.rideStatus}
+                                </option>
                               )}
                             </select>
                           </td>
@@ -566,7 +736,33 @@ export default function AdminDashboard() {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {booking.assignedDriverEmail || booking.assignedVehicleId ? (
+                            {booking.assignments && booking.assignments.length > 0 ? (
+                              <div className="flex flex-col space-y-2">
+                                {booking.assignments.map((assignment: any, idx: number) => (
+                                  <div key={idx} className="flex flex-col border-b border-gray-100 pb-1 last:border-0 last:pb-0">
+                                    {booking.assignments.length > 1 && <span className="text-[10px] text-gray-400 font-medium">Vehicle {idx + 1}</span>}
+                                    {assignment.driverDetails ? (
+                                      <span className="text-xs font-medium text-gray-900">{assignment.driverDetails.name}</span>
+                                    ) : assignment.driverEmail ? (
+                                      <span className="text-xs font-medium text-gray-900">{assignment.driverEmail}</span>
+                                    ) : null}
+                                    {assignment.vehicleDetails ? (
+                                      <span className="text-xs text-gray-500">{assignment.vehicleDetails.name} ({assignment.vehicleDetails.number})</span>
+                                    ) : assignment.vehicleId ? (
+                                      <span className="text-xs text-gray-500">{assignment.vehicleId}</span>
+                                    ) : null}
+                                  </div>
+                                ))}
+                                {!['Completed', 'Cancelled'].includes(booking.rideStatus) && (
+                                  <button
+                                    onClick={() => openAssignModal(booking)}
+                                    className="mt-1 text-xs text-indigo-600 hover:text-indigo-900 font-medium text-left"
+                                  >
+                                    Change Assignment
+                                  </button>
+                                )}
+                              </div>
+                            ) : booking.assignedDriverEmail || booking.assignedVehicleId ? (
                               <div className="flex flex-col space-y-1">
                                 {booking.driverDetails ? (
                                   <span className="text-xs font-medium text-gray-900">{booking.driverDetails.name}</span>
@@ -593,7 +789,7 @@ export default function AdminDashboard() {
                                   onClick={() => openAssignModal(booking)}
                                   className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                                 >
-                                  Assign Driver
+                                  Assign Details
                                 </button>
                               ) : (
                                 <span className="text-gray-400">Unassigned</span>
@@ -601,10 +797,41 @@ export default function AdminDashboard() {
                             )}
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                        {booking.rideStatus === 'Cancelled' && (
+                          <tr key={`${booking.id}-refund`} className="bg-red-50">
+                            <td colSpan={7} className="px-6 py-3 border-t border-red-100">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                  <h4 className="text-xs font-bold text-red-800 uppercase">Refund Details</h4>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-red-600 text-xs font-medium">Status:</span>
+                                    <select
+                                      value={booking.refundStatus || 'No Refund'}
+                                      onChange={(e) => handleUpdateStatus(booking.id, 'refundStatus', e.target.value)}
+                                      className="block w-32 pl-2 pr-8 py-1 text-xs border-red-300 focus:outline-none focus:ring-red-500 focus:border-red-500 rounded-md bg-white text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      disabled={booking.refundStatus === 'Processed'}
+                                    >
+                                      <option value="No Refund">No Refund</option>
+                                      <option value="Pending">Pending</option>
+                                      <option value="Processed">Processed</option>
+                                    </select>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-red-600 text-xs font-medium">Amount (₹):</span>
+                                  <div className="block w-24 pl-2 pr-2 py-1 text-xs border border-red-200 rounded-md bg-red-50 text-red-900 font-bold">
+                                    {booking.refundAmount !== undefined && booking.refundAmount !== null ? parseFloat(booking.refundAmount.toString()).toFixed(2) : '0.00'}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
                 </>
               )}
             </div>
@@ -980,11 +1207,19 @@ export default function AdminDashboard() {
                                 </div>
                                 <div className="flex flex-col items-end">
                                   <p className="text-sm font-semibold text-gray-900">
-                                    ₹{booking.fareAmount ? booking.fareAmount.toLocaleString() : '0'}
+                                    ₹{booking.refundStatus === 'Processed' && booking.refundAmount
+                                      ? (parseFloat(booking.fareAmount || '0') - parseFloat(booking.refundAmount.toString())).toLocaleString()
+                                      : booking.fareAmount ? booking.fareAmount.toLocaleString() : '0'}
                                   </p>
-                                  <p className="text-xs text-green-600 font-medium mt-1 bg-green-100 px-2 py-0.5 rounded-full">
-                                    Paid
-                                  </p>
+                                  {booking.refundStatus === 'Processed' && booking.refundAmount ? (
+                                    <p className="text-xs text-purple-600 font-medium mt-1 bg-purple-100 px-2 py-0.5 rounded-full">
+                                      Refunded (₹{parseFloat(booking.refundAmount.toString()).toLocaleString()})
+                                    </p>
+                                  ) : (
+                                    <p className="text-xs text-green-600 font-medium mt-1 bg-green-100 px-2 py-0.5 rounded-full">
+                                      Paid
+                                    </p>
+                                  )}
                                 </div>
                               </div>
                             </li>
@@ -1030,37 +1265,58 @@ export default function AdminDashboard() {
                       )}
                       
                       <div>
-                        <label htmlFor="driver" className="block text-sm font-medium text-gray-700">Select Driver</label>
-                        <select
-                          id="driver"
-                          value={selectedDriverId}
-                          onChange={(e) => setSelectedDriverId(e.target.value)}
-                          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white text-gray-900"
-                        >
-                          <option value="">-- Select a Driver --</option>
-                          {drivers.map(driver => (
-                            <option key={driver.id} value={driver.id}>
-                              {driver.name} ({driver.status})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                        {assignments.map((assignment, index) => (
+                          <div key={index} className="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50">
+                            <h4 className="text-sm font-medium text-gray-900 mb-3">Vehicle {index + 1}</h4>
+                            <div className="space-y-4">
+                              <div>
+                                <label htmlFor={`driver-${index}`} className="block text-sm font-medium text-gray-700">Select Driver</label>
+                                <select
+                                  id={`driver-${index}`}
+                                  value={assignment.driverId}
+                                  onChange={(e) => {
+                                    const newAssignments = [...assignments];
+                                    newAssignments[index].driverId = e.target.value;
+                                    setAssignments(newAssignments);
+                                  }}
+                                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white text-gray-900"
+                                >
+                                  <option value="">-- Select a Driver --</option>
+                                  {drivers.map(driver => {
+                                    return (
+                                      <option key={driver.id} value={driver.id} disabled={driver.status === 'Inactive'}>
+                                        {driver.name} ({driver.status})
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                              </div>
 
-                      <div>
-                        <label htmlFor="vehicle" className="block text-sm font-medium text-gray-700">Select Vehicle</label>
-                        <select
-                          id="vehicle"
-                          value={selectedVehicleId}
-                          onChange={(e) => setSelectedVehicleId(e.target.value)}
-                          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white text-gray-900"
-                        >
-                          <option value="">-- Select a Vehicle --</option>
-                          {vehicles.map(vehicle => (
-                            <option key={vehicle.vehicleId} value={vehicle.vehicleId}>
-                              {vehicle.name} - {vehicle.number} ({vehicle.status})
-                            </option>
-                          ))}
-                        </select>
+                              <div>
+                                <label htmlFor={`vehicle-${index}`} className="block text-sm font-medium text-gray-700">Select Vehicle</label>
+                                <select
+                                  id={`vehicle-${index}`}
+                                  value={assignment.vehicleId}
+                                  onChange={(e) => {
+                                    const newAssignments = [...assignments];
+                                    newAssignments[index].vehicleId = e.target.value;
+                                    setAssignments(newAssignments);
+                                  }}
+                                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white text-gray-900"
+                                >
+                                  <option value="">-- Select a Vehicle --</option>
+                                  {vehicles.map(vehicle => {
+                                    return (
+                                      <option key={vehicle.vehicleId} value={vehicle.vehicleId} disabled={vehicle.status === 'Maintenance'}>
+                                        {vehicle.name} - {vehicle.number} ({vehicle.status})
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -1069,7 +1325,7 @@ export default function AdminDashboard() {
               <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                 <button
                   type="button"
-                  disabled={assigning || !selectedDriverId || !selectedVehicleId}
+                  disabled={assigning || !assignments.every(a => a.driverId || a.vehicleId)}
                   onClick={handleAssignDriver}
                   className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
                 >

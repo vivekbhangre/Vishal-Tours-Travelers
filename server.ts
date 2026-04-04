@@ -5,7 +5,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { initSheets, getDoc, getCachedRows, invalidateCache } from './server/sheets.js';
+import { initSheets, getDoc, getCachedRows, invalidateCache, startCacheWarmer } from './server/sheets.js';
 import { setupFleetRoutes } from './server/fleet.js';
 import cityAutocompleteRouter from './server/cityAutocomplete.js';
 import PDFDocument from 'pdfkit';
@@ -32,7 +32,9 @@ async function startServer() {
   app.use('/api', cityAutocompleteRouter);
 
   // Initialize Google Sheets in the background to prevent blocking server startup
-  initSheets().catch(console.error);
+  initSheets().then(() => {
+    startCacheWarmer();
+  }).catch(console.error);
 
   // Socket.io for real-time updates
   io.on('connection', (socket) => {
@@ -381,18 +383,20 @@ async function startServer() {
         airportDetails: airportDetails ? JSON.stringify(airportDetails) : 'N/A',
         customRequirements: customRequirements || 'N/A',
         assignedDriverEmail: '',
-        assignedVehicleId: ''
+        assignedVehicleId: '',
+        assignments: '[]'
       };
 
       // Ensure headers include new fields
-      if (sheet.columnCount < 30) {
-        await sheet.resize({ rowCount: sheet.rowCount, columnCount: 30 });
+      if (sheet.columnCount < 33) {
+        await sheet.resize({ rowCount: sheet.rowCount, columnCount: 33 });
       }
       await sheet.setHeaderRow([
         'id', 'userId', 'userName', 'userEmail', 'fromLocation', 'toLocation', 'rideDate', 
         'rideType', 'numberOfPeople', 'rideStatus', 'paymentStatus', 'fareAmount', 'timestamp',
         'tripType', 'returnDate', 'destinations', 'numberOfDays', 'numberOfCars', 'estimatedKM', 'suggestedVehicle',
-        'isAC', 'weddingDetails', 'intercityDetails', 'airportDetails', 'customRequirements', 'assignedDriverEmail', 'assignedVehicleId'
+        'isAC', 'weddingDetails', 'intercityDetails', 'airportDetails', 'customRequirements', 'assignedDriverEmail', 'assignedVehicleId', 'assignments',
+        'refundStatus', 'refundAmount'
       ]);
 
       await sheet.addRow(newBooking);
@@ -423,18 +427,17 @@ async function startServer() {
       const vehiclesSheet = doc.sheetsByTitle['vehicles'];
       const driversSheet = doc.sheetsByTitle['drivers'];
       
-      const rows = await getCachedRows('Bookings', isForceRefresh);
-      const userRows = await getCachedRows('Users', isForceRefresh);
+      const [rows, userRows, vehicleRows, driverRows] = await Promise.all([
+        getCachedRows('Bookings', isForceRefresh),
+        getCachedRows('Users', isForceRefresh),
+        vehiclesSheet ? getCachedRows('vehicles', isForceRefresh) : Promise.resolve([]),
+        driversSheet ? getCachedRows('drivers', isForceRefresh) : Promise.resolve([])
+      ]);
       
       const userPhones: Record<string, string> = {};
       userRows.forEach(r => {
         userPhones[r.get('id')] = r.get('phone') || '';
       });
-
-      let vehicleRows: any[] = [];
-      let driverRows: any[] = [];
-      if (vehiclesSheet) vehicleRows = await getCachedRows('vehicles', isForceRefresh);
-      if (driversSheet) driverRows = await getCachedRows('drivers', isForceRefresh);
       
       const nowIST = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
 
@@ -445,36 +448,46 @@ async function startServer() {
           const rideStatus = r.get('rideStatus');
           const assignedDriverEmail = r.get('assignedDriverEmail');
           const assignedVehicleId = r.get('assignedVehicleId');
+          const assignmentsStr = r.get('assignments');
+          
+          let assignments: any[] = [];
+          if (assignmentsStr) {
+            try { assignments = JSON.parse(assignmentsStr); } catch(e) {}
+          } else if (assignedDriverEmail || assignedVehicleId) {
+            assignments = [{ driverEmail: assignedDriverEmail, vehicleId: assignedVehicleId }];
+          }
           
           let driverDetails = null;
           let vehicleDetails = null;
           let visibilityMessage = null;
           let showDetails = isUserAdmin;
 
-          if (assignedDriverEmail || assignedVehicleId) {
+          if (assignments.length > 0) {
             if (rideDateStr && (rideStatus === 'Assigned' || rideStatus === 'Ongoing' || rideStatus === 'Completed')) {
               showDetails = true;
             }
             
             if (showDetails) {
-              if (assignedDriverEmail) {
-                const driver = driverRows.find(d => d.get('email') === assignedDriverEmail);
-                if (driver) {
-                  driverDetails = {
-                    name: driver.get('name'),
-                    phone: driver.get('phone')
-                  };
+              assignments = assignments.map(a => {
+                let dDetails = null;
+                let vDetails = null;
+                if (a.driverEmail) {
+                  const driver = driverRows.find(d => d.get('email') === a.driverEmail);
+                  if (driver) dDetails = { name: driver.get('name'), phone: driver.get('phone') };
                 }
-              }
-              if (assignedVehicleId) {
-                const vehicle = vehicleRows.find(v => v.get('vehicleId') === assignedVehicleId);
-                if (vehicle) {
-                  vehicleDetails = {
-                    name: vehicle.get('vehicleName'),
-                    number: vehicle.get('vehicleNumber')
-                  };
+                if (a.vehicleId) {
+                  const vehicle = vehicleRows.find(v => v.get('vehicleId') === a.vehicleId);
+                  if (vehicle) vDetails = { name: vehicle.get('vehicleName'), number: vehicle.get('vehicleNumber') };
                 }
+                return { ...a, driverDetails: dDetails, vehicleDetails: vDetails };
+              });
+              
+              if (assignments[0]) {
+                driverDetails = assignments[0].driverDetails;
+                vehicleDetails = assignments[0].vehicleDetails;
               }
+            } else {
+              assignments = assignments.map(a => ({ driverEmail: a.driverEmail, vehicleId: a.vehicleId }));
             }
           }
 
@@ -484,7 +497,7 @@ async function startServer() {
                 visibilityMessage = "Vehicle information will be given to you before 1 hour of the start time.";
               }
             } else if (!driverDetails) {
-              visibilityMessage = "Driver information will be given to you before 1 hour of the departure time.";
+              visibilityMessage = "Driver & vehicle information will be given to you once the admin assigns these details to your ride.";
             }
           }
 
@@ -510,12 +523,19 @@ async function startServer() {
             rideStatus,
             paymentStatus: r.get('paymentStatus'),
             fareAmount: r.get('fareAmount'),
+            refundStatus: r.get('refundStatus'),
+            refundAmount: r.get('refundAmount') ? parseFloat(r.get('refundAmount')) : undefined,
             timestamp: r.get('timestamp'),
+            weddingDetails: (() => { try { return r.get('weddingDetails') && r.get('weddingDetails') !== 'N/A' ? JSON.parse(r.get('weddingDetails')) : undefined; } catch(e) { return undefined; } })(),
+            intercityDetails: (() => { try { return r.get('intercityDetails') && r.get('intercityDetails') !== 'N/A' ? JSON.parse(r.get('intercityDetails')) : undefined; } catch(e) { return undefined; } })(),
+            airportDetails: (() => { try { return r.get('airportDetails') && r.get('airportDetails') !== 'N/A' ? JSON.parse(r.get('airportDetails')) : undefined; } catch(e) { return undefined; } })(),
+            customRequirements: r.get('customRequirements'),
             driverDetails,
             vehicleDetails,
             visibilityMessage,
             assignedDriverEmail: showDetails ? assignedDriverEmail : undefined,
-            assignedVehicleId: showDetails ? assignedVehicleId : undefined
+            assignedVehicleId: showDetails ? assignedVehicleId : undefined,
+            assignments: showDetails ? assignments : undefined
           };
         });
 
@@ -535,7 +555,7 @@ async function startServer() {
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
     const { id } = req.params;
-    const { rideStatus, paymentStatus } = req.body;
+    const { rideStatus, paymentStatus, refundStatus, refundAmount, isAdmin } = req.body;
     
     try {
       const sheet = doc.sheetsByTitle['Bookings'];
@@ -546,7 +566,7 @@ async function startServer() {
         return res.status(404).json({ error: 'Booking not found' });
       }
 
-      if (rideStatus === 'Cancelled') {
+      if (rideStatus === 'Cancelled' && !isAdmin) {
         const rideDateStr = row.get('rideDate');
         if (rideDateStr) {
           const rideTime = new Date(rideDateStr);
@@ -567,51 +587,37 @@ async function startServer() {
 
       const oldPaymentStatus = row.get('paymentStatus');
       const oldRideStatus = row.get('rideStatus');
+      const oldRefundStatus = row.get('refundStatus');
 
       if (oldRideStatus === 'Completed' && oldPaymentStatus === 'Paid') {
         return res.status(400).json({ error: 'Cannot modify a completed and paid ride.' });
       }
 
+      if (oldRefundStatus === 'Processed' && refundStatus && refundStatus !== 'Processed') {
+        return res.status(400).json({ error: 'Cannot change refund status once it is Processed.' });
+      }
+
+      console.log(`Updating booking ${id}:`, { rideStatus, paymentStatus, refundStatus, refundAmount });
+
       if (rideStatus) row.set('rideStatus', rideStatus);
       if (paymentStatus) row.set('paymentStatus', paymentStatus);
+      if (refundStatus !== undefined) row.set('refundStatus', refundStatus);
+      if (refundAmount !== undefined) row.set('refundAmount', refundAmount.toString());
       
+      // Ensure headers include new fields before saving
+      if (sheet.columnCount < 33) {
+        await sheet.resize({ rowCount: sheet.rowCount, columnCount: 33 });
+      }
+      await sheet.setHeaderRow([
+        'id', 'userId', 'userName', 'userEmail', 'fromLocation', 'toLocation', 'rideDate', 
+        'rideType', 'numberOfPeople', 'rideStatus', 'paymentStatus', 'fareAmount', 'timestamp',
+        'tripType', 'returnDate', 'destinations', 'numberOfDays', 'numberOfCars', 'estimatedKM', 'suggestedVehicle',
+        'isAC', 'weddingDetails', 'intercityDetails', 'airportDetails', 'customRequirements', 'assignedDriverEmail', 'assignedVehicleId', 'assignments',
+        'refundStatus', 'refundAmount'
+      ]);
+
       await row.save();
       invalidateCache('Bookings');
-
-      // Automatic Status Reset for Driver and Vehicle
-      if (rideStatus && (rideStatus === 'Completed' || rideStatus === 'Cancelled') && oldRideStatus !== rideStatus) {
-        try {
-          const assignedDriverEmail = row.get('assignedDriverEmail');
-          const assignedVehicleId = row.get('assignedVehicleId');
-
-          if (assignedDriverEmail || assignedVehicleId) {
-            const driversSheet = doc.sheetsByTitle['drivers'];
-            const vehiclesSheet = doc.sheetsByTitle['vehicles'];
-
-            if (assignedDriverEmail && driversSheet) {
-              const driverRows = await getCachedRows('drivers');
-              const driverRow = driverRows.find(r => r.get('email') === assignedDriverEmail);
-              if (driverRow) {
-                driverRow.set('status', 'Available');
-                await driverRow.save();
-                invalidateCache('drivers');
-              }
-            }
-
-            if (assignedVehicleId && vehiclesSheet) {
-              const vehicleRows = await getCachedRows('vehicles');
-              const vehicleRow = vehicleRows.find(r => r.get('vehicleId') === assignedVehicleId);
-              if (vehicleRow) {
-                vehicleRow.set('status', 'Available');
-                await vehicleRow.save();
-                invalidateCache('vehicles');
-              }
-            }
-          }
-        } catch (resetError) {
-          console.error('Failed to reset driver/vehicle status:', resetError);
-        }
-      }
 
       // Log revenue if payment status changed to Paid
       if (paymentStatus === 'Paid' && oldPaymentStatus !== 'Paid') {
@@ -644,6 +650,46 @@ async function startServer() {
         }
       }
 
+      // Deduct revenue if refund status changed to Processed
+      console.log(`Checking refund deduction: refundStatus=${refundStatus}, oldRefundStatus=${oldRefundStatus}`);
+      if (refundStatus === 'Processed' && oldRefundStatus !== 'Processed') {
+        try {
+          const refundAmt = parseFloat(row.get('refundAmount') || '0');
+          console.log(`Deducting refund amount: ${refundAmt}`);
+          if (refundAmt > 0) {
+            const date = new Date();
+            const month = date.toLocaleString('default', { month: 'short' });
+            const year = date.getFullYear().toString();
+            
+            const revenueSheet = doc.sheetsByTitle['Revenue Logs'];
+            const revRows = await getCachedRows('Revenue Logs');
+            const revRow = revRows.find(r => r.get('month') === month && r.get('year') === year);
+            
+            if (revRow) {
+              const currentAmount = parseFloat(revRow.get('amount') || '0');
+              console.log(`Updating existing revenue row: currentAmount=${currentAmount}, newAmount=${currentAmount - refundAmt}`);
+              revRow.set('amount', currentAmount - refundAmt);
+              await revRow.save();
+            } else {
+              console.log(`Creating new revenue row for refund: amount=${-refundAmt}`);
+              await revenueSheet.addRow({
+                id: Date.now().toString(),
+                month,
+                year,
+                amount: -refundAmt,
+                timestamp: new Date().toISOString()
+              });
+            }
+            invalidateCache('Revenue Logs');
+            
+            // Also notify clients about revenue update
+            io.emit('revenue:updated');
+          }
+        } catch (revError) {
+          console.error('Failed to deduct revenue for refund:', revError);
+        }
+      }
+
       const updatedBooking = {
         id: row.get('id'),
         userId: row.get('userId'),
@@ -654,8 +700,12 @@ async function startServer() {
         rideStatus: row.get('rideStatus'),
         paymentStatus: row.get('paymentStatus'),
         fareAmount: row.get('fareAmount'),
+        refundStatus: row.get('refundStatus'),
+        refundAmount: row.get('refundAmount') ? parseFloat(row.get('refundAmount')) : undefined,
         timestamp: row.get('timestamp')
       };
+
+      console.log('Broadcasting updatedBooking:', updatedBooking);
 
       // Notify all clients about the updated booking
       io.emit('booking:updated', updatedBooking);
@@ -793,7 +843,13 @@ async function startServer() {
       let waypoints: { lat: number, lon: number }[] = [];
       
       if (destinations) {
-        const destArray = JSON.parse(destinations as string);
+        let destArray = [];
+        try {
+          destArray = JSON.parse(destinations as string);
+        } catch(e) {
+          // If it's not JSON, assume it's a single destination string
+          destArray = [destinations as string];
+        }
         for (const dest of destArray) {
           waypoints.push(await getCoordinates(dest));
         }

@@ -81,7 +81,7 @@ export default function CustomerDashboard() {
   const [rideTimeMinute, setRideTimeMinute] = useState<string>(() => getInitialDateTime().minute);
   const [rideTimeAmPm, setRideTimeAmPm] = useState<string>(() => getInitialDateTime().ampm);
   const [rideType, setRideType] = useState('Intercity');
-  const [numberOfPeople, setNumberOfPeople] = useState(1);
+  const [numberOfPeople, setNumberOfPeople] = useState<number | ''>(1);
   const [bookingError, setBookingError] = useState('');
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingSuccessData, setBookingSuccessData] = useState<any>(null);
@@ -354,7 +354,13 @@ export default function CustomerDashboard() {
 
         const perKmRate = isAC ? 14 : 13;
         const basePrice = totalDistance * perKmRate;
-        const finalPrice = Math.ceil(basePrice / 100) * 100;
+        let finalPrice = Math.ceil(basePrice / 100) * 100;
+
+        if (tripType === 'Wedding') {
+          finalPrice *= parseInt(vehiclesRequired) || 1;
+        } else if (tripType === 'Tour') {
+          finalPrice *= Number(numberOfCars) || 1;
+        }
 
         setEstimatedKM(parseFloat(totalDistance.toFixed(2)));
         setEstimatedPrice(finalPrice);
@@ -369,7 +375,7 @@ export default function CustomerDashboard() {
 
     const timeoutId = setTimeout(calculateDistance, 500);
     return () => clearTimeout(timeoutId);
-  }, [fromLocationData, toLocationData, destinationData, tripType, numberOfDays, numberOfCars, isAC]);
+  }, [fromLocationData, toLocationData, destinationData, tripType, numberOfDays, numberOfCars, isAC, vehiclesRequired]);
 
   useEffect(() => {
     let recommended = '';
@@ -557,11 +563,21 @@ export default function CustomerDashboard() {
       }
 
       const vehicleObj = AVAILABLE_VEHICLES.find(v => v.name === selectedVehicle);
-      if (vehicleObj && vehicleObj.quantity <= 0) {
-        setBookingError('The selected vehicle is currently unavailable.');
-        setBookingLoading(false);
-        return;
+      if (vehicleObj) {
+        if (vehicleObj.quantity <= 0) {
+          setBookingError('The selected vehicle is currently unavailable.');
+          setBookingLoading(false);
+          return;
+        }
+        
+        const requestedCars = tripType === 'Wedding' ? parseInt(vehiclesRequired) || 1 : (tripType === 'Tour' || tripType === 'Car Renting' ? Number(numberOfCars) || 1 : 1);
+        if (requestedCars > vehicleObj.quantity) {
+          setBookingError(`Only ${vehicleObj.quantity} ${vehicleObj.name}(s) available.`);
+          setBookingLoading(false);
+          return;
+        }
       }
+      
       if (vehicleObj && vehicleObj.capacity < numberOfPeople && !confirmCapacity && tripType !== 'Car Renting') {
         setBookingError('Please confirm that you want to proceed with a vehicle that may not accommodate all passengers.');
         setBookingLoading(false);
@@ -575,7 +591,13 @@ export default function CustomerDashboard() {
       if (tripType === 'Car Renting') {
         finalEstimatedPrice = (days * 2000 * cars);
       } else {
-        finalEstimatedPrice = estimatedPrice || (estimatedKM * (isAC ? 14 : 13));
+        let fallbackPrice = estimatedKM * (isAC ? 14 : 13);
+        if (tripType === 'Wedding') {
+          fallbackPrice *= parseInt(vehiclesRequired) || 1;
+        } else if (tripType === 'Tour') {
+          fallbackPrice *= cars;
+        }
+        finalEstimatedPrice = estimatedPrice || fallbackPrice;
       }
 
       const formattedRideDate = `${rideDate} ${rideTimeHour}:${rideTimeMinute} ${rideTimeAmPm}`;
@@ -628,7 +650,7 @@ export default function CustomerDashboard() {
         numberOfPeople,
         fareAmount: finalEstimatedPrice,
         numberOfDays: tripType === 'Car Renting' ? days : 'N/A',
-        numberOfCars: tripType === 'Car Renting' ? cars : 'N/A',
+        numberOfCars: tripType === 'Car Renting' ? cars : (tripType === 'Tour' ? cars : 'N/A'),
         estimatedKM: tripType !== 'Car Renting' ? estimatedKM : 'N/A',
         suggestedVehicle: selectedVehicle,
         isAC,
@@ -731,21 +753,44 @@ export default function CustomerDashboard() {
     }
   };
 
-  const handleCancel = async (id: string) => {
+  const handleCancel = async (id: string, refundInfo: any) => {
     setCancelMessage(null);
+    
+    // 1. Optimistic UI Update: Save previous state in case we need to revert
+    const previousBookings = [...bookings];
+    
+    const payload: any = { rideStatus: "Cancelled" };
+    payload.refundStatus = "No Refund";
+    
+    if (refundInfo && refundInfo.refundAmount > 0) {
+      payload.refundAmount = refundInfo.refundAmount;
+    } else {
+      payload.refundAmount = 0;
+    }
+
+    // Instantly update the UI
+    setBookings(prevBookings => prevBookings.map(b => {
+      if (b.id === id) {
+        return { ...b, rideStatus: "Cancelled", refundStatus: payload.refundStatus, refundAmount: payload.refundAmount };
+      }
+      return b;
+    }));
+
     try {
       const response = await fetch(`/api/bookings/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ rideStatus: "Cancelled" })
+        body: JSON.stringify(payload)
       });
 
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         const data = await response.json();
         if (!response.ok) {
+          // Revert Optimistic Update
+          setBookings(previousBookings);
           setCancelMessage({ id, text: data.message || data.error || "Failed to cancel ride", type: 'error' });
           return;
         }
@@ -753,17 +798,46 @@ export default function CustomerDashboard() {
         const text = await response.text();
         if (!response.ok) {
           console.error("Non-JSON error response:", text);
+          // Revert Optimistic Update
+          setBookings(previousBookings);
           setCancelMessage({ id, text: "Failed to cancel ride. Server returned an invalid response.", type: 'error' });
           return;
         }
       }
 
       setCancelMessage({ id, text: "Ride cancelled successfully", type: 'success' });
+      
+      // Automatically update to Pending after 10 seconds if refund is applicable
+      if (refundInfo && refundInfo.refundAmount > 0) {
+        setTimeout(async () => {
+          // Optimistic UI for the Pending update
+          setBookings(prevBookings => prevBookings.map(b => {
+            if (b.id === id) {
+              return { ...b, refundStatus: "Pending" };
+            }
+            return b;
+          }));
+          
+          try {
+            await fetch(`/api/bookings/${id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ refundStatus: "Pending" })
+            });
+          } catch (err) {
+            console.error("Failed to automatically update refund status to Pending:", err);
+            // We could revert here, but it's a background task, so we'll just fetch fresh data later
+          }
+        }, 10000);
+      }
+
       setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+        setCancelMessage(null);
+      }, 3000);
     } catch (error) {
       console.error("Error cancelling ride:", error);
+      // Revert Optimistic Update
+      setBookings(previousBookings);
       setCancelMessage({ id, text: "An error occurred while cancelling the ride. Please try again.", type: 'error' });
     }
   };
@@ -805,7 +879,10 @@ export default function CustomerDashboard() {
     return diffInHours > 2;
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string, refundStatus?: string) => {
+    if (status === 'Cancelled' && refundStatus === 'Processed') {
+      return 'bg-purple-50 text-purple-600 border border-purple-100';
+    }
     switch (status) {
       case 'Pending': return 'bg-yellow-50 text-yellow-600 border border-yellow-100';
       case 'Confirmed': return 'bg-indigo-50 text-indigo-600 border border-indigo-100';
@@ -1335,7 +1412,7 @@ export default function CustomerDashboard() {
                               min="1"
                               max="30"
                               value={numberOfDays}
-                              onChange={(e) => setNumberOfDays(parseInt(e.target.value) || 1)}
+                              onChange={(e) => setNumberOfDays(e.target.value === '' ? '' : parseInt(e.target.value))}
                               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             />
                           </div>
@@ -1346,9 +1423,9 @@ export default function CustomerDashboard() {
                               id="numberOfCars"
                               required={tripType === 'Car Renting'}
                               min="1"
-                              max="10"
+                              max={AVAILABLE_VEHICLES.find(v => v.name === selectedVehicle)?.quantity || 10}
                               value={numberOfCars}
-                              onChange={(e) => setNumberOfCars(parseInt(e.target.value) || 1)}
+                              onChange={(e) => setNumberOfCars(e.target.value === '' ? '' : parseInt(e.target.value))}
                               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             />
                           </div>
@@ -1362,7 +1439,7 @@ export default function CustomerDashboard() {
                           >
                             {AVAILABLE_VEHICLES.map(v => (
                               <option key={v.name} value={v.name} disabled={v.quantity <= 0}>
-                                {v.name} (Up to {v.capacity} passengers) - {v.quantity > 0 ? 'Available' : 'Currently Unavailable'}
+                                {v.name} (Up to {v.capacity} passengers) - {v.quantity > 0 ? `Available (${v.quantity} left)` : 'Currently Unavailable'}
                               </option>
                             ))}
                           </select>
@@ -1401,7 +1478,7 @@ export default function CustomerDashboard() {
                           min="1"
                           max="50"
                           value={numberOfPeople}
-                          onChange={(e) => setNumberOfPeople(parseInt(e.target.value))}
+                          onChange={(e) => setNumberOfPeople(e.target.value === '' ? '' : parseInt(e.target.value))}
                           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                         />
                       </div>
@@ -1425,7 +1502,7 @@ export default function CustomerDashboard() {
                             >
                               {AVAILABLE_VEHICLES.map(v => (
                                 <option key={v.name} value={v.name} disabled={v.quantity <= 0}>
-                                  {v.name} (Up to {v.capacity} passengers) - {v.quantity > 0 ? 'Available' : 'Currently Unavailable'}
+                                  {v.name} (Up to {v.capacity} passengers) - {v.quantity > 0 ? `Available (${v.quantity} left)` : 'Currently Unavailable'}
                                 </option>
                               ))}
                             </select>
@@ -1444,6 +1521,20 @@ export default function CustomerDashboard() {
                                   />
                                   I confirm I want to proceed with this vehicle
                                 </label>
+                              </div>
+                            )}
+
+                            {tripType === 'Tour' && (
+                              <div className="mt-4">
+                                <label className="block text-sm font-medium text-gray-700">Number of Vehicles</label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max={AVAILABLE_VEHICLES.find(v => v.name === selectedVehicle)?.quantity || 10}
+                                  value={numberOfCars}
+                                  onChange={(e) => setNumberOfCars(e.target.value === '' ? '' : parseInt(e.target.value))}
+                                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                />
                               </div>
                             )}
 
@@ -1502,12 +1593,12 @@ export default function CustomerDashboard() {
                         </div>
                         <div className="flex gap-6">
                           <div className="flex-1">
-                            <label htmlFor="vehiclesRequired" className="block text-sm font-medium text-gray-700">Number of Vehicles (Max 10)</label>
+                            <label htmlFor="vehiclesRequired" className="block text-sm font-medium text-gray-700">Number of Vehicles</label>
                             <input
                               type="number"
                               id="vehiclesRequired"
                               min="1"
-                              max="10"
+                              max={AVAILABLE_VEHICLES.find(v => v.name === selectedVehicle)?.quantity || 10}
                               value={vehiclesRequired}
                               onChange={(e) => {
                                 const valStr = e.target.value;
@@ -1516,8 +1607,9 @@ export default function CustomerDashboard() {
                                   return;
                                 }
                                 const val = parseInt(valStr);
+                                const maxQty = AVAILABLE_VEHICLES.find(v => v.name === selectedVehicle)?.quantity || 10;
                                 if (!isNaN(val)) {
-                                  if (val > 10) setVehiclesRequired('10');
+                                  if (val > maxQty) setVehiclesRequired(maxQty.toString());
                                   else if (val < 1) setVehiclesRequired('1');
                                   else setVehiclesRequired(val.toString());
                                 }
@@ -1706,8 +1798,8 @@ export default function CustomerDashboard() {
                               : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
                           </h4>
                           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.rideStatus)}`}>
-                              {booking.rideStatus}
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.rideStatus, booking.refundStatus)}`}>
+                              {booking.rideStatus === 'Cancelled' && booking.refundStatus === 'Processed' ? 'Refunded' : booking.rideStatus}
                             </span>
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPaymentColor(booking.paymentStatus)}`}>
                               {booking.paymentStatus}
@@ -1756,10 +1848,68 @@ export default function CustomerDashboard() {
                                   {booking.numberOfPeople} Passenger{booking.numberOfPeople > 1 ? 's' : ''}
                                 </div>
                               )}
+                              {booking.tripType === 'Tour' && (
+                                <div className="flex items-center gap-1.5">
+                                  <Car className="w-4 h-4 text-green-400" />
+                                  {booking.numberOfCars} Vehicle{booking.numberOfCars > 1 ? 's' : ''}
+                                </div>
+                              )}
                               </div>
+                              
+                              {booking.tripType === 'Wedding' && booking.weddingDetails && (
+                                <div className="mb-6 p-4 bg-white rounded-lg border border-pink-100 shadow-sm">
+                                  <h5 className="text-sm font-bold text-pink-800 mb-3 flex items-center gap-2">
+                                    <span className="text-lg">💍</span> Wedding Details
+                                  </h5>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                      <span className="text-gray-500 block text-xs uppercase tracking-wider mb-1">Event Location</span>
+                                      <span className="font-medium text-gray-900">{booking.weddingDetails.eventLocation}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-gray-500 block text-xs uppercase tracking-wider mb-1">Vehicles Required</span>
+                                      <span className="font-medium text-gray-900">{booking.weddingDetails.vehiclesRequired}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-gray-500 block text-xs uppercase tracking-wider mb-1">Decoration</span>
+                                      <span className="font-medium text-gray-900">{booking.weddingDetails.decorationRequired}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
 
                               {/* Driver Details Section */}
-                              {booking.driverDetails ? (
+                              {booking.assignments && booking.assignments.length > 0 ? (
+                                <div className="mb-6 space-y-4">
+                                  {booking.assignments.map((assignment: any, idx: number) => (
+                                    <div key={idx} className="p-4 bg-white rounded-lg border border-indigo-100 shadow-sm">
+                                      <h5 className="text-sm font-semibold text-indigo-900 mb-2">
+                                        {booking.assignments.length > 1 ? `Vehicle ${idx + 1} Details` : 'Driver & Vehicle Details'}
+                                      </h5>
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {assignment.driverDetails && (
+                                          <>
+                                            <div>
+                                              <p className="text-xs text-indigo-700 uppercase tracking-wider">Driver Name</p>
+                                              <p className="text-sm font-medium text-indigo-900">{assignment.driverDetails.name}</p>
+                                            </div>
+                                            <div>
+                                              <p className="text-xs text-indigo-700 uppercase tracking-wider">Phone Number</p>
+                                              <p className="text-sm font-medium text-indigo-900">{assignment.driverDetails.phone}</p>
+                                            </div>
+                                          </>
+                                        )}
+                                        {assignment.vehicleDetails && (
+                                          <div className="sm:col-span-2">
+                                            <p className="text-xs text-indigo-700 uppercase tracking-wider">Vehicle Assigned</p>
+                                            <p className="text-sm font-medium text-indigo-900">{assignment.vehicleDetails.name} ({assignment.vehicleDetails.number})</p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : booking.driverDetails ? (
                                 <div className="mb-6 p-4 bg-white rounded-lg border border-indigo-100 shadow-sm">
                                   <h5 className="text-sm font-semibold text-indigo-900 mb-2">Driver & Vehicle Details</h5>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1788,6 +1938,22 @@ export default function CustomerDashboard() {
                                 </div>
                               ) : null}
 
+                              {booking.rideStatus === 'Cancelled' && (
+                                <div className="mb-6 p-4 bg-red-50 rounded-lg border border-red-100 shadow-sm">
+                                  <h5 className="text-sm font-semibold text-red-900 mb-2">Refund Details</h5>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <p className="text-xs text-red-700 uppercase tracking-wider">Status</p>
+                                      <p className="text-sm font-medium text-red-900">{booking.refundStatus || 'No Refund'}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-red-700 uppercase tracking-wider">Amount</p>
+                                      <p className="text-sm font-medium text-red-900">₹{booking.refundAmount?.toFixed(2) || '0.00'}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
                               <div className="flex justify-between items-end">
                                 <div>
                                   <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Booking ID</p>
@@ -1806,7 +1972,7 @@ export default function CustomerDashboard() {
                                     {(booking.rideStatus === 'Pending' || booking.rideStatus === 'Confirmed' || booking.rideStatus === 'Assigned') && (
                                       <button
                                         onClick={() => {
-                                          const refundInfo = calculateRefund(booking.rideDate, booking.fareAmount, booking.numberOfDays);
+                                          const refundInfo = calculateRefund(booking.rideDate, parseFloat(booking.fareAmount || '0'), booking.numberOfDays);
                                           setCancelModal({ isOpen: true, booking, refundInfo });
                                         }}
                                         className="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-red-100 text-red-600 hover:bg-red-200"
@@ -1894,8 +2060,10 @@ export default function CustomerDashboard() {
                   <button
                     type="button"
                     onClick={() => {
-                      handleCancel(cancelModal.booking.id);
-                      setCancelModal({ isOpen: false, booking: null, refundInfo: null });
+                      if (cancelModal.booking) {
+                        handleCancel(cancelModal.booking.id, cancelModal.refundInfo);
+                        setCancelModal({ isOpen: false, booking: null, refundInfo: null });
+                      }
                     }}
                     className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-xl hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                   >
@@ -2073,7 +2241,7 @@ export default function CustomerDashboard() {
                   </div>
                   <div className="p-3 bg-blue-50 text-blue-700 rounded-lg text-sm border border-blue-100 flex items-start gap-2 text-left">
                     <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                    <p>Driver information will be given to you before 1 hour of the departure time.</p>
+                    <p>Driver & vehicle information will be given to you once the admin assigns these details to your ride.</p>
                   </div>
                 </div>
 

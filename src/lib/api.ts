@@ -162,11 +162,12 @@ export const api = {
     return res.json();
   },
 
-  async assignDriver(bookingId: string, driverId: string, vehicleId: string) {
+  async assignDriver(bookingId: string, driverId: string, vehicleId: string, assignments?: {driverId: string, vehicleId: string}[]) {
+    const payload = assignments ? { assignments } : { driverId, vehicleId };
     const res = await fetch(`${API_URL}/bookings/${bookingId}/assign`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ driverId, vehicleId }),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) {
       const error = await res.json();

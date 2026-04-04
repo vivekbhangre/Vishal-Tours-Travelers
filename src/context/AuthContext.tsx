@@ -24,7 +24,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('user');
     
     const storedUser = sessionStorage.getItem('user');
-    return storedUser ? JSON.parse(storedUser) : null;
+    try {
+      return storedUser ? JSON.parse(storedUser) : null;
+    } catch (e) {
+      sessionStorage.removeItem('user');
+      return null;
+    }
   });
 
   const login = (userData: User) => {

@@ -173,13 +173,21 @@ export default function StaffDashboard() {
                           <div>
                             <div className="text-sm font-medium text-gray-900">{booking.userName}</div>
                             <div className="text-sm text-gray-500 mt-1">
-                              {booking.tripType === 'Tour' 
+                              {booking.tripType === 'Car Renting'
+                                ? `Car Rental: ${booking.numberOfDays} days, ${booking.numberOfCars} cars`
+                                : booking.tripType === 'Tour' 
                                 ? `${booking.fromLocation} \u2192 ${booking.destinations}`
                                 : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
                             </div>
                             <div className="text-xs text-indigo-600 mt-1 font-medium">
                               {booking.suggestedVehicle || 'Sedan'} {booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
                             </div>
+                            {booking.tripType === 'Tour' && <div className="text-xs text-indigo-600 mt-1">{booking.numberOfCars} Vehicle(s)</div>}
+                            {booking.tripType === 'Wedding' && booking.weddingDetails && (
+                              <div className="text-xs text-pink-600 mt-1">
+                                💍 {booking.weddingDetails.vehiclesRequired} Vehicle(s)
+                              </div>
+                            )}
                           </div>
                           <div className="text-xs text-gray-500 text-right">
                             {format(new Date(booking.rideDate), 'MMM d, yyyy')}
@@ -261,7 +269,9 @@ export default function StaffDashboard() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm text-gray-900">
-                                {booking.tripType === 'Tour' 
+                                {booking.tripType === 'Car Renting'
+                                  ? `Car Rental: ${booking.numberOfDays} days, ${booking.numberOfCars} cars`
+                                  : booking.tripType === 'Tour' 
                                   ? `${booking.fromLocation} \u2192 ${booking.destinations}`
                                   : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
                               </div>
@@ -269,6 +279,12 @@ export default function StaffDashboard() {
                               <div className="text-xs text-indigo-600 mt-1 font-medium">
                                 {booking.suggestedVehicle || 'Sedan'} {booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
                               </div>
+                              {booking.tripType === 'Tour' && <div className="text-xs text-indigo-600 mt-1">{booking.numberOfCars} Vehicle(s)</div>}
+                              {booking.tripType === 'Wedding' && booking.weddingDetails && (
+                                <div className="text-xs text-pink-600 mt-1">
+                                  💍 {booking.weddingDetails.vehiclesRequired} Vehicle(s)
+                                </div>
+                              )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <select
