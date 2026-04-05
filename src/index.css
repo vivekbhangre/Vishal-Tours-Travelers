@@ -1,7 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Outfit", ui-sans-serif, system-ui, sans-serif;
   
   --color-white: var(--theme-white);
   --color-gray-50: var(--theme-gray-50);
@@ -41,22 +43,22 @@
 @layer base {
   :root {
     --theme-white: #ffffff;
-    --theme-gray-50: #ffffff;
-    --theme-gray-100: #f3f4f6;
-    --theme-gray-200: #e5e7eb;
-    --theme-gray-300: #d1d5db;
-    --theme-gray-400: #9ca3af;
-    --theme-gray-500: #6b7280;
-    --theme-gray-600: #4b5563;
-    --theme-gray-700: #374151;
-    --theme-gray-800: #1f2937;
-    --theme-gray-900: #1a1a1a;
+    --theme-gray-50: #fafafa;
+    --theme-gray-100: #f4f4f5;
+    --theme-gray-200: #e4e4e7;
+    --theme-gray-300: #d4d4d8;
+    --theme-gray-400: #a1a1aa;
+    --theme-gray-500: #71717a;
+    --theme-gray-600: #52525b;
+    --theme-gray-700: #3f3f46;
+    --theme-gray-800: #27272a;
+    --theme-gray-900: #18181b;
     
     --theme-indigo-50: #eef2ff;
     --theme-indigo-100: #e0e7ff;
-    --theme-indigo-500: #3b82f6;
-    --theme-indigo-600: #2563eb;
-    --theme-indigo-700: #1d4ed8;
+    --theme-indigo-500: #6366f1;
+    --theme-indigo-600: #4f46e5;
+    --theme-indigo-700: #4338ca;
 
     --theme-red-50: #fef2f2;
     --theme-red-100: #fee2e2;
@@ -76,23 +78,23 @@
   }
 
   .dark {
-    --theme-white: #1e293b;
-    --theme-gray-50: #0f172a;
-    --theme-gray-100: #1e293b;
-    --theme-gray-200: #334155;
-    --theme-gray-300: #475569;
-    --theme-gray-400: #94a3b8;
-    --theme-gray-500: #94a3b8;
-    --theme-gray-600: #cbd5e1;
-    --theme-gray-700: #e2e8f0;
-    --theme-gray-800: #f1f5f9;
-    --theme-gray-900: #f1f5f9;
+    --theme-white: #020617;
+    --theme-gray-50: #020617;
+    --theme-gray-100: #0f172a;
+    --theme-gray-200: #1e293b;
+    --theme-gray-300: #334155;
+    --theme-gray-400: #475569;
+    --theme-gray-500: #64748b;
+    --theme-gray-600: #94a3b8;
+    --theme-gray-700: #cbd5e1;
+    --theme-gray-800: #e2e8f0;
+    --theme-gray-900: #f8fafc;
     
-    --theme-indigo-50: #1e293b;
-    --theme-indigo-100: #334155;
-    --theme-indigo-500: #60a5fa;
-    --theme-indigo-600: #3b82f6;
-    --theme-indigo-700: #2563eb;
+    --theme-indigo-50: #020617;
+    --theme-indigo-100: #0f172a;
+    --theme-indigo-500: #818cf8;
+    --theme-indigo-600: #6366f1;
+    --theme-indigo-700: #4f46e5;
 
     --theme-red-50: #450a0a;
     --theme-red-100: #7f1d1d;
@@ -112,12 +114,21 @@
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 transition-colors duration-300 ease-in-out;
+    @apply bg-gray-50 text-gray-900 transition-colors duration-300 ease-in-out font-sans;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
   }
 
   /* Hide default browser password reveal button */
   input[type="password"]::-ms-reveal,
   input[type="password"]::-ms-clear {
     display: none;
+  }
+  
+  /* Leaflet Map Fixes */
+  .leaflet-container {
+    @apply rounded-xl z-0;
   }
 }

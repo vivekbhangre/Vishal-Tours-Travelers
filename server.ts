@@ -319,7 +319,7 @@ async function startServer() {
     const { 
       userId, userName, userEmail, fromLocation, toLocation, rideDate, rideType, numberOfPeople, fareAmount,
       tripType, returnDate, weddingDetails, intercityDetails, airportDetails, customRequirements,
-      destinations, numberOfDays, numberOfCars, estimatedKM, suggestedVehicle, isAC
+      destinations, numberOfDays, numberOfCars, estimatedKM, suggestedVehicle, isAC, routeGeometry
     } = req.body;
     
     try {
@@ -378,6 +378,7 @@ async function startServer() {
         estimatedKM: estimatedKM || 'N/A',
         suggestedVehicle: suggestedVehicle || 'N/A',
         isAC: isAC ? 'Yes' : 'No',
+        routeGeometry: routeGeometry || '[]',
         weddingDetails: weddingDetails ? JSON.stringify(weddingDetails) : 'N/A',
         intercityDetails: intercityDetails ? JSON.stringify(intercityDetails) : 'N/A',
         airportDetails: airportDetails ? JSON.stringify(airportDetails) : 'N/A',
@@ -395,7 +396,7 @@ async function startServer() {
         'id', 'userId', 'userName', 'userEmail', 'fromLocation', 'toLocation', 'rideDate', 
         'rideType', 'numberOfPeople', 'rideStatus', 'paymentStatus', 'fareAmount', 'timestamp',
         'tripType', 'returnDate', 'destinations', 'numberOfDays', 'numberOfCars', 'estimatedKM', 'suggestedVehicle',
-        'isAC', 'weddingDetails', 'intercityDetails', 'airportDetails', 'customRequirements', 'assignedDriverEmail', 'assignedVehicleId', 'assignments',
+        'isAC', 'routeGeometry', 'weddingDetails', 'intercityDetails', 'airportDetails', 'customRequirements', 'assignedDriverEmail', 'assignedVehicleId', 'assignments',
         'refundStatus', 'refundAmount'
       ]);
 
@@ -520,6 +521,7 @@ async function startServer() {
             estimatedKM: r.get('estimatedKM'),
             suggestedVehicle: r.get('suggestedVehicle'),
             isAC: r.get('isAC'),
+            routeGeometry: (() => { try { return r.get('routeGeometry') && r.get('routeGeometry') !== '[]' ? JSON.parse(r.get('routeGeometry')) : undefined; } catch(e) { return undefined; } })(),
             rideStatus,
             paymentStatus: r.get('paymentStatus'),
             fareAmount: r.get('fareAmount'),

@@ -5,9 +5,10 @@ import { api, socket } from '../lib/api';
 import { validateEmail, validateName, validatePhone } from '../lib/validation';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle, Calendar, Clock, Car, Users, MapPin, Grid, RefreshCw, Info, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle, Calendar, Clock, Car, Users, MapPin, Grid, RefreshCw, Info, ChevronDown, ChevronUp, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import debounce from 'lodash.debounce';
+import InteractiveMap from '../components/InteractiveMap';
 
 interface LocationData {
   name: string;
@@ -948,9 +949,10 @@ export default function CustomerDashboard() {
           </div>
           
           {activeTab === 'dashboard' ? (
-            <div className="max-w-3xl mx-auto flex flex-col gap-8">
-              {/* Profile Section */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 flex flex-col gap-8">
+                {/* Profile Section */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                 <div className={`flex justify-between items-start ${isEditingProfile ? 'mb-6' : ''}`}>
                   <div className="flex items-center gap-4">
                     <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-md">
@@ -1440,18 +1442,49 @@ export default function CustomerDashboard() {
                           </div>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700">Select Vehicle</label>
-                          <select
-                            value={selectedVehicle}
-                            onChange={(e) => setSelectedVehicle(e.target.value)}
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
-                          >
-                            {AVAILABLE_VEHICLES.map(v => (
-                              <option key={v.name} value={v.name} disabled={v.quantity <= 0}>
-                                {v.name} (Up to {v.capacity} passengers) - {v.quantity > 0 ? `Available (${v.quantity} left)` : 'Currently Unavailable'}
-                              </option>
-                            ))}
-                          </select>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Select Vehicle</label>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {AVAILABLE_VEHICLES.map(v => {
+                              const isSelected = selectedVehicle === v.name;
+                              const isUnavailable = v.quantity <= 0;
+                              return (
+                                <div 
+                                  key={v.name}
+                                  onClick={() => {
+                                    if (!isUnavailable) {
+                                      setSelectedVehicle(v.name);
+                                      setConfirmCapacity(false);
+                                    }
+                                  }}
+                                  className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                                    isSelected 
+                                      ? 'border-indigo-600 bg-indigo-50/50 shadow-md ring-1 ring-indigo-600' 
+                                      : isUnavailable 
+                                        ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed' 
+                                        : 'border-gray-200 bg-white hover:border-indigo-300 hover:shadow-sm'
+                                  }`}
+                                >
+                                  <div className="flex justify-between items-start mb-2">
+                                    <h5 className={`font-bold ${isSelected ? 'text-indigo-900' : 'text-gray-900'}`}>{v.name}</h5>
+                                    {isSelected && <CheckCircle className="h-5 w-5 text-indigo-600" />}
+                                  </div>
+                                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
+                                    <Users className="h-4 w-4" />
+                                    <span>Up to {v.capacity} passengers</span>
+                                  </div>
+                                  <div className="mt-auto">
+                                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                                      isUnavailable 
+                                        ? 'bg-red-100 text-red-700' 
+                                        : 'bg-green-100 text-green-700'
+                                    }`}>
+                                      {isUnavailable ? 'Unavailable' : `${v.quantity} Available`}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       </motion.div>
                     )}
@@ -1500,21 +1533,49 @@ export default function CustomerDashboard() {
                           </div>
                           
                           <div className="space-y-3">
-                            <label className="block text-sm font-medium text-gray-700">Vehicle Selection</label>
-                            <select
-                              value={selectedVehicle}
-                              onChange={(e) => {
-                                setSelectedVehicle(e.target.value);
-                                setConfirmCapacity(false);
-                              }}
-                              className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
-                            >
-                              {AVAILABLE_VEHICLES.map(v => (
-                                <option key={v.name} value={v.name} disabled={v.quantity <= 0}>
-                                  {v.name} (Up to {v.capacity} passengers) - {v.quantity > 0 ? `Available (${v.quantity} left)` : 'Currently Unavailable'}
-                                </option>
-                              ))}
-                            </select>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Selection</label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              {AVAILABLE_VEHICLES.map(v => {
+                                const isSelected = selectedVehicle === v.name;
+                                const isUnavailable = v.quantity <= 0;
+                                return (
+                                  <div 
+                                    key={v.name}
+                                    onClick={() => {
+                                      if (!isUnavailable) {
+                                        setSelectedVehicle(v.name);
+                                        setConfirmCapacity(false);
+                                      }
+                                    }}
+                                    className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                                      isSelected 
+                                        ? 'border-indigo-600 bg-indigo-50/50 shadow-md ring-1 ring-indigo-600' 
+                                        : isUnavailable 
+                                          ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed' 
+                                          : 'border-gray-200 bg-white hover:border-indigo-300 hover:shadow-sm'
+                                    }`}
+                                  >
+                                    <div className="flex justify-between items-start mb-2">
+                                      <h5 className={`font-bold ${isSelected ? 'text-indigo-900' : 'text-gray-900'}`}>{v.name}</h5>
+                                      {isSelected && <CheckCircle className="h-5 w-5 text-indigo-600" />}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
+                                      <Users className="h-4 w-4" />
+                                      <span>Up to {v.capacity} passengers</span>
+                                    </div>
+                                    <div className="mt-auto">
+                                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                                        isUnavailable 
+                                          ? 'bg-red-100 text-red-700' 
+                                          : 'bg-green-100 text-green-700'
+                                      }`}>
+                                        {isUnavailable ? 'Unavailable' : `${v.quantity} Available`}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
                             
                             {AVAILABLE_VEHICLES.find(v => v.name === selectedVehicle)?.capacity! < numberOfPeople && (
                               <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mt-3">
@@ -1766,6 +1827,56 @@ export default function CustomerDashboard() {
                 </AnimatePresence>
               </div>
             </div>
+            <div className="lg:col-span-1 flex flex-col gap-8">
+              {/* Map Component */}
+              <InteractiveMap 
+                fromLocation={fromLocationData} 
+                toLocation={toLocationData} 
+                destinations={destinationData} 
+              />
+              
+              {/* Dynamic Receipt Component */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-indigo-600" />
+                  Trip Summary
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Trip Type</span>
+                    <span className="font-medium text-gray-900">{tripType}</span>
+                  </div>
+                  {tripType !== 'Car Renting' && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Estimated Distance</span>
+                      <span className="font-medium text-gray-900">{estimatedKM} km</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Vehicle</span>
+                    <span className="font-medium text-gray-900">{selectedVehicle}</span>
+                  </div>
+                  {tripType === 'Round-trip' && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Halt Charges</span>
+                      <span className="font-medium text-gray-900">₹{calculateHaltCharge()}</span>
+                    </div>
+                  )}
+                  <div className="border-t border-gray-100 pt-4 mt-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-base font-bold text-gray-900">Total Estimated Fare</span>
+                      <span className="text-2xl font-extrabold text-indigo-600">₹{
+                        tripType === 'Car Renting' 
+                          ? (Number(numberOfDays) || 1) * 2000 * (Number(numberOfCars) || 1)
+                          : (estimatedPrice || (estimatedKM * (isAC ? 14 : 13) * (tripType === 'Wedding' ? (parseInt(vehiclesRequired) || 1) : (tripType === 'Tour' ? (Number(numberOfCars) || 1) : 1)))) + (tripType === 'Round-trip' ? calculateHaltCharge() : 0)
+                      }</span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2 text-right">*Final fare may vary based on actual distance and tolls.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           ) : (
             <div className="max-w-5xl mx-auto">
               <div className="flex justify-between items-center mb-2">
@@ -1787,9 +1898,38 @@ export default function CustomerDashboard() {
               
               <div className="space-y-4">
                 {loading ? (
-                  <div className="p-4 text-center text-gray-500 bg-white rounded-2xl shadow-sm border border-gray-100">Loading bookings...</div>
+                  <div className="space-y-4">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 animate-pulse">
+                        <div className="flex justify-between items-center mb-4">
+                          <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+                          <div className="flex gap-2">
+                            <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+                            <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+                          </div>
+                        </div>
+                        <div className="flex gap-4">
+                          <div className="h-4 bg-gray-200 rounded w-24"></div>
+                          <div className="h-4 bg-gray-200 rounded w-24"></div>
+                          <div className="h-4 bg-gray-200 rounded w-16"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 ) : bookings.length === 0 ? (
-                  <div className="p-4 text-center text-gray-500 bg-white rounded-2xl shadow-sm border border-gray-100">No bookings found. Book a ride to get started!</div>
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+                    <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Car className="w-10 h-10 text-indigo-300" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">No bookings yet</h3>
+                    <p className="text-gray-500 mb-6 max-w-sm mx-auto">You haven't made any bookings yet. Book your first ride to get started!</p>
+                    <button 
+                      onClick={() => setActiveTab('dashboard')}
+                      className="inline-flex items-center justify-center px-6 py-2.5 border border-transparent text-sm font-medium rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-colors"
+                    >
+                      Book a Ride
+                    </button>
+                  </div>
                 ) : (
                   bookings.map((booking) => (
                     <div key={booking.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

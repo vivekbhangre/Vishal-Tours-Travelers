@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { MapPin, Calendar, CreditCard, ShieldCheck, Phone, Mail, Instagram } from 'lucide-react';
+import { MapPin, Calendar, CreditCard, ShieldCheck, Phone, Mail, Instagram, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'motion/react';
 
@@ -13,7 +13,7 @@ export default function Home() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen bg-gray-50 flex flex-col transition-colors duration-300"
+      className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col transition-colors duration-300"
     >
       <Navbar />
       
@@ -30,175 +30,211 @@ export default function Home() {
               referrerPolicy="no-referrer"
             />
             {/* Dark gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent z-10"></div>
-            <div className="absolute inset-0 bg-indigo-900/20 mix-blend-multiply z-10"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent z-10"></div>
+            <div className="absolute inset-0 bg-indigo-900/30 mix-blend-multiply z-10"></div>
           </div>
 
           {/* Text Content */}
           <div className="relative z-20 w-full px-4 sm:px-6 lg:px-24 xl:px-32 flex justify-center lg:justify-start pt-8 lg:pt-0">
-            <div 
-              className="w-full max-w-2xl rounded-[24px] p-8 sm:p-12 text-center lg:text-left shadow-2xl"
+            <motion.div 
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="w-full max-w-2xl rounded-3xl p-8 sm:p-12 text-center lg:text-left shadow-2xl relative overflow-hidden"
               style={{
-                background: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.3)'
+                background: 'rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(24px)',
+                WebkitBackdropFilter: 'blur(24px)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
               }}
             >
-              <h1 className="text-4xl tracking-tight font-extrabold text-white sm:text-5xl md:text-6xl drop-shadow-lg leading-tight">
+              {/* Subtle noise overlay for premium glass feel */}
+              <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
+              
+              <h1 className="relative z-10 text-4xl tracking-tight font-extrabold text-white sm:text-5xl md:text-6xl drop-shadow-lg leading-tight">
                 <span className="block mb-2">Your Journey,</span>
-                <span className="block text-indigo-300">Our Priority</span>
+                <span className="block text-indigo-400">Our Priority</span>
               </h1>
-              <p className="mt-6 text-base text-gray-100 sm:text-lg md:text-xl drop-shadow leading-relaxed">
+              <p className="relative z-10 mt-6 text-base text-gray-200 sm:text-lg md:text-xl drop-shadow leading-relaxed font-light">
                 Experience the best touring and traveling services with Vishal Tour & Travelers. We offer comfortable, safe, and reliable rides for all your needs.
               </p>
-              <div className="mt-10 sm:flex sm:justify-center lg:justify-start gap-4">
+              <div className="relative z-10 mt-10 sm:flex sm:justify-center lg:justify-start gap-4">
                 <Link
                   to={user ? `/dashboard/${user.role}` : "/register"}
-                  className="w-full sm:w-auto flex items-center justify-center px-8 py-3.5 border border-transparent text-base font-medium rounded-xl text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300"
+                  className="group w-full sm:w-auto flex items-center justify-center px-8 py-3.5 border border-transparent text-base font-medium rounded-xl text-white bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:shadow-[0_0_30px_rgba(79,70,229,0.6)] transform hover:-translate-y-1 transition-all duration-300"
                 >
                   {user ? "Book a Ride" : "Book a Ride"}
+                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 {!user && (
                   <Link
                     to="/login"
-                    className="mt-4 sm:mt-0 w-full sm:w-auto flex items-center justify-center px-8 py-3.5 text-base font-medium rounded-xl text-white transition-all duration-300 hover:bg-white/20 hover:shadow-lg transform hover:-translate-y-0.5"
+                    className="mt-4 sm:mt-0 w-full sm:w-auto flex items-center justify-center px-8 py-3.5 text-base font-medium rounded-xl text-white transition-all duration-300 hover:bg-white/10 hover:shadow-lg transform hover:-translate-y-1"
                     style={{
-                      background: 'rgba(255, 255, 255, 0.1)',
+                      background: 'rgba(255, 255, 255, 0.05)',
                       backdropFilter: 'blur(10px)',
                       WebkitBackdropFilter: 'blur(10px)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)'
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
                     }}
                   >
                     Login
                   </Link>
                 )}
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
 
-        {/* Features Section */}
-        <div className="py-12 bg-white">
-          <div className="w-full mx-auto px-4 sm:px-6 lg:px-12 xl:px-24">
-            <div className="lg:text-center">
-              <h2 className="text-base text-indigo-600 font-semibold tracking-wide uppercase">Why Choose Us</h2>
-              <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+        {/* Features Section - Bento Grid */}
+        <div className="py-24 bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <h2 className="text-sm text-indigo-600 dark:text-indigo-400 font-bold tracking-widest uppercase mb-3">Why Choose Us</h2>
+              <p className="text-4xl leading-tight font-extrabold text-gray-900 dark:text-white sm:text-5xl">
                 A better way to travel
               </p>
             </div>
 
-            <div className="mt-10">
-              <dl className="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-10">
-                <div className="relative">
-                  <dt>
-                    <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
-                      <MapPin className="h-6 w-6" aria-hidden="true" />
-                    </div>
-                    <p className="ml-16 text-lg leading-6 font-medium text-gray-900">Anywhere, Anytime</p>
-                  </dt>
-                  <dd className="mt-2 ml-16 text-base text-gray-500">
-                    We cover a wide range of locations. Just tell us where you want to go, and we'll get you there.
-                  </dd>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Large Bento Box */}
+              <motion.div 
+                whileHover={{ y: -5 }}
+                className="md:col-span-2 bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden group"
+              >
+                <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-indigo-50 dark:bg-indigo-900/20 rounded-full blur-3xl group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 transition-colors duration-500"></div>
+                <div className="relative z-10">
+                  <div className="h-14 w-14 rounded-2xl bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-6">
+                    <MapPin className="h-7 w-7" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Anywhere, Anytime</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-lg leading-relaxed max-w-md">
+                    We cover a wide range of locations. Just tell us where you want to go, and we'll get you there safely and comfortably.
+                  </p>
                 </div>
+              </motion.div>
 
-                <div className="relative">
-                  <dt>
-                    <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
-                      <Calendar className="h-6 w-6" aria-hidden="true" />
-                    </div>
-                    <p className="ml-16 text-lg leading-6 font-medium text-gray-900">Easy Booking</p>
-                  </dt>
-                  <dd className="mt-2 ml-16 text-base text-gray-500">
+              {/* Small Bento Box 1 */}
+              <motion.div 
+                whileHover={{ y: -5 }}
+                className="bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden group"
+              >
+                <div className="absolute bottom-0 right-0 w-24 h-24 bg-green-50 dark:bg-green-900/20 rounded-full blur-2xl group-hover:bg-green-100 dark:group-hover:bg-green-900/40 transition-colors duration-500"></div>
+                <div className="relative z-10">
+                  <div className="h-12 w-12 rounded-xl bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 flex items-center justify-center mb-6">
+                    <Calendar className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Easy Booking</h3>
+                  <p className="text-gray-600 dark:text-gray-400">
                     Our simple booking process ensures you can reserve your ride in just a few clicks.
-                  </dd>
+                  </p>
                 </div>
+              </motion.div>
 
-                <div className="relative">
-                  <dt>
-                    <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
-                      <ShieldCheck className="h-6 w-6" aria-hidden="true" />
-                    </div>
-                    <p className="ml-16 text-lg leading-6 font-medium text-gray-900">Safe & Secure</p>
-                  </dt>
-                  <dd className="mt-2 ml-16 text-base text-gray-500">
+              {/* Small Bento Box 2 */}
+              <motion.div 
+                whileHover={{ y: -5 }}
+                className="bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden group"
+              >
+                <div className="absolute top-0 left-0 w-24 h-24 bg-red-50 dark:bg-red-900/20 rounded-full blur-2xl group-hover:bg-red-100 dark:group-hover:bg-red-900/40 transition-colors duration-500"></div>
+                <div className="relative z-10">
+                  <div className="h-12 w-12 rounded-xl bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 flex items-center justify-center mb-6">
+                    <ShieldCheck className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Safe & Secure</h3>
+                  <p className="text-gray-600 dark:text-gray-400">
                     Your safety is our top priority. All our drivers are verified and vehicles are regularly inspected.
-                  </dd>
+                  </p>
                 </div>
+              </motion.div>
 
-                <div className="relative">
-                  <dt>
-                    <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
-                      <CreditCard className="h-6 w-6" aria-hidden="true" />
-                    </div>
-                    <p className="ml-16 text-lg leading-6 font-medium text-gray-900">Transparent Pricing</p>
-                  </dt>
-                  <dd className="mt-2 ml-16 text-base text-gray-500">
-                    No hidden fees. You know exactly what you'll pay before you book your ride.
-                  </dd>
+              {/* Medium Bento Box */}
+              <motion.div 
+                whileHover={{ y: -5 }}
+                className="md:col-span-2 bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden group flex flex-col md:flex-row items-start md:items-center gap-6"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-50/30 to-transparent dark:via-indigo-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="h-16 w-16 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-indigo-200 dark:shadow-none">
+                  <CreditCard className="h-8 w-8" />
                 </div>
-              </dl>
+                <div className="relative z-10">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Transparent Pricing</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-lg">
+                    No hidden fees. You know exactly what you'll pay before you book your ride. We believe in fair and honest pricing for all our customers.
+                  </p>
+                </div>
+              </motion.div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Footer Section */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="w-full mx-auto px-4 sm:px-6 lg:px-12 xl:px-24">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <footer className="bg-gray-950 text-white py-16 border-t border-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {/* About */}
             <div>
-              <h3 className="text-xl font-bold mb-4">Vishal Tour & Travelers</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">
+              <h3 className="text-2xl font-bold mb-6 font-heading">Vishal Tour & Travelers</h3>
+              <p className="text-gray-400 text-sm leading-relaxed max-w-sm">
                 Providing reliable, comfortable, and safe travel experiences. Your journey is our priority. Book with us today for a seamless ride.
               </p>
             </div>
 
             {/* Contact Info */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
-              <ul className="space-y-3">
-                <li className="flex items-start">
-                  <MapPin className="h-5 w-5 text-indigo-400 mr-3 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-300 text-sm">123 Main Street, City Center<br />State, Country 12345</span>
+              <h3 className="text-lg font-semibold mb-6 text-gray-200">Contact Us</h3>
+              <ul className="space-y-4">
+                <li className="flex items-start group">
+                  <div className="p-2 bg-gray-900 rounded-lg mr-4 group-hover:bg-indigo-900/50 transition-colors">
+                    <MapPin className="h-5 w-5 text-indigo-400" />
+                  </div>
+                  <span className="text-gray-400 text-sm mt-1">123 Main Street, City Center<br />State, Country 12345</span>
                 </li>
-                <li className="flex items-start">
-                  <Phone className="h-5 w-5 text-indigo-400 mr-3 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-300 text-sm">
+                <li className="flex items-start group">
+                  <div className="p-2 bg-gray-900 rounded-lg mr-4 group-hover:bg-indigo-900/50 transition-colors">
+                    <Phone className="h-5 w-5 text-indigo-400" />
+                  </div>
+                  <span className="text-gray-400 text-sm mt-1">
                     +91 6266440222<br />
                     +91 9589681877
                   </span>
                 </li>
-                <li className="flex items-center">
-                  <Mail className="h-5 w-5 text-indigo-400 mr-3 flex-shrink-0" />
-                  <span className="text-gray-300 text-sm">info@vishaltravels.com</span>
+                <li className="flex items-center group">
+                  <div className="p-2 bg-gray-900 rounded-lg mr-4 group-hover:bg-indigo-900/50 transition-colors">
+                    <Mail className="h-5 w-5 text-indigo-400" />
+                  </div>
+                  <span className="text-gray-400 text-sm">info@vishaltravels.com</span>
                 </li>
               </ul>
             </div>
 
             {/* Social Media */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Follow Us</h3>
-              <p className="text-gray-400 text-sm mb-4">
+              <h3 className="text-lg font-semibold mb-6 text-gray-200">Follow Us</h3>
+              <p className="text-gray-400 text-sm mb-6">
                 Stay updated with our latest offers and travel stories.
               </p>
               <a 
                 href="https://www.instagram.com/ertiga__love__8952_seoni?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="inline-flex items-center text-gray-300 hover:text-pink-500 transition-colors"
+                className="inline-flex items-center px-4 py-2 bg-gray-900 hover:bg-gray-800 rounded-xl text-gray-300 hover:text-pink-500 transition-all duration-300 border border-gray-800 hover:border-pink-500/30"
               >
-                <Instagram className="h-6 w-6 mr-2" />
+                <Instagram className="h-5 w-5 mr-3" />
                 <span className="text-sm font-medium">@ertiga__love__8952_seoni</span>
               </a>
             </div>
           </div>
           
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center">
+          <div className="border-t border-gray-900 mt-16 pt-8 flex flex-col md:flex-row items-center justify-between">
             <p className="text-gray-500 text-sm">
               &copy; {new Date().getFullYear()} Vishal Tour & Travelers. All rights reserved.
             </p>
+            <div className="mt-4 md:mt-0 flex space-x-6">
+              <a href="#" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">Privacy Policy</a>
+              <a href="#" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">Terms of Service</a>
+            </div>
           </div>
         </div>
       </footer>
