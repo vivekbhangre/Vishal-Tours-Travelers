@@ -118,17 +118,34 @@ router.get('/location', async (req, res) => {
           lng: parseFloat(item.lon),
           displayName: displayNameParts.join(', '),
           primaryText: name || city || state,
-          secondaryText: secondaryText
+          secondaryText: secondaryText,
+          addresstype: item.addresstype || item.type
         };
       });
 
-    // Remove duplicates by displayName
-    const uniqueResults = Array.from(new Map(results.map((item: any) => [item.displayName, item])).values());
+    // Remove duplicates by displayName, preferring cities over districts
+    const resultsMap = new Map();
+    for (const item of results) {
+      const existing = resultsMap.get(item.displayName);
+      const isCity = item.city === item.name || item.primaryText === item.city || item.addresstype === 'city' || item.addresstype === 'town';
+      
+      if (!existing) {
+        resultsMap.set(item.displayName, item);
+      } else {
+        // If existing is not a city but the new one is, replace it
+        const existingIsCity = existing.city === existing.name || existing.primaryText === existing.city || existing.addresstype === 'city' || existing.addresstype === 'town';
+        if (!existingIsCity && isCity) {
+          resultsMap.set(item.displayName, item);
+        }
+      }
+    }
+    
+    const uniqueResults = Array.from(resultsMap.values());
 
-    // Prioritize cities and towns over districts/states
+    // Prioritize cities and towns over districts/states in the final list
     uniqueResults.sort((a: any, b: any) => {
-      const aIsCity = a.city === a.name || a.primaryText === a.city;
-      const bIsCity = b.city === b.name || b.primaryText === b.city;
+      const aIsCity = a.city === a.name || a.primaryText === a.city || a.addresstype === 'city' || a.addresstype === 'town';
+      const bIsCity = b.city === b.name || b.primaryText === b.city || b.addresstype === 'city' || b.addresstype === 'town';
       if (aIsCity && !bIsCity) return -1;
       if (!aIsCity && bIsCity) return 1;
       return 0;
