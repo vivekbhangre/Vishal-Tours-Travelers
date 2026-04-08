@@ -40,7 +40,7 @@ export async function initSheets() {
             'id', 'userId', 'userName', 'userEmail', 'fromLocation', 'toLocation', 'rideDate', 
             'rideType', 'numberOfPeople', 'rideStatus', 'paymentStatus', 'fareAmount', 'timestamp',
             'tripType', 'returnDate', 'destinations', 'numberOfDays', 'numberOfCars', 'estimatedKM', 'suggestedVehicle',
-            'isAC', 'weddingDetails', 'intercityDetails', 'airportDetails', 'customRequirements', 'assignedDriverEmail', 'assignedVehicleId', 'assignments', 'refundStatus', 'refundAmount'
+            'isAC', 'routeGeometry', 'weddingDetails', 'intercityDetails', 'airportDetails', 'customRequirements', 'assignedDriverEmail', 'assignedVehicleId', 'assignments', 'refundStatus', 'refundAmount'
           ];
         } else if (title === 'Revenue Logs') {
           headerValues = ['id', 'month', 'year', 'amount', 'timestamp'];
@@ -50,6 +50,25 @@ export async function initSheets() {
           headerValues = ['id', 'name', 'email', 'phone', 'assignedVehicleId', 'status'];
         }
         sheet = await doc.addSheet({ title, headerValues });
+      } else if (title === 'Bookings') {
+        // Fix headers for Bookings if they are missing routeGeometry
+        try {
+          await sheet.loadHeaderRow();
+          if (sheet.headerValues.length < 31 || !sheet.headerValues.includes('routeGeometry')) {
+            if (sheet.columnCount < 33) {
+              await sheet.resize({ rowCount: sheet.rowCount, columnCount: 33 });
+            }
+            await sheet.setHeaderRow([
+              'id', 'userId', 'userName', 'userEmail', 'fromLocation', 'toLocation', 'rideDate', 
+              'rideType', 'numberOfPeople', 'rideStatus', 'paymentStatus', 'fareAmount', 'timestamp',
+              'tripType', 'returnDate', 'destinations', 'numberOfDays', 'numberOfCars', 'estimatedKM', 'suggestedVehicle',
+              'isAC', 'routeGeometry', 'weddingDetails', 'intercityDetails', 'airportDetails', 'customRequirements', 'assignedDriverEmail', 'assignedVehicleId', 'assignments', 'refundStatus', 'refundAmount'
+            ]);
+            console.log('Fixed Bookings headers');
+          }
+        } catch (e) {
+          console.error('Error fixing Bookings headers:', e);
+        }
       }
     }
       
@@ -140,7 +159,7 @@ export async function initSheets() {
             }
           }
 
-          await sheet.loadCells('A1:AD1');
+          await sheet.loadCells({ startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: sheet.headerValues.length });
           for (let i = 0; i < sheet.headerValues.length; i++) {
             const cell = sheet.getCell(0, i);
             cell.textFormat = { bold: true };

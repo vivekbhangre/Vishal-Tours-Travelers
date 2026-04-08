@@ -125,6 +125,15 @@ router.get('/location', async (req, res) => {
     // Remove duplicates by displayName
     const uniqueResults = Array.from(new Map(results.map((item: any) => [item.displayName, item])).values());
 
+    // Prioritize cities and towns over districts/states
+    uniqueResults.sort((a: any, b: any) => {
+      const aIsCity = a.city === a.name || a.primaryText === a.city;
+      const bIsCity = b.city === b.name || b.primaryText === b.city;
+      if (aIsCity && !bIsCity) return -1;
+      if (!aIsCity && bIsCity) return 1;
+      return 0;
+    });
+
     cache.set(cacheKey, uniqueResults);
     res.json(uniqueResults);
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import ProfileSection from '../components/ProfileSection';
 import { api, socket } from '../lib/api';
-import { validateEmail, validateName, validatePhone, validateVehicleNumber } from '../lib/validation';
+import { validateEmail, validateName, validatePhone, validateVehicleNumber, parseRideDate, safeFormatDate } from '../lib/validation';
 import { format } from 'date-fns';
 import { Download, TrendingUp, RefreshCw, ChevronDown, Car } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -149,7 +149,7 @@ export default function AdminDashboard() {
     let payload: any = { [field]: value, isAdmin: true };
 
     if (field === 'rideStatus' && value === 'Cancelled' && booking) {
-      const rideDate = new Date(booking.rideDate);
+      const rideDate = parseRideDate(booking.rideDate);
       const now = new Date();
       const diffInHours = (rideDate.getTime() - now.getTime()) / (1000 * 60 * 60);
       const fareAmount = parseFloat(booking.fareAmount || '0');
@@ -457,9 +457,9 @@ export default function AdminDashboard() {
                           </div>
                           <div className="flex flex-col items-end">
                             <div className="text-xs text-gray-500 text-right">
-                              {format(new Date(booking.rideDate), 'MMM d, yyyy')}
+                              {safeFormatDate(booking.rideDate, 'MMM d, yyyy')}
                               <br />
-                              {format(new Date(booking.rideDate), 'h:mm a')}
+                              {safeFormatDate(booking.rideDate, 'h:mm a')}
                             </div>
                             <ChevronDown className={`w-5 h-5 text-gray-400 mt-2 transition-transform ${expandedBookingId === booking.id ? 'transform rotate-180' : ''}`} />
                           </div>
@@ -701,7 +701,7 @@ export default function AdminDashboard() {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {format(new Date(booking.rideDate), 'PPp')}
+                            {safeFormatDate(booking.rideDate, 'PPp')}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <select

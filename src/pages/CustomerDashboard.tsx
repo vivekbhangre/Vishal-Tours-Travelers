@@ -2,13 +2,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import { api, socket } from '../lib/api';
-import { validateEmail, validateName, validatePhone } from '../lib/validation';
+import { validateEmail, validateName, validatePhone, parseRideDate, safeFormatDate } from '../lib/validation';
 import { format } from 'date-fns';
-import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle, Calendar, Clock, Car, Users, MapPin, Grid, RefreshCw, Info, ChevronDown, ChevronUp, CreditCard } from 'lucide-react';
+import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'motion/react';
+import { CheckCircle, Calendar, Clock, Car, Users, MapPin, Grid, RefreshCw, Info, ChevronDown, ChevronUp, CreditCard, ChevronRight, ChevronLeft, Moon, Sun, Crown, Star, Shield, Radar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import debounce from 'lodash.debounce';
 import InteractiveMap from '../components/InteractiveMap';
+import SlideToBookButton from '../components/SlideToBookButton';
 
 interface LocationData {
   name: string;
@@ -68,14 +69,211 @@ const getInitialDateTime = () => {
   return { date: dateStr, hour: hourStr, minute: minuteStr, ampm };
 };
 
+const AbstractMiniMap = ({ from, to }: { from: string, to: string,  }) => (
+  <div className={`h-24 w-full rounded-xl relative overflow-hidden bg-indigo-50/50 border border-indigo-100 flex items-center justify-center p-4 mb-4`}>
+    <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(99,102,241,0.4) 1px, transparent 0)', backgroundSize: '16px 16px' }}></div>
+    <div className="relative w-full max-w-xs flex items-center justify-between">
+      <div className="flex flex-col items-center gap-1 z-10">
+        <div className={`w-4 h-4 rounded-full bg-indigo-600 border-2 border-white`}></div>
+        <span className={`text-[10px] font-medium truncate w-20 text-center text-gray-600`}>{from.split(',')[0]}</span>
+      </div>
+      <div className="flex-1 h-0 border-t-2 border-dashed border-indigo-300/50 mx-2 relative">
+        <motion.div 
+          initial={{ left: 0 }}
+          animate={{ left: '100%' }}
+          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+          className="absolute -top-2 -ml-2 w-4 h-4 text-indigo-500"
+        >
+          <Car className="w-4 h-4" />
+        </motion.div>
+      </div>
+      <div className="flex flex-col items-center gap-1 z-10">
+        <div className={`w-4 h-4 rounded-full bg-purple-600 border-2 border-white`}></div>
+        <span className={`text-[10px] font-medium truncate w-20 text-center text-gray-600`}>{to.split(',')[0]}</span>
+      </div>
+    </div>
+  </div>
+);
+
+const LoyaltyCard = ({ bookingsCount }: { bookingsCount: number,  }) => {
+  const tier = bookingsCount >= 6 ? 'Black' : bookingsCount >= 3 ? 'Gold' : 'Silver';
+  const nextTier = tier === 'Silver' ? 'Gold' : tier === 'Gold' ? 'Black' : null;
+  const progress = tier === 'Silver' ? (bookingsCount / 3) * 100 : tier === 'Gold' ? ((bookingsCount - 3) / 3) * 100 : 100;
+  
+  const getTierStyles = () => {
+    if (tier === 'Black') return 'from-gray-900 via-gray-800 to-black border-gray-700 text-gray-100 shadow-[0_0_20px_rgba(255,255,255,0.1)]';
+    if (tier === 'Gold') return 'from-yellow-600 via-yellow-500 to-yellow-700 border-yellow-400 text-yellow-50 shadow-[0_0_20px_rgba(234,179,8,0.2)]';
+    return 'from-gray-300 via-gray-200 to-gray-400 border-gray-300 text-gray-800 shadow-[0_0_15px_rgba(156,163,175,0.2)]';
+  };
+
+  const Icon = tier === 'Black' ? Crown : tier === 'Gold' ? Star : Shield;
+
+  return (
+    <motion.div 
+      whileHover={{ scale: 1.02, rotateX: 5, rotateY: -5 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className={`relative overflow-hidden rounded-2xl p-6 mb-8 border bg-gradient-to-br ${getTierStyles()} opacity-90`}
+      style={{ transformStyle: 'preserve-3d', perspective: 1000 }}
+    >
+      <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl"></div>
+      <div className="relative z-10 flex justify-between items-start">
+        <div>
+          <p className="text-xs uppercase tracking-widest opacity-80 font-semibold mb-1">Status Tier</p>
+          <h3 className="text-2xl font-bold flex items-center gap-2">
+            {tier} Member <Icon className="w-5 h-5" />
+          </h3>
+        </div>
+        <div className="text-right">
+          <p className="text-3xl font-light">{bookingsCount}</p>
+          <p className="text-xs opacity-80">Total Rides</p>
+        </div>
+      </div>
+      
+      {nextTier && (
+        <div className="mt-6 relative z-10">
+          <div className="flex justify-between text-xs mb-2 opacity-90 font-medium">
+            <span>{bookingsCount} rides</span>
+            <span>{tier === 'Silver' ? 3 : 6} rides for {nextTier}</span>
+          </div>
+          <div className="h-1.5 w-full bg-black/20 rounded-full overflow-hidden">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 1, delay: 0.5 }}
+              className="h-full bg-white/80 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)]"
+            />
+          </div>
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
+const VehicleShowroomCard = ({ vehicle, isSelected, isUnavailable,  onClick }: any) => {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const mouseXSpring = useSpring(x);
+  const mouseYSpring = useSpring(y);
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["10deg", "-10deg"]);
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-10deg", "10deg"]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const xPct = mouseX / width - 0.5;
+    const yPct = mouseY / height - 0.5;
+    x.set(xPct);
+    y.set(yPct);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.div
+      style={{ rotateX, rotateY, transformStyle: "preserve-3d", perspective: 1000 }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      onClick={onClick}
+      className={`relative p-4 sm:p-6 rounded-2xl border-2 cursor-pointer transition-colors duration-300 ${
+        isSelected 
+          ? ('border-indigo-600 bg-indigo-50/80 shadow-xl ring-1 ring-indigo-600')
+          : isUnavailable 
+            ? ('border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed')
+            : ('border-gray-200 bg-white hover:border-indigo-300 hover:shadow-lg')
+      }`}
+    >
+      <div style={{ transform: "translateZ(30px)" }} className="flex justify-between items-start mb-4">
+        <div>
+          <h4 className={`font-bold text-lg text-gray-900`}>{vehicle.name}</h4>
+          <p className={`text-sm flex items-center gap-1 mt-1 text-gray-500`}>
+            <Users className="w-4 h-4" /> Up to {vehicle.capacity}
+          </p>
+        </div>
+        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+          isSelected 
+            ? 'border-indigo-500 bg-indigo-500' 
+            : ('border-gray-300')
+        }`}>
+          {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
+        </div>
+      </div>
+      
+      <div style={{ transform: "translateZ(50px)" }} className="py-2 sm:py-6 flex justify-center items-center">
+        {/* 3D Parallax Car Representation */}
+        <div className={`w-24 sm:w-32 h-12 sm:h-16 rounded-full blur-xl absolute bottom-4 bg-gray-300/50`}></div>
+        <Car className={`w-16 h-16 sm:w-24 sm:h-24 drop-shadow-2xl ${isSelected ? ('text-indigo-600') : ('text-gray-400')}`} />
+      </div>
+
+      <div style={{ transform: "translateZ(20px)" }} className="mt-2 text-center">
+        {isUnavailable ? (
+          <span className="text-xs font-medium text-red-500 bg-red-500/10 px-3 py-1 rounded-full">Currently Unavailable</span>
+        ) : (
+          <span className={`text-xs font-medium px-3 py-1 rounded-full ${isSelected ? ('bg-indigo-100 text-indigo-700') : ('bg-gray-100 text-gray-600')}`}>
+            {vehicle.quantity} Available
+          </span>
+        )}
+      </div>
+    </motion.div>
+  );
+};
+
+const ConciergeLoading = () => (
+  <motion.div 
+    initial={{ opacity: 0 }} 
+    animate={{ opacity: 1 }} 
+    exit={{ opacity: 0 }}
+    className={`absolute inset-0 z-50 flex flex-col items-center justify-center rounded-2xl backdrop-blur-md bg-white/80`}
+  >
+    <div className="relative w-32 h-32 flex items-center justify-center mb-6">
+      <motion.div 
+        animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        className={`absolute inset-0 rounded-full blur-xl bg-indigo-300/40`}
+      />
+      <Car className={`w-16 h-16 relative z-10 animate-pulse text-indigo-600`} />
+      
+      {/* Shimmering effect */}
+      <motion.div 
+        initial={{ x: -100, opacity: 0 }}
+        animate={{ x: 100, opacity: [0, 1, 0] }}
+        transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12 z-20"
+      />
+    </div>
+    <h3 className={`text-xl font-bold mb-2 text-gray-900`}>Curating your route...</h3>
+    <p className={`text-sm text-gray-500`}>Preparing your premium vehicle</p>
+  </motion.div>
+);
+
 export default function CustomerDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings'>(() => {
-    return (localStorage.getItem('customerActiveTab') as 'dashboard' | 'bookings') || 'dashboard';
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'profile'>(() => {
+    return (localStorage.getItem('customerActiveTab') as 'dashboard' | 'bookings' | 'profile') || 'dashboard';
   });
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const tab = localStorage.getItem('customerActiveTab') as 'dashboard' | 'bookings' | 'profile';
+      if (tab) setActiveTab(tab);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Wizard State
+  const [bookingStep, setBookingStep] = useState(1);
+  
+  // Theme State
+  
   const [fromLocation, setFromLocation] = useState('');
   const [toLocation, setToLocation] = useState('');
   const [rideDate, setRideDate] = useState<string>(() => getInitialDateTime().date);
@@ -138,32 +336,8 @@ export default function CustomerDashboard() {
   const [cancelModal, setCancelModal] = useState<{ isOpen: boolean, booking: any | null, refundInfo: any | null }>({ isOpen: false, booking: null, refundInfo: null });
 
   const calculateRefund = (rideDateStr: string, fareAmount: number, numberOfDays: number | string) => {
-    let rideDate = new Date(rideDateStr);
+    let rideDate = parseRideDate(rideDateStr);
     
-    if (isNaN(rideDate.getTime())) {
-      try {
-        let match = rideDateStr.match(/(\d{4}-\d{2}-\d{2})\s+(\d{1,2}):(\d{2})\s+(AM|PM)/i);
-        if (match) {
-          const [_, datePart, hourStr, minStr, ampm] = match;
-          let hour = parseInt(hourStr, 10);
-          if (ampm.toUpperCase() === 'PM' && hour < 12) hour += 12;
-          if (ampm.toUpperCase() === 'AM' && hour === 12) hour = 0;
-          rideDate = new Date(`${datePart}T${hour.toString().padStart(2, '0')}:${minStr}:00`);
-        } else {
-          match = rideDateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2})\s+(AM|PM)/i);
-          if (match) {
-            const [_, month, day, year, hourStr, minStr, ampm] = match;
-            let hour = parseInt(hourStr, 10);
-            if (ampm.toUpperCase() === 'PM' && hour < 12) hour += 12;
-            if (ampm.toUpperCase() === 'AM' && hour === 12) hour = 0;
-            rideDate = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hour.toString().padStart(2, '0')}:${minStr}:00`);
-          }
-        }
-      } catch (e) {
-        console.error('Error parsing date:', e);
-      }
-    }
-
     if (isNaN(rideDate.getTime())) {
       return { refundPercent: 0, refundAmount: 0, message: "Could not determine ride date." };
     }
@@ -347,8 +521,11 @@ export default function CustomerDashboard() {
           waypoints = [toLocationData];
         }
 
+        let oneWayDistance = 0;
         for (const wp of waypoints) {
-          totalDistance += calculateLegDistance(currentCoords.lat, currentCoords.lng, wp.lat, wp.lng);
+          const legDist = calculateLegDistance(currentCoords.lat, currentCoords.lng, wp.lat, wp.lng);
+          totalDistance += legDist;
+          oneWayDistance += legDist;
           currentCoords = wp;
         }
 
@@ -364,7 +541,7 @@ export default function CustomerDashboard() {
           finalPrice *= Number(numberOfCars) || 1;
         }
 
-        setEstimatedKM(parseFloat(totalDistance.toFixed(2)));
+        setEstimatedKM(parseFloat(oneWayDistance.toFixed(2)));
         setEstimatedPrice(finalPrice);
       } catch (error) {
         console.error('Failed to calculate distance:', error);
@@ -462,8 +639,8 @@ export default function CustomerDashboard() {
   const calculateHaltCharge = () => {
     if (tripType !== 'Round-trip' || !rideDate || !returnDate || !selectedVehicle) return 0;
     
-    const start = new Date(rideDate);
-    const end = new Date(returnDate);
+    const start = parseRideDate(rideDate);
+    const end = parseRideDate(returnDate);
     
     if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
     
@@ -485,6 +662,12 @@ export default function CustomerDashboard() {
 
   const handleBookRide = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (bookingStep < 3) {
+      setBookingStep(bookingStep + 1);
+      return;
+    }
+
     setBookingError('');
     setBookingLoading(true);
 
@@ -494,7 +677,7 @@ export default function CustomerDashboard() {
         setBookingLoading(false);
         return;
       }
-      const wDate = new Date(weddingDate);
+      const wDate = parseRideDate(weddingDate);
       const now = new Date();
       now.setHours(0, 0, 0, 0);
       if (wDate < now) {
@@ -610,10 +793,15 @@ export default function CustomerDashboard() {
         finalEstimatedPrice = estimatedPrice || fallbackPrice;
       }
 
-      const formattedRideDate = `${rideDate} ${rideTimeHour}:${rideTimeMinute} ${rideTimeAmPm}`;
+      let formattedRideDate = '';
+      if (tripType === 'Wedding') {
+        formattedRideDate = weddingDate;
+      } else {
+        formattedRideDate = `${rideDate} ${rideTimeHour}:${rideTimeMinute} ${rideTimeAmPm}`;
+      }
       
-      if (rideDate) {
-        const depDate = new Date(formattedRideDate);
+      if (rideDate && tripType !== 'Wedding') {
+        const depDate = parseRideDate(formattedRideDate);
         const now = new Date();
         if (depDate < now) {
           setBookingError('Departure date and time cannot be in the past.');
@@ -630,8 +818,8 @@ export default function CustomerDashboard() {
           setBookingLoading(false);
           return;
         }
-        const depDate = new Date(`${rideDate} ${rideTimeHour}:${rideTimeMinute} ${rideTimeAmPm}`);
-        const retDate = new Date(`${returnDate} ${returnTimeHour}:${returnTimeMinute} ${returnTimeAmPm}`);
+        const depDate = parseRideDate(`${rideDate} ${rideTimeHour}:${rideTimeMinute} ${rideTimeAmPm}`);
+        const retDate = parseRideDate(`${returnDate} ${returnTimeHour}:${returnTimeMinute} ${returnTimeAmPm}`);
         if (retDate <= depDate) {
           setBookingError('Return date must be later than departure date');
           setBookingLoading(false);
@@ -719,7 +907,7 @@ export default function CustomerDashboard() {
 
     try {
       const b = rebookModal.booking;
-      const rideDate = new Date(`${rebookDate} ${rebookTimeHour}:${rebookTimeMinute} ${rebookTimeAmPm}`);
+      const rideDate = parseRideDate(`${rebookDate} ${rebookTimeHour}:${rebookTimeMinute} ${rebookTimeAmPm}`);
       
       const now = new Date();
       if (rideDate < now) {
@@ -855,31 +1043,7 @@ export default function CustomerDashboard() {
   const canCancelRide = (rideDateStr: string, status: string) => {
     if (status === 'Cancelled' || status === 'Completed' || status === 'Ongoing') return false;
     
-    let rideDate = new Date(rideDateStr);
-    
-    if (isNaN(rideDate.getTime())) {
-      try {
-        let match = rideDateStr.match(/(\d{4}-\d{2}-\d{2})\s+(\d{1,2}):(\d{2})\s+(AM|PM)/i);
-        if (match) {
-          const [_, datePart, hourStr, minStr, ampm] = match;
-          let hour = parseInt(hourStr, 10);
-          if (ampm.toUpperCase() === 'PM' && hour < 12) hour += 12;
-          if (ampm.toUpperCase() === 'AM' && hour === 12) hour = 0;
-          rideDate = new Date(`${datePart}T${hour.toString().padStart(2, '0')}:${minStr}:00`);
-        } else {
-          match = rideDateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2})\s+(AM|PM)/i);
-          if (match) {
-            const [_, month, day, year, hourStr, minStr, ampm] = match;
-            let hour = parseInt(hourStr, 10);
-            if (ampm.toUpperCase() === 'PM' && hour < 12) hour += 12;
-            if (ampm.toUpperCase() === 'AM' && hour === 12) hour = 0;
-            rideDate = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hour.toString().padStart(2, '0')}:${minStr}:00`);
-          }
-        }
-      } catch (e) {
-        console.error('Error parsing date:', e);
-      }
-    }
+    let rideDate = parseRideDate(rideDateStr);
 
     if (isNaN(rideDate.getTime())) return false;
     
@@ -910,63 +1074,88 @@ export default function CustomerDashboard() {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
+    const firstName = profileName.split(' ')[0];
+    if (hour < 12) return { text: `Good morning, ${firstName}. Traffic is light today.`, gradient: 'from-orange-500/10 via-rose-500/5 to-transparent' };
+    if (hour < 18) return { text: `Good afternoon, ${firstName}. Ready for your next journey?`, gradient: 'from-blue-500/10 via-cyan-500/5 to-transparent' };
+    return { text: `Good evening, ${firstName}. Need a safe ride home?`, gradient: 'from-indigo-500/10 via-purple-500/5 to-transparent' };
   };
+
+  const greetingData = getGreeting();
 
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="min-h-screen bg-gray-50 transition-colors duration-300"
+      className={`min-h-screen transition-colors duration-500 bg-gray-50 text-gray-900`}
     >
-      <Navbar />
-      
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-            <div className="flex items-center gap-4">
-              <h1 className="text-3xl font-bold text-gray-900 capitalize">
-                {getGreeting()}, {user?.name || 'Customer'}
-              </h1>
+      {/* Dynamic Background Mesh */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className={`absolute inset-0 bg-gradient-to-br ${greetingData.gradient} opacity-50`}></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl mix-blend-screen animate-blob"></div>
+        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl mix-blend-screen animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-1/3 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl mix-blend-screen animate-blob animation-delay-4000"></div>
+      </div>
+
+      <div className="relative z-10">
+        <Navbar />
+        
+        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <div className="px-4 py-6 sm:px-0">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+              <div className="flex items-center gap-4">
+                <div>
+                  <h1 className={`text-3xl font-bold capitalize text-gray-900`}>
+                    {greetingData.text.split('.')[0]}.
+                  </h1>
+                  <p className={`text-sm mt-1 text-gray-500`}>
+                    {greetingData.text.split('.')[1]}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 w-full sm:w-auto">
+                <div className={`flex flex-row rounded-lg shadow-sm border p-1 w-full sm:w-auto bg-white border-gray-100`}>
+                  <button
+                    onClick={() => setActiveTab('dashboard')}
+                    className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors text-center ${
+                      activeTab === 'dashboard' 
+                        ? ('bg-indigo-50 text-indigo-700') 
+                        : ('text-gray-500 hover:text-gray-700 hover:bg-gray-50')
+                    }`}
+                  >
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('bookings')}
+                    className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors text-center ${
+                      activeTab === 'bookings' 
+                        ? ('bg-indigo-50 text-indigo-700') 
+                        : ('text-gray-500 hover:text-gray-700 hover:bg-gray-50')
+                    }`}
+                  >
+                    My Bookings
+                  </button>
+                </div>
+              </div>
             </div>
-            <div className="flex flex-wrap sm:flex-nowrap bg-white rounded-lg shadow-sm border border-gray-100 p-1 w-full sm:w-auto">
-              <button
-                onClick={() => setActiveTab('dashboard')}
-                className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-              >
-                Dashboard
-              </button>
-              <button
-                onClick={() => setActiveTab('bookings')}
-                className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'bookings' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-              >
-                My Bookings
-              </button>
-            </div>
-          </div>
           
-          {activeTab === 'dashboard' ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 flex flex-col gap-8">
-                {/* Profile Section */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          {activeTab === 'profile' ? (
+            <div className="max-w-2xl mx-auto">
+              <div className={`rounded-2xl shadow-sm border p-6 bg-white border-gray-100`}>
                 <div className={`flex justify-between items-start ${isEditingProfile ? 'mb-6' : ''}`}>
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-md">
+                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-md bg-indigo-600`}>
                       {profileName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-gray-900">{profileName}</h3>
-                      <p className="text-sm text-gray-500">Customer</p>
+                      <h3 className={`text-lg font-bold text-gray-900`}>{profileName}</h3>
+                      <p className={`text-sm text-gray-500`}>Customer</p>
                     </div>
                   </div>
                   {!isEditingProfile && (
                     <button
                       onClick={() => setIsEditingProfile(true)}
-                      className="text-xs font-medium text-indigo-600 bg-indigo-50 px-4 py-1.5 rounded-full hover:bg-indigo-100 transition-colors"
+                      className={`text-xs font-medium px-4 py-1.5 rounded-full transition-colors text-indigo-600 bg-indigo-50 hover:bg-indigo-100`}
                     >
                       Edit
                     </button>
@@ -1037,18 +1226,55 @@ export default function CustomerDashboard() {
                   </form>
                 )}
               </div>
+            </div>
+          ) : activeTab === 'dashboard' ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 flex flex-col gap-8">
+                <LoyaltyCard bookingsCount={bookings.filter(b => b.rideStatus === 'Completed').length}  />
+                
+                {/* Book a Ride Form */}
+                <div className={`relative overflow-hidden rounded-2xl shadow-sm border p-6 bg-white border-gray-100`}>
+                <AnimatePresence>
+                  {bookingLoading && <ConciergeLoading  />}
+                </AnimatePresence>
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className={`text-lg font-bold text-gray-900`}>Book a Ride</h3>
+                  
+                  {/* Stepper Indicator */}
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3].map((step) => (
+                      <div key={step} className="flex items-center">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+                          bookingStep === step 
+                            ? ('bg-indigo-600 text-white')
+                            : bookingStep > step 
+                              ? ('bg-indigo-100 text-indigo-600')
+                              : ('bg-gray-100 text-gray-400')
+                        }`}>
+                          {bookingStep > step ? <CheckCircle className="w-4 h-4" /> : step}
+                        </div>
+                        {step < 3 && (
+                          <div className={`w-8 h-1 mx-1 rounded-full ${
+                            bookingStep > step 
+                              ? ('bg-indigo-100')
+                              : ('bg-gray-100')
+                          }`}></div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-              {/* Book a Ride Form */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-6">Book a Ride</h3>
                 <AnimatePresence mode="wait">
                     <motion.form 
-                      key="form"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
+                      id="booking-form"
+                      key={`form-step-${bookingStep}`}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.3 }}
                       onSubmit={handleBookRide} 
-                      className="space-y-4"
+                      className="space-y-6"
                     >
                       {bookingError && (
                         <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative text-sm">
@@ -1056,26 +1282,28 @@ export default function CustomerDashboard() {
                         </div>
                       )}
                       
-                      <div className="flex flex-wrap gap-2 mb-6">
-                        {['One-way', 'Round-trip', 'Tour', 'Car Renting', 'Wedding'].map(type => (
-                          <button
-                            key={type}
-                            type="button"
-                            onClick={() => setTripType(type)}
-                            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                              tripType === type 
-                                ? 'bg-indigo-600 text-white' 
-                                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-                            }`}
-                          >
-                            {type}
-                          </button>
-                        ))}
-                      </div>
+                      {bookingStep === 1 && (
+                        <>
+                          <div className="flex flex-wrap gap-2 mb-6">
+                            {['One-way', 'Round-trip', 'Tour', 'Car Renting', 'Wedding'].map(type => (
+                              <button
+                                key={type}
+                                type="button"
+                                onClick={() => setTripType(type)}
+                                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                                  tripType === type 
+                                    ? ('bg-indigo-600 text-white') 
+                                    : ('bg-white text-gray-600 border border-gray-200 hover:bg-gray-50')
+                                }`}
+                              >
+                                {type}
+                              </button>
+                            ))}
+                          </div>
 
-                  {tripType !== 'Car Renting' && (
-                    <div className="relative">
-                      <label htmlFor="fromLocation" className="block text-sm font-medium text-gray-700">From</label>
+                      {tripType !== 'Car Renting' && (
+                        <div className="relative">
+                          <label htmlFor="fromLocation" className={`block text-sm font-medium mb-1 text-gray-700`}>From</label>
                       <input
                         type="text"
                         id="fromLocation"
@@ -1360,7 +1588,7 @@ export default function CustomerDashboard() {
                         transition={{ duration: 0.3 }}
                         className="overflow-hidden"
                       >
-                        <label htmlFor="returnDate" className="block text-sm font-medium text-gray-700 mt-4">Return Date & Time</label>
+                        <label htmlFor="returnDate" className={`block text-sm font-medium mt-4 text-gray-700`}>Return Date & Time</label>
                         <div className="mt-1 flex flex-wrap gap-3">
                           <input
                             type="date"
@@ -1369,23 +1597,23 @@ export default function CustomerDashboard() {
                             min={rideDate || new Date().toISOString().split('T')[0]}
                             value={returnDate}
                             onChange={(e) => setReturnDate(e.target.value)}
-                            className="block w-full sm:flex-1 min-w-[150px] border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            className={`block w-full sm:flex-1 min-w-[150px] border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900`}
                           />
                           <div className="flex gap-2 items-center flex-1 min-w-[240px]">
                             <select
                               value={returnTimeHour}
                               onChange={(e) => setReturnTimeHour(e.target.value)}
-                              className="block w-full flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
+                              className={`block w-full flex-1 border rounded-md shadow-sm py-2 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900`}
                             >
                               {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
                                 <option key={h} value={h.toString().padStart(2, '0')}>{h.toString().padStart(2, '0')}</option>
                               ))}
                             </select>
-                            <span className="flex items-center text-gray-500 font-bold">:</span>
+                            <span className={`flex items-center font-bold text-gray-500`}>:</span>
                             <select
                               value={returnTimeMinute}
                               onChange={(e) => setReturnTimeMinute(e.target.value)}
-                              className="block w-full flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
+                              className={`block w-full flex-1 border rounded-md shadow-sm py-2 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900`}
                             >
                               {['00', '15', '30', '45'].map(m => (
                                 <option key={m} value={m}>{m}</option>
@@ -1394,7 +1622,7 @@ export default function CustomerDashboard() {
                             <select
                               value={returnTimeAmPm}
                               onChange={(e) => setReturnTimeAmPm(e.target.value)}
-                              className="block w-full flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
+                              className={`block w-full flex-1 border rounded-md shadow-sm py-2 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900`}
                             >
                               <option value="AM">AM</option>
                               <option value="PM">PM</option>
@@ -1415,7 +1643,7 @@ export default function CustomerDashboard() {
                       >
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label htmlFor="numberOfDays" className="block text-sm font-medium text-gray-700">Number of Days</label>
+                            <label htmlFor="numberOfDays" className={`block text-sm font-medium text-gray-700`}>Number of Days</label>
                             <input
                               type="number"
                               id="numberOfDays"
@@ -1424,7 +1652,7 @@ export default function CustomerDashboard() {
                               max="30"
                               value={numberOfDays}
                               onChange={(e) => setNumberOfDays(e.target.value === '' ? '' : parseInt(e.target.value))}
-                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                              className={`mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900`}
                             />
                           </div>
                           <div>
@@ -1448,40 +1676,19 @@ export default function CustomerDashboard() {
                               const isSelected = selectedVehicle === v.name;
                               const isUnavailable = v.quantity <= 0;
                               return (
-                                <div 
+                                <VehicleShowroomCard
                                   key={v.name}
+                                  vehicle={v}
+                                  isSelected={isSelected}
+                                  isUnavailable={isUnavailable}
+                                  
                                   onClick={() => {
                                     if (!isUnavailable) {
                                       setSelectedVehicle(v.name);
                                       setConfirmCapacity(false);
                                     }
                                   }}
-                                  className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                                    isSelected 
-                                      ? 'border-indigo-600 bg-indigo-50/50 shadow-md ring-1 ring-indigo-600' 
-                                      : isUnavailable 
-                                        ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed' 
-                                        : 'border-gray-200 bg-white hover:border-indigo-300 hover:shadow-sm'
-                                  }`}
-                                >
-                                  <div className="flex justify-between items-start mb-2">
-                                    <h5 className={`font-bold ${isSelected ? 'text-indigo-900' : 'text-gray-900'}`}>{v.name}</h5>
-                                    {isSelected && <CheckCircle className="h-5 w-5 text-indigo-600" />}
-                                  </div>
-                                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
-                                    <Users className="h-4 w-4" />
-                                    <span>Up to {v.capacity} passengers</span>
-                                  </div>
-                                  <div className="mt-auto">
-                                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                                      isUnavailable 
-                                        ? 'bg-red-100 text-red-700' 
-                                        : 'bg-green-100 text-green-700'
-                                    }`}>
-                                      {isUnavailable ? 'Unavailable' : `${v.quantity} Available`}
-                                    </span>
-                                  </div>
-                                </div>
+                                />
                               );
                             })}
                           </div>
@@ -1489,6 +1696,71 @@ export default function CustomerDashboard() {
                       </motion.div>
                     )}
 
+
+                    {tripType === 'Wedding' && (
+                      <motion.div
+                        key="wedding-fields"
+                        initial={{ opacity: 0, y: -10, height: 0 }}
+                        animate={{ opacity: 1, y: 0, height: 'auto' }}
+                        exit={{ opacity: 0, y: -10, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="space-y-4 overflow-hidden mt-4"
+                      >
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="weddingDate" className="block text-sm font-medium text-gray-700">Wedding Date</label>
+                            <input
+                              type="date"
+                              id="weddingDate"
+                              required={tripType === 'Wedding'}
+                              min={new Date().toISOString().split('T')[0]}
+                              value={weddingDate}
+                              onChange={(e) => setWeddingDate(e.target.value)}
+                              className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="eventLocation" className="block text-sm font-medium text-gray-700">Event Location</label>
+                            <input
+                              type="text"
+                              id="eventLocation"
+                              required={tripType === 'Wedding'}
+                              value={eventLocation}
+                              onChange={(e) => setEventLocation(e.target.value)}
+                              placeholder="e.g., Grand Hotel, City Center"
+                              className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="vehiclesRequired" className="block text-sm font-medium text-gray-700">Vehicles Required</label>
+                            <input
+                              type="number"
+                              id="vehiclesRequired"
+                              required={tripType === 'Wedding'}
+                              min="1"
+                              max="10"
+                              value={vehiclesRequired}
+                              onChange={(e) => setVehiclesRequired(e.target.value)}
+                              className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="decorationRequired" className="block text-sm font-medium text-gray-700">Decoration Required?</label>
+                            <select
+                              id="decorationRequired"
+                              value={decorationRequired}
+                              onChange={(e) => setDecorationRequired(e.target.value)}
+                              className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900"
+                            >
+                              <option value="No">No</option>
+                              <option value="Yes">Yes</option>
+                            </select>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
 
                   </AnimatePresence>
                   
@@ -1524,55 +1796,39 @@ export default function CustomerDashboard() {
                           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                         />
                       </div>
+                    </div>
+                  )}
 
-                      {numberOfPeople <= 22 && (
-                        <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className="text-xl">⭐</span>
-                            <h4 className="text-sm font-bold text-indigo-900">Recommended for You</h4>
-                          </div>
-                          
-                          <div className="space-y-3">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Selection</label>
+                        </>
+                      )}
+
+                      {bookingStep === 2 && (
+                        <div className="space-y-6">
+                          {/* Vehicle Selection Step */}
+                          <div className={`rounded-xl p-6 border bg-indigo-50 border-indigo-100`}>
+                            <div className="flex items-center gap-2 mb-4">
+                              <span className="text-xl">⭐</span>
+                              <h4 className={`text-lg font-bold text-indigo-900`}>Choose Your Vehicle</h4>
+                            </div>
+                            
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               {AVAILABLE_VEHICLES.map(v => {
                                 const isSelected = selectedVehicle === v.name;
                                 const isUnavailable = v.quantity <= 0;
                                 return (
-                                  <div 
+                                  <VehicleShowroomCard
                                     key={v.name}
+                                    vehicle={v}
+                                    isSelected={isSelected}
+                                    isUnavailable={isUnavailable}
+                                    
                                     onClick={() => {
                                       if (!isUnavailable) {
                                         setSelectedVehicle(v.name);
                                         setConfirmCapacity(false);
                                       }
                                     }}
-                                    className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                                      isSelected 
-                                        ? 'border-indigo-600 bg-indigo-50/50 shadow-md ring-1 ring-indigo-600' 
-                                        : isUnavailable 
-                                          ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed' 
-                                          : 'border-gray-200 bg-white hover:border-indigo-300 hover:shadow-sm'
-                                    }`}
-                                  >
-                                    <div className="flex justify-between items-start mb-2">
-                                      <h5 className={`font-bold ${isSelected ? 'text-indigo-900' : 'text-gray-900'}`}>{v.name}</h5>
-                                      {isSelected && <CheckCircle className="h-5 w-5 text-indigo-600" />}
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
-                                      <Users className="h-4 w-4" />
-                                      <span>Up to {v.capacity} passengers</span>
-                                    </div>
-                                    <div className="mt-auto">
-                                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                                        isUnavailable 
-                                          ? 'bg-red-100 text-red-700' 
-                                          : 'bg-green-100 text-green-700'
-                                      }`}>
-                                        {isUnavailable ? 'Unavailable' : `${v.quantity} Available`}
-                                      </span>
-                                    </div>
-                                  </div>
+                                  />
                                 );
                               })}
                             </div>
@@ -1596,22 +1852,24 @@ export default function CustomerDashboard() {
 
                             {tripType === 'Tour' && (
                               <div className="mt-4">
-                                <label className="block text-sm font-medium text-gray-700">Number of Vehicles</label>
+                                <label className={`block text-sm font-medium mb-1 text-gray-700`}>Number of Vehicles</label>
                                 <input
                                   type="number"
                                   min="1"
                                   max={AVAILABLE_VEHICLES.find(v => v.name === selectedVehicle)?.quantity || 10}
                                   value={numberOfCars}
                                   onChange={(e) => setNumberOfCars(e.target.value === '' ? '' : parseInt(e.target.value))}
-                                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  className={`block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900`}
                                 />
                               </div>
                             )}
 
+                            {/* AC Selection */}
                             {tripType !== 'Car Renting' && (
-                              <div className="mt-4 bg-white border border-gray-200 rounded-lg p-4 shadow-sm flex items-center justify-between">
+                              <div className={`mt-6 border rounded-lg p-4 shadow-sm flex items-center justify-between bg-white border-gray-200`}>
                                 <div>
-                                  <h4 className="text-sm font-medium text-gray-900">AC Vehicle</h4>
+                                  <h4 className={`font-medium text-gray-900`}>Air Conditioning</h4>
+                                  <p className={`text-sm text-gray-500`}>Add AC for a more comfortable ride</p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
                                   <input 
@@ -1620,210 +1878,102 @@ export default function CustomerDashboard() {
                                     checked={isAC}
                                     onChange={(e) => setIsAC(e.target.checked)}
                                   />
-                                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                  <div className={`w-11 h-6 rounded-full peer peer-focus:outline-none peer-focus:ring-4 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all bg-gray-200 peer-focus:ring-indigo-300 peer-checked:bg-indigo-600`}></div>
                                 </label>
                               </div>
                             )}
                           </div>
                         </div>
                       )}
-                    </div>
-                  )}
 
-                  <AnimatePresence mode="wait">
-                    {tripType === 'Wedding' && (
-                      <motion.div
-                        key="wedding"
-                        initial={{ opacity: 0, y: -10, height: 0 }}
-                        animate={{ opacity: 1, y: 0, height: 'auto' }}
-                        exit={{ opacity: 0, y: -10, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="space-y-4 overflow-hidden"
-                      >
-                        <div>
-                          <label htmlFor="weddingDate" className="block text-sm font-medium text-gray-700">Wedding Date</label>
-                          <input
-                            type="date"
-                            id="weddingDate"
-                            min={new Date().toISOString().split('T')[0]}
-                            value={weddingDate}
-                            onChange={(e) => setWeddingDate(e.target.value)}
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                          />
+                      {bookingStep === 3 && (
+                        <div className="space-y-6">
+                          {/* Review Step */}
+                          <div className={`rounded-xl p-6 border bg-gray-50 border-gray-200`}>
+                            <h4 className={`text-lg font-bold mb-4 text-gray-900`}>Review Your Trip</h4>
+                            <div className="space-y-4">
+                              <div className="flex items-start gap-3">
+                                <MapPin className={`w-5 h-5 mt-0.5 text-indigo-600`} />
+                                <div>
+                                  <p className={`text-sm text-gray-500`}>Route</p>
+                                  <p className={`font-medium text-gray-900`}>
+                                    {tripType === 'Car Renting' ? 'Car Rental' : 
+                                     tripType === 'Tour' ? `${fromLocation} → ${destinations.join(' → ')}` :
+                                     `${fromLocation} → ${toLocation}`}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-start gap-3">
+                                <Calendar className={`w-5 h-5 mt-0.5 text-indigo-600`} />
+                                <div>
+                                  <p className={`text-sm text-gray-500`}>Date & Time</p>
+                                  <p className={`font-medium text-gray-900`}>
+                                    {rideDate && !isNaN(parseRideDate(rideDate).getTime()) 
+                                      ? `${safeFormatDate(rideDate, 'MMM d, yyyy')} at ${rideTimeHour}:${rideTimeMinute} ${rideTimeAmPm}`
+                                      : (tripType === 'Wedding' && weddingDate && !isNaN(parseRideDate(weddingDate).getTime()) 
+                                          ? `${safeFormatDate(weddingDate, 'MMM d, yyyy')}` 
+                                          : 'Date not selected')}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-start gap-3">
+                                <Car className={`w-5 h-5 mt-0.5 text-indigo-600`} />
+                                <div>
+                                  <p className={`text-sm text-gray-500`}>Vehicle</p>
+                                  <p className={`font-medium text-gray-900`}>
+                                    {selectedVehicle} {isAC ? '(AC)' : '(Non-AC)'}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <label htmlFor="eventLocation" className="block text-sm font-medium text-gray-700">Event Location</label>
-                          <input
-                            type="text"
-                            id="eventLocation"
-                            value={eventLocation}
-                            onChange={(e) => setEventLocation(e.target.value)}
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                          />
-                        </div>
-                        <div className="flex gap-6">
-                          <div className="flex-1">
-                            <label htmlFor="vehiclesRequired" className="block text-sm font-medium text-gray-700">Number of Vehicles</label>
-                            <input
-                              type="number"
-                              id="vehiclesRequired"
-                              min="1"
-                              max={AVAILABLE_VEHICLES.find(v => v.name === selectedVehicle)?.quantity || 10}
-                              value={vehiclesRequired}
-                              onChange={(e) => {
-                                const valStr = e.target.value;
-                                if (valStr === '') {
-                                  setVehiclesRequired('');
-                                  return;
-                                }
-                                const val = parseInt(valStr);
-                                const maxQty = AVAILABLE_VEHICLES.find(v => v.name === selectedVehicle)?.quantity || 10;
-                                if (!isNaN(val)) {
-                                  if (val > maxQty) setVehiclesRequired(maxQty.toString());
-                                  else if (val < 1) setVehiclesRequired('1');
-                                  else setVehiclesRequired(val.toString());
+                      )}
+
+                      {/* Wizard Navigation */}
+                      <div className="flex justify-between pt-6 border-t border-gray-200/20">
+                        {bookingStep > 1 ? (
+                          <button
+                            type="button"
+                            onClick={() => setBookingStep(bookingStep - 1)}
+                            className={`flex items-center px-4 py-2 text-sm font-medium rounded-xl transition-colors ${
+                              'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+                            }`}
+                          >
+                            <ChevronLeft className="w-4 h-4 mr-1" /> Back
+                          </button>
+                        ) : <div></div>}
+                        
+                        {bookingStep < 3 ? (
+                          <button
+                            type="submit"
+                            className={`flex items-center px-6 py-2.5 text-sm font-medium rounded-xl text-white transition-all ${
+                              'bg-indigo-600 hover:bg-indigo-700 shadow-sm'
+                            }`}
+                          >
+                            Next <ChevronRight className="w-4 h-4 ml-1" />
+                          </button>
+                        ) : (
+                          <div className="w-full max-w-xs ml-auto">
+                            <SlideToBookButton 
+                              onConfirm={() => {
+                                const btn = document.getElementById('hidden-submit-btn') as HTMLButtonElement;
+                                if (btn) {
+                                  btn.click();
                                 }
                               }}
-                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                              isLoading={bookingLoading}
+                              disabled={bookingLoading || (numberOfPeople > 22 && !confirmCapacity)}
                             />
+                            <button
+                              id="hidden-submit-btn"
+                              type="submit"
+                              className="hidden"
+                            ></button>
                           </div>
-                          <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Decoration Required?</label>
-                            <select
-                              value={decorationRequired}
-                              onChange={(e) => setDecorationRequired(e.target.value)}
-                              className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
-                            >
-                              <option value="Yes">Yes</option>
-                              <option value="No">No</option>
-                            </select>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-
-                    {tripType !== 'Car Renting' && tripType !== 'Wedding' && rideType === 'Airport Transfer' && (
-                      <motion.div
-                        key="airport"
-                        initial={{ opacity: 0, y: -10, height: 0 }}
-                        animate={{ opacity: 1, y: 0, height: 'auto' }}
-                        exit={{ opacity: 0, y: -10, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="space-y-4 overflow-hidden"
-                      >
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Pickup Type</label>
-                          <select
-                            value={pickupType}
-                            onChange={(e) => setPickupType(e.target.value)}
-                            className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
-                          >
-                            <option value="Arrival">Arrival</option>
-                            <option value="Departure">Departure</option>
-                          </select>
-                        </div>
-                      </motion.div>
-                    )}
-
-                    {tripType !== 'Car Renting' && tripType !== 'Wedding' && rideType === 'Other' && (
-                      <motion.div
-                        key="other"
-                        initial={{ opacity: 0, y: -10, height: 0 }}
-                        animate={{ opacity: 1, y: 0, height: 'auto' }}
-                        exit={{ opacity: 0, y: -10, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="overflow-hidden"
-                      >
-                        <label htmlFor="customRequirements" className="block text-sm font-medium text-gray-700">Please describe your requirements</label>
-                        <textarea
-                          id="customRequirements"
-                          rows={4}
-                          value={customRequirements}
-                          onChange={(e) => setCustomRequirements(e.target.value)}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                          placeholder="Tell us what you need..."
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-6 bg-indigo-50 border border-indigo-100 rounded-xl p-4 shadow-sm"
-                  >
-                    <div 
-                      className="flex justify-between items-center cursor-pointer"
-                      onClick={() => setShowCostBreakdown(!showCostBreakdown)}
-                    >
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-medium text-indigo-800">Total Cost Summary</h4>
-                        {tripType === 'Round-trip' && calculateHaltCharge() > 0 && !isCalculatingDistance && (
-                          showCostBreakdown ? <ChevronUp className="w-4 h-4 text-indigo-600" /> : <ChevronDown className="w-4 h-4 text-indigo-600" />
                         )}
                       </div>
-                      <span className="text-2xl font-bold text-indigo-900">
-                        {isCalculatingDistance ? (
-                          <span className="text-sm font-normal text-indigo-500 animate-pulse">Calculating...</span>
-                        ) : (
-                          `₹${(estimatedPrice + (tripType === 'Round-trip' ? calculateHaltCharge() : 0)).toFixed(2)}`
-                        )}
-                      </span>
-                    </div>
-                    
-                    <AnimatePresence>
-                      {showCostBreakdown && tripType === 'Round-trip' && calculateHaltCharge() > 0 && !isCalculatingDistance && (
-                        <motion.div 
-                          initial={{ height: 0, opacity: 0, marginTop: 0 }}
-                          animate={{ height: 'auto', opacity: 1, marginTop: 12 }}
-                          exit={{ height: 0, opacity: 0, marginTop: 0 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="space-y-2 pt-3 border-t border-indigo-100">
-                            <div className="flex justify-between items-center text-sm text-indigo-600">
-                              <span>Base Fare</span>
-                              <span>₹{estimatedPrice.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between items-center text-sm text-indigo-600">
-                              <span>Halt Charge</span>
-                              <span>₹{calculateHaltCharge().toFixed(2)}</span>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                  <div className="mt-6 mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200 text-sm text-gray-700">
-                    <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-1.5">
-                      <Info className="w-4 h-4 text-indigo-600" />
-                      Cancellation Policy & Terms
-                    </h4>
-                    <ul className="list-disc pl-5 space-y-1 mb-4 text-xs text-gray-600">
-                      <li><strong>Less than 24 hours</strong> before departure: No refund.</li>
-                      <li><strong>24 to 72 hours</strong> before departure: 50% refund (25% for multi-day trips).</li>
-                      <li><strong>More than 72 hours</strong> before departure: 85% refund (50% for multi-day trips).</li>
-                    </ul>
-                    <label className="flex items-start gap-2 cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={acceptedTerms}
-                        onChange={(e) => setAcceptedTerms(e.target.checked)}
-                        className="mt-1 w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                      />
-                      <span className="text-sm font-medium text-gray-900">
-                        I have read and agree to the Cancellation Policy & Terms.
-                      </span>
-                    </label>
-                  </div>
-                  
-                  <button
-                    type="submit"
-                    disabled={bookingLoading || !acceptedTerms}
-                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:hover:bg-gray-400"
-                  >
-                    {bookingLoading ? (tripType === 'Car Renting' ? 'Renting...' : 'Booking...') : (tripType === 'Car Renting' ? 'Rent Vehicle' : 'Book Ride')}
-                  </button>
-                </motion.form>
+                    </motion.form>
                 </AnimatePresence>
               </div>
             </div>
@@ -1836,45 +1986,47 @@ export default function CustomerDashboard() {
               />
               
               {/* Dynamic Receipt Component */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-indigo-600" />
-                  Trip Summary
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Trip Type</span>
-                    <span className="font-medium text-gray-900">{tripType}</span>
-                  </div>
-                  {tripType !== 'Car Renting' && (
+              {bookingStep > 1 && (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-indigo-600" />
+                    Trip Summary
+                  </h3>
+                  <div className="space-y-4">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Estimated Distance</span>
-                      <span className="font-medium text-gray-900">{estimatedKM} km</span>
+                      <span className="text-gray-500">Trip Type</span>
+                      <span className="font-medium text-gray-900">{tripType}</span>
                     </div>
-                  )}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Vehicle</span>
-                    <span className="font-medium text-gray-900">{selectedVehicle}</span>
-                  </div>
-                  {tripType === 'Round-trip' && (
+                    {tripType !== 'Car Renting' && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Total Distance</span>
+                        <span className="font-medium text-gray-900">{estimatedKM} km</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Halt Charges</span>
-                      <span className="font-medium text-gray-900">₹{calculateHaltCharge()}</span>
+                      <span className="text-gray-500">Vehicle</span>
+                      <span className="font-medium text-gray-900">{selectedVehicle}</span>
                     </div>
-                  )}
-                  <div className="border-t border-gray-100 pt-4 mt-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-base font-bold text-gray-900">Total Estimated Fare</span>
-                      <span className="text-2xl font-extrabold text-indigo-600">₹{
-                        tripType === 'Car Renting' 
-                          ? (Number(numberOfDays) || 1) * 2000 * (Number(numberOfCars) || 1)
-                          : (estimatedPrice || (estimatedKM * (isAC ? 14 : 13) * (tripType === 'Wedding' ? (parseInt(vehiclesRequired) || 1) : (tripType === 'Tour' ? (Number(numberOfCars) || 1) : 1)))) + (tripType === 'Round-trip' ? calculateHaltCharge() : 0)
-                      }</span>
+                    {tripType === 'Round-trip' && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Halt Charges</span>
+                        <span className="font-medium text-gray-900">₹{calculateHaltCharge()}</span>
+                      </div>
+                    )}
+                    <div className="border-t border-gray-100 pt-4 mt-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-base font-bold text-gray-900">Total Estimated Fare</span>
+                        <span className="text-2xl font-extrabold text-indigo-600">₹{
+                          tripType === 'Car Renting' 
+                            ? (Number(numberOfDays) || 1) * 2000 * (Number(numberOfCars) || 1)
+                            : (estimatedPrice || (estimatedKM * (isAC ? 14 : 13) * (tripType === 'Wedding' ? (parseInt(vehiclesRequired) || 1) : (tripType === 'Tour' ? (Number(numberOfCars) || 1) : 1)))) + (tripType === 'Round-trip' ? calculateHaltCharge() : 0)
+                        }</span>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-2 text-right">*Final fare may vary based on actual distance and tolls.</p>
                     </div>
-                    <p className="text-xs text-gray-400 mt-2 text-right">*Final fare may vary based on actual distance and tolls.</p>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
           ) : (
@@ -1917,240 +2069,253 @@ export default function CustomerDashboard() {
                     ))}
                   </div>
                 ) : bookings.length === 0 ? (
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
-                    <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Car className="w-10 h-10 text-indigo-300" />
+                  <div className={`rounded-2xl shadow-sm border p-12 text-center bg-white border-gray-100`}>
+                    <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 bg-indigo-50`}>
+                      <Car className={`w-10 h-10 text-indigo-300`} />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">No bookings yet</h3>
-                    <p className="text-gray-500 mb-6 max-w-sm mx-auto">You haven't made any bookings yet. Book your first ride to get started!</p>
+                    <h3 className={`text-lg font-bold mb-2 text-gray-900`}>No bookings yet</h3>
+                    <p className={`mb-6 max-w-sm mx-auto text-gray-500`}>You haven't made any bookings yet. Book your first ride to get started!</p>
                     <button 
                       onClick={() => setActiveTab('dashboard')}
-                      className="inline-flex items-center justify-center px-6 py-2.5 border border-transparent text-sm font-medium rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-colors"
+                      className={`inline-flex items-center justify-center px-6 py-2.5 border border-transparent text-sm font-medium rounded-xl text-white shadow-sm transition-colors bg-indigo-600 hover:bg-indigo-700`}
                     >
                       Book a Ride
                     </button>
                   </div>
                 ) : (
-                  bookings.map((booking) => (
-                    <div key={booking.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                      {/* Always visible header */}
-                      <div 
-                        className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
-                        onClick={() => setExpandedBookingId(expandedBookingId === booking.id ? null : booking.id)}
-                      >
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2 sm:gap-4">
-                          <h4 className="text-lg font-bold text-gray-900 break-words w-full sm:w-auto">
-                            {booking.tripType === 'Car Renting'
-                              ? `Car Rental: ${booking.numberOfDays} days, ${booking.numberOfCars} cars`
-                              : booking.tripType === 'Tour' 
-                              ? `${booking.fromLocation} \u2192 ${booking.destinations}`
-                              : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
-                          </h4>
-                          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.rideStatus, booking.refundStatus)}`}>
-                              {booking.rideStatus === 'Cancelled' && booking.refundStatus === 'Processed' ? 'Refunded' : booking.rideStatus}
-                            </span>
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPaymentColor(booking.paymentStatus)}`}>
-                              {booking.paymentStatus}
-                            </span>
-                            {expandedBookingId === booking.id ? (
-                              <ChevronUp className="w-5 h-5 text-gray-400 ml-auto sm:ml-0" />
-                            ) : (
-                              <ChevronDown className="w-5 h-5 text-gray-400 ml-auto sm:ml-0" />
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="w-4 h-4 text-indigo-400" />
-                            {format(new Date(booking.rideDate), 'MMM d, yyyy')}
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="w-4 h-4 text-red-400" />
-                            {format(new Date(booking.rideDate), 'h:mm a')}
-                          </div>
-                          <div className="flex items-center gap-1.5 font-medium text-gray-900">
-                            ₹{parseFloat(booking.fareAmount).toFixed(2)}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Expandable Body */}
-                      <AnimatePresence>
-                        {expandedBookingId === booking.id && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="border-t border-gray-100 bg-gray-50"
+                  <div className={`relative border-l-2 ml-4 pl-8 space-y-8 border-indigo-100`}>
+                    {bookings.map((booking, index) => (
+                      <div key={booking.id} className="relative">
+                        {/* Timeline Node */}
+                        <div className={`absolute -left-[41px] top-6 w-5 h-5 rounded-full border-4 shadow-sm bg-indigo-500 border-white`}></div>
+                        
+                        <div className={`rounded-2xl shadow-sm border overflow-hidden transition-colors bg-white border-gray-100 hover:border-indigo-100`}>
+                          {/* Always visible header */}
+                          <div 
+                            className={`p-6 cursor-pointer transition-colors hover:bg-gray-50`}
+                            onClick={() => setExpandedBookingId(expandedBookingId === booking.id ? null : booking.id)}
                           >
-                            <div className="p-6">
-                              <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-6">
-                                <div className="flex items-center gap-1.5">
-                                  <Car className="w-4 h-4 text-blue-400" />
-                                  {booking.suggestedVehicle || 'Sedan'} {booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
-                                </div>
-                              {booking.tripType !== 'Car Renting' && (
-                                <div className="flex items-center gap-1.5">
-                                  <Users className="w-4 h-4 text-purple-400" />
-                                  {booking.numberOfPeople} Passenger{booking.numberOfPeople > 1 ? 's' : ''}
-                                </div>
-                              )}
-                              {booking.tripType === 'Tour' && (
-                                <div className="flex items-center gap-1.5">
-                                  <Car className="w-4 h-4 text-green-400" />
-                                  {booking.numberOfCars} Vehicle{booking.numberOfCars > 1 ? 's' : ''}
-                                </div>
-                              )}
+                            <AbstractMiniMap 
+                              from={booking.fromLocation} 
+                              to={booking.tripType === 'Tour' ? booking.destinations : booking.toLocation || 'Destination'} 
+                               
+                            />
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2 sm:gap-4">
+                              <h4 className={`text-lg font-bold break-words w-full sm:w-auto text-gray-900`}>
+                                {booking.tripType === 'Car Renting'
+                                  ? `Car Rental: ${booking.numberOfDays} days, ${booking.numberOfCars} cars`
+                                  : booking.tripType === 'Tour' 
+                                  ? `${booking.fromLocation} \u2192 ${booking.destinations}`
+                                  : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
+                              </h4>
+                              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.rideStatus, booking.refundStatus)}`}>
+                                  {booking.rideStatus === 'Cancelled' && booking.refundStatus === 'Processed' ? 'Refunded' : booking.rideStatus}
+                                </span>
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPaymentColor(booking.paymentStatus)}`}>
+                                  {booking.paymentStatus}
+                                </span>
+                                {expandedBookingId === booking.id ? (
+                                  <ChevronUp className={`w-5 h-5 ml-auto sm:ml-0 text-gray-400`} />
+                                ) : (
+                                  <ChevronDown className={`w-5 h-5 ml-auto sm:ml-0 text-gray-400`} />
+                                )}
                               </div>
-                              
-                              {booking.tripType === 'Wedding' && booking.weddingDetails && (
-                                <div className="mb-6 p-4 bg-white rounded-lg border border-pink-100 shadow-sm">
-                                  <h5 className="text-sm font-bold text-pink-800 mb-3 flex items-center gap-2">
-                                    <span className="text-lg">💍</span> Wedding Details
-                                  </h5>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                                    <div>
-                                      <span className="text-gray-500 block text-xs uppercase tracking-wider mb-1">Event Location</span>
-                                      <span className="font-medium text-gray-900">{booking.weddingDetails.eventLocation}</span>
+                            </div>
+                            <div className={`flex flex-wrap gap-4 text-sm text-gray-500`}>
+                              <div className="flex items-center gap-1.5">
+                                <Calendar className={`w-4 h-4 text-indigo-500`} />
+                                {safeFormatDate(booking.rideDate, 'MMM d, yyyy')}
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <Clock className={`w-4 h-4 text-red-500`} />
+                                {safeFormatDate(booking.rideDate, 'h:mm a')}
+                              </div>
+                              <div className={`flex items-center gap-1.5 font-medium text-gray-900`}>
+                                ₹{parseFloat(booking.fareAmount).toFixed(2)}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Expandable Body */}
+                          <AnimatePresence>
+                            {expandedBookingId === booking.id && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className={`border-t border-gray-100 bg-gray-50`}
+                              >
+                                <div className="p-6">
+                                  <div className={`flex flex-wrap gap-4 text-sm mb-6 text-gray-500`}>
+                                    <div className="flex items-center gap-1.5">
+                                      <Car className="w-4 h-4 text-blue-400" />
+                                      {booking.suggestedVehicle || 'Sedan'} {booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
                                     </div>
-                                    <div>
-                                      <span className="text-gray-500 block text-xs uppercase tracking-wider mb-1">Vehicles Required</span>
-                                      <span className="font-medium text-gray-900">{booking.weddingDetails.vehiclesRequired}</span>
+                                  {booking.tripType !== 'Car Renting' && (
+                                    <div className="flex items-center gap-1.5">
+                                      <Users className="w-4 h-4 text-purple-400" />
+                                      {booking.numberOfPeople} Passenger{booking.numberOfPeople > 1 ? 's' : ''}
                                     </div>
-                                    <div>
-                                      <span className="text-gray-500 block text-xs uppercase tracking-wider mb-1">Decoration</span>
-                                      <span className="font-medium text-gray-900">{booking.weddingDetails.decorationRequired}</span>
+                                  )}
+                                  {booking.tripType === 'Tour' && (
+                                    <div className="flex items-center gap-1.5">
+                                      <Car className="w-4 h-4 text-green-400" />
+                                      {booking.numberOfCars} Vehicle{booking.numberOfCars > 1 ? 's' : ''}
                                     </div>
+                                  )}
                                   </div>
-                                </div>
-                              )}
-
-                              {/* Driver Details Section */}
-                              {booking.assignments && booking.assignments.length > 0 ? (
-                                <div className="mb-6 space-y-4">
-                                  {booking.assignments.map((assignment: any, idx: number) => (
-                                    <div key={idx} className="p-4 bg-white rounded-lg border border-indigo-100 shadow-sm">
-                                      <h5 className="text-sm font-semibold text-indigo-900 mb-2">
-                                        {booking.assignments.length > 1 ? `Vehicle ${idx + 1} Details` : 'Driver & Vehicle Details'}
+                                  
+                                  {booking.tripType === 'Wedding' && booking.weddingDetails && (
+                                    <div className={`mb-6 p-4 rounded-lg border shadow-sm bg-white border-pink-100`}>
+                                      <h5 className={`text-sm font-bold mb-3 flex items-center gap-2 text-pink-800`}>
+                                        <span className="text-lg">💍</span> Wedding Details
                                       </h5>
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                          <span className={`block text-xs uppercase tracking-wider mb-1 text-gray-500`}>Event Location</span>
+                                          <span className={`font-medium text-gray-900`}>{booking.weddingDetails.eventLocation}</span>
+                                        </div>
+                                        <div>
+                                          <span className={`block text-xs uppercase tracking-wider mb-1 text-gray-500`}>Vehicles Required</span>
+                                          <span className={`font-medium text-gray-900`}>{booking.weddingDetails.vehiclesRequired}</span>
+                                        </div>
+                                        <div>
+                                          <span className={`block text-xs uppercase tracking-wider mb-1 text-gray-500`}>Decoration</span>
+                                          <span className={`font-medium text-gray-900`}>{booking.weddingDetails.decorationRequired}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+  
+                                  {/* Driver Details Section */}
+                                  {booking.assignments && booking.assignments.length > 0 ? (
+                                    <div className="mb-6 space-y-4">
+                                      {booking.assignments.map((assignment: any, idx: number) => (
+                                        <div key={idx} className={`p-4 rounded-lg border shadow-sm bg-white border-indigo-100`}>
+                                          <h5 className={`text-sm font-semibold mb-2 text-indigo-900`}>
+                                            {booking.assignments.length > 1 ? `Vehicle ${idx + 1} Details` : 'Driver & Vehicle Details'}
+                                          </h5>
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {assignment.driverDetails && (
+                                              <>
+                                                <div>
+                                                  <p className={`text-xs uppercase tracking-wider text-indigo-700`}>Driver Name</p>
+                                                  <p className={`text-sm font-medium text-indigo-900`}>{assignment.driverDetails.name}</p>
+                                                </div>
+                                                <div>
+                                                  <p className={`text-xs uppercase tracking-wider text-indigo-700`}>Phone Number</p>
+                                                  <p className={`text-sm font-medium text-indigo-900`}>{assignment.driverDetails.phone}</p>
+                                                </div>
+                                              </>
+                                            )}
+                                            {assignment.vehicleDetails && (
+                                              <div className="sm:col-span-2">
+                                                <p className={`text-xs uppercase tracking-wider text-indigo-700`}>Vehicle Assigned</p>
+                                                <p className={`text-sm font-medium text-indigo-900`}>{assignment.vehicleDetails.name} ({assignment.vehicleDetails.number})</p>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : booking.driverDetails ? (
+                                    <div className={`mb-6 p-4 rounded-lg border shadow-sm bg-white border-indigo-100`}>
+                                      <h5 className={`text-sm font-semibold mb-2 text-indigo-900`}>Driver & Vehicle Details</h5>
                                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        {assignment.driverDetails && (
-                                          <>
-                                            <div>
-                                              <p className="text-xs text-indigo-700 uppercase tracking-wider">Driver Name</p>
-                                              <p className="text-sm font-medium text-indigo-900">{assignment.driverDetails.name}</p>
-                                            </div>
-                                            <div>
-                                              <p className="text-xs text-indigo-700 uppercase tracking-wider">Phone Number</p>
-                                              <p className="text-sm font-medium text-indigo-900">{assignment.driverDetails.phone}</p>
-                                            </div>
-                                          </>
-                                        )}
-                                        {assignment.vehicleDetails && (
+                                        <div>
+                                          <p className={`text-xs uppercase tracking-wider text-indigo-700`}>Driver Name</p>
+                                          <p className={`text-sm font-medium text-indigo-900`}>{booking.driverDetails.name}</p>
+                                        </div>
+                                        <div>
+                                          <p className={`text-xs uppercase tracking-wider text-indigo-700`}>Phone Number</p>
+                                          <p className={`text-sm font-medium text-indigo-900`}>{booking.driverDetails.phone}</p>
+                                        </div>
+                                        {booking.vehicleDetails && (
                                           <div className="sm:col-span-2">
-                                            <p className="text-xs text-indigo-700 uppercase tracking-wider">Vehicle Assigned</p>
-                                            <p className="text-sm font-medium text-indigo-900">{assignment.vehicleDetails.name} ({assignment.vehicleDetails.number})</p>
+                                            <p className={`text-xs uppercase tracking-wider text-indigo-700`}>Vehicle Assigned</p>
+                                            <p className={`text-sm font-medium text-indigo-900`}>{booking.vehicleDetails.name} ({booking.vehicleDetails.number})</p>
                                           </div>
                                         )}
                                       </div>
                                     </div>
-                                  ))}
-                                </div>
-                              ) : booking.driverDetails ? (
-                                <div className="mb-6 p-4 bg-white rounded-lg border border-indigo-100 shadow-sm">
-                                  <h5 className="text-sm font-semibold text-indigo-900 mb-2">Driver & Vehicle Details</h5>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                      <p className="text-xs text-indigo-700 uppercase tracking-wider">Driver Name</p>
-                                      <p className="text-sm font-medium text-indigo-900">{booking.driverDetails.name}</p>
+                                  ) : booking.visibilityMessage ? (
+                                    <div className={`mb-6 p-4 rounded-lg border shadow-sm bg-blue-50 border-blue-100`}>
+                                      <p className={`text-sm flex items-center gap-2 text-blue-700`}>
+                                        <Info className="w-5 h-5 flex-shrink-0" />
+                                        {booking.visibilityMessage}
+                                      </p>
                                     </div>
-                                    <div>
-                                      <p className="text-xs text-indigo-700 uppercase tracking-wider">Phone Number</p>
-                                      <p className="text-sm font-medium text-indigo-900">{booking.driverDetails.phone}</p>
-                                    </div>
-                                    {booking.vehicleDetails && (
-                                      <div className="sm:col-span-2">
-                                        <p className="text-xs text-indigo-700 uppercase tracking-wider">Vehicle Assigned</p>
-                                        <p className="text-sm font-medium text-indigo-900">{booking.vehicleDetails.name} ({booking.vehicleDetails.number})</p>
+                                  ) : null}
+  
+                                  {booking.rideStatus === 'Cancelled' && (
+                                    <div className={`mb-6 p-4 rounded-lg border shadow-sm bg-red-50 border-red-100`}>
+                                      <h5 className={`text-sm font-semibold mb-2 text-red-900`}>Refund Details</h5>
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                          <p className={`text-xs uppercase tracking-wider text-red-700`}>Status</p>
+                                          <p className={`text-sm font-medium text-red-900`}>{booking.refundStatus || 'No Refund'}</p>
+                                        </div>
+                                        <div>
+                                          <p className={`text-xs uppercase tracking-wider text-red-700`}>Amount</p>
+                                          <p className={`text-sm font-medium text-red-900`}>₹{booking.refundAmount?.toFixed(2) || '0.00'}</p>
+                                        </div>
                                       </div>
-                                    )}
-                                  </div>
-                                </div>
-                              ) : booking.visibilityMessage ? (
-                                <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100 shadow-sm">
-                                  <p className="text-sm text-blue-700 flex items-center gap-2">
-                                    <Info className="w-5 h-5 flex-shrink-0" />
-                                    {booking.visibilityMessage}
-                                  </p>
-                                </div>
-                              ) : null}
-
-                              {booking.rideStatus === 'Cancelled' && (
-                                <div className="mb-6 p-4 bg-red-50 rounded-lg border border-red-100 shadow-sm">
-                                  <h5 className="text-sm font-semibold text-red-900 mb-2">Refund Details</h5>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                      <p className="text-xs text-red-700 uppercase tracking-wider">Status</p>
-                                      <p className="text-sm font-medium text-red-900">{booking.refundStatus || 'No Refund'}</p>
                                     </div>
-                                    <div>
-                                      <p className="text-xs text-red-700 uppercase tracking-wider">Amount</p>
-                                      <p className="text-sm font-medium text-red-900">₹{booking.refundAmount?.toFixed(2) || '0.00'}</p>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              <div className="flex justify-between items-end">
-                                <div>
-                                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Booking ID</p>
-                                  <p className="text-sm font-medium text-gray-900">#{booking.id}</p>
-                                </div>
-                                <div className="flex flex-col items-end gap-2">
-                                  <div className="flex gap-2">
-                                    {booking.rideStatus === 'Completed' && (
-                                      <button
-                                        onClick={() => setRebookModal({ isOpen: true, booking })}
-                                        className="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
-                                      >
-                                        Rebook Ride
-                                      </button>
-                                    )}
-                                    {(booking.rideStatus === 'Pending' || booking.rideStatus === 'Confirmed' || booking.rideStatus === 'Assigned') && (
-                                      <button
-                                        onClick={() => {
-                                          const refundInfo = calculateRefund(booking.rideDate, parseFloat(booking.fareAmount || '0'), booking.numberOfDays);
-                                          setCancelModal({ isOpen: true, booking, refundInfo });
-                                        }}
-                                        className="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-red-100 text-red-600 hover:bg-red-200"
-                                      >
-                                        Cancel Ride
-                                      </button>
-                                    )}
-                                  </div>
-                                  {cancelMessage && cancelMessage.id === booking.id && (
-                                    <p className={`text-xs max-w-[200px] text-right ${cancelMessage.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>
-                                      {cancelMessage.text}
-                                    </p>
                                   )}
+  
+                                  <div className="flex justify-between items-end">
+                                    <div>
+                                      <p className={`text-xs font-medium uppercase tracking-wider mb-1 text-gray-400`}>Booking ID</p>
+                                      <p className={`text-sm font-medium text-gray-900`}>#{booking.id}</p>
+                                    </div>
+                                    <div className="flex flex-col items-end gap-2">
+                                      <div className="flex gap-2">
+                                        {booking.rideStatus === 'Completed' && (
+                                          <button
+                                            onClick={() => setRebookModal({ isOpen: true, booking })}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-indigo-100 text-indigo-700 hover:bg-indigo-200`}
+                                          >
+                                            Rebook Ride
+                                          </button>
+                                        )}
+                                        {(booking.rideStatus === 'Pending' || booking.rideStatus === 'Confirmed' || booking.rideStatus === 'Assigned') && (
+                                          <button
+                                            onClick={() => {
+                                              const refundInfo = calculateRefund(booking.rideDate, parseFloat(booking.fareAmount || '0'), booking.numberOfDays);
+                                              setCancelModal({ isOpen: true, booking, refundInfo });
+                                            }}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-red-100 text-red-600 hover:bg-red-200`}
+                                          >
+                                            Cancel Ride
+                                          </button>
+                                        )}
+                                      </div>
+                                      {cancelMessage && cancelMessage.id === booking.id && (
+                                        <p className={`text-xs max-w-[200px] text-right ${cancelMessage.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>
+                                          {cancelMessage.text}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  ))
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
           )}
         </div>
       </div>
+    </div>
 
-      {/* Cancel Modal */}
+    {/* Cancel Modal */}
       <AnimatePresence>
         {cancelModal.isOpen && cancelModal.booking && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -2159,14 +2324,14 @@ export default function CustomerDashboard() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.3 }}
-              className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden"
+              className={`rounded-2xl shadow-xl max-w-md w-full overflow-hidden bg-white`}
             >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold text-gray-900">Cancel Ride</h3>
+                  <h3 className={`text-xl font-bold text-gray-900`}>Cancel Ride</h3>
                   <button 
                     onClick={() => setCancelModal({ isOpen: false, booking: null, refundInfo: null })}
-                    className="text-gray-400 hover:text-gray-500"
+                    className={`hover:text-gray-500 transition-colors text-gray-400`}
                   >
                     <span className="sr-only">Close</span>
                     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2175,20 +2340,20 @@ export default function CustomerDashboard() {
                   </button>
                 </div>
                 
-                <div className="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                  <p className="text-sm text-gray-600 mb-2">
-                    <span className="font-medium text-gray-900">Route:</span> {cancelModal.booking.tripType === 'Car Renting' ? `Car Rental: ${cancelModal.booking.numberOfDays} days, ${cancelModal.booking.numberOfCars} cars` : cancelModal.booking.tripType === 'Tour' ? `${cancelModal.booking.fromLocation} \u2192 ${cancelModal.booking.destinations}` : `${cancelModal.booking.fromLocation} \u2192 ${cancelModal.booking.toLocation}`}
+                <div className={`mb-6 p-4 rounded-xl border bg-gray-50 border-gray-100`}>
+                  <p className={`text-sm mb-2 text-gray-600`}>
+                    <span className={`font-medium text-gray-900`}>Route:</span> {cancelModal.booking.tripType === 'Car Renting' ? `Car Rental: ${cancelModal.booking.numberOfDays} days, ${cancelModal.booking.numberOfCars} cars` : cancelModal.booking.tripType === 'Tour' ? `${cancelModal.booking.fromLocation} \u2192 ${cancelModal.booking.destinations}` : `${cancelModal.booking.fromLocation} \u2192 ${cancelModal.booking.toLocation}`}
                   </p>
-                  <p className="text-sm text-gray-600 mb-2">
-                    <span className="font-medium text-gray-900">Departure:</span> {cancelModal.booking.rideDate}
+                  <p className={`text-sm mb-2 text-gray-600`}>
+                    <span className={`font-medium text-gray-900`}>Departure:</span> {cancelModal.booking.rideDate}
                   </p>
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium text-gray-900">Fare:</span> ₹{cancelModal.booking.fareAmount}
+                  <p className={`text-sm text-gray-600`}>
+                    <span className={`font-medium text-gray-900`}>Fare:</span> ₹{cancelModal.booking.fareAmount}
                   </p>
                 </div>
 
                 {cancelModal.refundInfo && (
-                  <div className={`mb-6 p-4 rounded-xl border ${cancelModal.refundInfo.refundPercent > 0 ? 'bg-green-50 border-green-100 text-green-800' : 'bg-red-50 border-red-100 text-red-800'}`}>
+                  <div className={`mb-6 p-4 rounded-xl border ${cancelModal.refundInfo.refundPercent > 0 ? ('bg-green-50 border-green-100 text-green-800') : ('bg-red-50 border-red-100 text-red-800')}`}>
                     <h4 className="font-semibold mb-1">Cancellation Policy</h4>
                     <p className="text-sm mb-2">{cancelModal.refundInfo.message}</p>
                     <div className="flex justify-between items-center font-bold">
@@ -2202,7 +2367,7 @@ export default function CustomerDashboard() {
                   <button
                     type="button"
                     onClick={() => setCancelModal({ isOpen: false, booking: null, refundInfo: null })}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className={`px-4 py-2 text-sm font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors text-gray-700 bg-white border border-gray-300 hover:bg-gray-50`}
                   >
                     Keep Ride
                   </button>
@@ -2214,7 +2379,7 @@ export default function CustomerDashboard() {
                         setCancelModal({ isOpen: false, booking: null, refundInfo: null });
                       }
                     }}
-                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-xl hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    className={`px-4 py-2 text-sm font-medium text-white border border-transparent rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors bg-red-600 hover:bg-red-700`}
                   >
                     Confirm Cancellation
                   </button>
@@ -2234,14 +2399,14 @@ export default function CustomerDashboard() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.3 }}
-              className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden"
+              className={`rounded-2xl shadow-xl max-w-md w-full overflow-hidden bg-white`}
             >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold text-gray-900">Rebook Ride</h3>
+                  <h3 className={`text-xl font-bold text-gray-900`}>Rebook Ride</h3>
                   <button 
                     onClick={() => setRebookModal({ isOpen: false, booking: null })}
-                    className="text-gray-400 hover:text-gray-500"
+                    className={`hover:text-gray-500 transition-colors text-gray-400`}
                   >
                     <span className="sr-only">Close</span>
                     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2250,51 +2415,51 @@ export default function CustomerDashboard() {
                   </button>
                 </div>
                 
-                <div className="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                  <p className="text-sm text-gray-600 mb-2">
-                    <span className="font-medium text-gray-900">Route:</span> {rebookModal.booking.tripType === 'Car Renting' ? `Car Rental: ${rebookModal.booking.numberOfDays} days, ${rebookModal.booking.numberOfCars} cars` : rebookModal.booking.tripType === 'Tour' ? `${rebookModal.booking.fromLocation} \u2192 ${rebookModal.booking.destinations}` : `${rebookModal.booking.fromLocation} \u2192 ${rebookModal.booking.toLocation}`}
+                <div className={`mb-6 p-4 rounded-xl border bg-gray-50 border-gray-100`}>
+                  <p className={`text-sm mb-2 text-gray-600`}>
+                    <span className={`font-medium text-gray-900`}>Route:</span> {rebookModal.booking.tripType === 'Car Renting' ? `Car Rental: ${rebookModal.booking.numberOfDays} days, ${rebookModal.booking.numberOfCars} cars` : rebookModal.booking.tripType === 'Tour' ? `${rebookModal.booking.fromLocation} \u2192 ${rebookModal.booking.destinations}` : `${rebookModal.booking.fromLocation} \u2192 ${rebookModal.booking.toLocation}`}
                   </p>
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium text-gray-900">Vehicle:</span> {rebookModal.booking.suggestedVehicle} {rebookModal.booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
+                  <p className={`text-sm text-gray-600`}>
+                    <span className={`font-medium text-gray-900`}>Vehicle:</span> {rebookModal.booking.suggestedVehicle} {rebookModal.booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
                   </p>
                 </div>
 
                 <form onSubmit={handleRebookSubmit} className="space-y-4">
                   {rebookError && (
-                    <div className="p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-100">
+                    <div className={`p-3 text-sm rounded-lg border bg-red-50 text-red-700 border-red-100`}>
                       {rebookError}
                     </div>
                   )}
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Select New Date</label>
+                    <label className={`block text-sm font-medium mb-1 text-gray-700`}>Select New Date</label>
                     <input
                       type="date"
                       required
                       min={new Date().toISOString().split('T')[0]}
                       value={rebookDate}
                       onChange={(e) => setRebookDate(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white border-gray-300 text-gray-900`}
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Select New Time</label>
+                    <label className={`block text-sm font-medium mb-1 text-gray-700`}>Select New Time</label>
                     <div className="flex gap-2 items-center">
                       <select
                         value={rebookTimeHour}
                         onChange={(e) => setRebookTimeHour(e.target.value)}
-                        className="block w-full flex-1 border border-gray-300 rounded-xl shadow-sm py-2.5 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
+                        className={`block w-full flex-1 border rounded-xl shadow-sm py-2.5 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors bg-white border-gray-300 text-gray-900`}
                       >
                         {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
                           <option key={h} value={h.toString().padStart(2, '0')}>{h.toString().padStart(2, '0')}</option>
                         ))}
                       </select>
-                      <span className="flex items-center text-gray-500 font-bold">:</span>
+                      <span className={`flex items-center font-bold text-gray-500`}>:</span>
                       <select
                         value={rebookTimeMinute}
                         onChange={(e) => setRebookTimeMinute(e.target.value)}
-                        className="block w-full flex-1 border border-gray-300 rounded-xl shadow-sm py-2.5 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
+                        className={`block w-full flex-1 border rounded-xl shadow-sm py-2.5 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors bg-white border-gray-300 text-gray-900`}
                       >
                         {['00', '15', '30', '45'].map(m => (
                           <option key={m} value={m}>{m}</option>
@@ -2303,7 +2468,7 @@ export default function CustomerDashboard() {
                       <select
                         value={rebookTimeAmPm}
                         onChange={(e) => setRebookTimeAmPm(e.target.value)}
-                        className="block w-full flex-1 border border-gray-300 rounded-xl shadow-sm py-2.5 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
+                        className={`block w-full flex-1 border rounded-xl shadow-sm py-2.5 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors bg-white border-gray-300 text-gray-900`}
                       >
                         <option value="AM">AM</option>
                         <option value="PM">PM</option>
@@ -2315,14 +2480,14 @@ export default function CustomerDashboard() {
                     <button
                       type="button"
                       onClick={() => setRebookModal({ isOpen: false, booking: null })}
-                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      className={`flex-1 px-4 py-2.5 border rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors border-gray-300 text-gray-700 bg-white hover:bg-gray-50`}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={rebookLoading || !rebookDate}
-                      className="flex-1 px-4 py-2.5 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
+                      className={`flex-1 px-4 py-2.5 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center transition-colors bg-indigo-600 hover:bg-indigo-700`}
                     >
                       {rebookLoading ? (
                         <RefreshCw className="w-5 h-5 animate-spin" />
@@ -2347,26 +2512,33 @@ export default function CustomerDashboard() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.3 }}
-              className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden"
+              className={`rounded-2xl shadow-xl max-w-md w-full overflow-hidden bg-white max-h-[90vh] flex flex-col`}
             >
-              <div className="p-6 text-center">
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
-                  className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4"
-                >
-                  <CheckCircle className="w-8 h-8 text-green-500" />
-                </motion.div>
+              <div className="p-6 text-center overflow-y-auto flex-1 relative">
+                <div className="relative mx-auto w-24 h-24 mb-6 flex items-center justify-center">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                    className={`relative z-10 w-20 h-20 rounded-full flex items-center justify-center bg-green-500 shadow-lg`}
+                  >
+                    <motion.div
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ duration: 0.5, delay: 0.2 }}
+                    >
+                      <CheckCircle className="w-10 h-10 text-white" />
+                    </motion.div>
+                  </motion.div>
+                </div>
                 
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Confirmed!</h2>
-                <p className="text-gray-500 mb-6">Your ride has been successfully scheduled.</p>
+                <h2 className={`text-2xl font-bold mb-6 text-gray-900`}>Booking Confirmed</h2>
 
-                <div className="bg-gray-50 rounded-xl p-4 text-left border border-gray-100 mb-6">
+                <div className={`rounded-xl p-4 text-left border mb-6 bg-gray-50 border-gray-100`}>
                   <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Route</span>
-                      <span className="font-medium text-gray-900 text-right">
+                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-4">
+                      <span className={'text-gray-500 whitespace-nowrap'}>Route</span>
+                      <span className={`font-medium text-left sm:text-right text-gray-900 break-words`}>
                         {bookingSuccessData.tripType === 'Car Renting'
                           ? `Car Rental: ${bookingSuccessData.numberOfDays} days, ${bookingSuccessData.numberOfCars} cars`
                           : bookingSuccessData.tripType === 'Tour' 
@@ -2374,39 +2546,43 @@ export default function CustomerDashboard() {
                           : `${bookingSuccessData.fromLocation} \u2192 ${bookingSuccessData.toLocation}`}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Departure</span>
-                      <span className="font-medium text-gray-900 text-right">
-                        {format(new Date(bookingSuccessData.rideDate), 'dd/MM/yyyy hh:mm a')}
+                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-4">
+                      <span className={'text-gray-500 whitespace-nowrap'}>Departure</span>
+                      <span className={`font-medium text-left sm:text-right text-gray-900`}>
+                        {safeFormatDate(bookingSuccessData.rideDate, 'dd/MM/yyyy hh:mm a')}
                       </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-3 mb-8">
-                  <div className="p-3 bg-indigo-50 text-indigo-700 rounded-lg text-sm border border-indigo-100 flex items-start gap-2 text-left">
+                  <div className={`p-3 rounded-lg text-sm border flex items-start gap-2 text-left bg-indigo-50 text-indigo-700 border-indigo-100`}>
                     <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
                     <p>We will contact you shortly.</p>
                   </div>
-                  <div className="p-3 bg-blue-50 text-blue-700 rounded-lg text-sm border border-blue-100 flex items-start gap-2 text-left">
+                  <div className={`p-3 rounded-lg text-sm border flex items-start gap-2 text-left bg-blue-50 text-blue-700 border-blue-100`}>
                     <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
                     <p>Driver & vehicle information will be given to you once the admin assigns these details to your ride.</p>
                   </div>
                 </div>
-
-                <div className="flex flex-col sm:flex-row gap-3 w-full">
+              </div>
+              <div className="p-6 pt-0 bg-white border-t border-gray-100">
+                <div className="flex flex-col sm:flex-row gap-3 w-full mt-4">
                   <button
                     onClick={() => {
                       setActiveTab('bookings');
                       setBookingSuccessData(null);
                     }}
-                    className="flex-1 justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                    className={`flex-1 justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition-colors bg-indigo-600 hover:bg-indigo-700`}
                   >
                     Go to My Bookings
                   </button>
                   <button
-                    onClick={() => setBookingSuccessData(null)}
-                    className="flex-1 justify-center py-2.5 px-4 border border-indigo-600 rounded-md shadow-sm text-sm font-medium text-indigo-600 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                    onClick={() => {
+                      setBookingSuccessData(null);
+                      setBookingStep(1);
+                    }}
+                    className={`flex-1 justify-center py-2.5 px-4 border rounded-md shadow-sm text-sm font-medium transition-colors border-indigo-600 text-indigo-600 bg-white hover:bg-indigo-50`}
                   >
                     Book Another
                   </button>

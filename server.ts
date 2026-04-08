@@ -385,20 +385,10 @@ async function startServer() {
         customRequirements: customRequirements || 'N/A',
         assignedDriverEmail: '',
         assignedVehicleId: '',
-        assignments: '[]'
+        assignments: '[]',
+        refundStatus: '',
+        refundAmount: ''
       };
-
-      // Ensure headers include new fields
-      if (sheet.columnCount < 33) {
-        await sheet.resize({ rowCount: sheet.rowCount, columnCount: 33 });
-      }
-      await sheet.setHeaderRow([
-        'id', 'userId', 'userName', 'userEmail', 'fromLocation', 'toLocation', 'rideDate', 
-        'rideType', 'numberOfPeople', 'rideStatus', 'paymentStatus', 'fareAmount', 'timestamp',
-        'tripType', 'returnDate', 'destinations', 'numberOfDays', 'numberOfCars', 'estimatedKM', 'suggestedVehicle',
-        'isAC', 'routeGeometry', 'weddingDetails', 'intercityDetails', 'airportDetails', 'customRequirements', 'assignedDriverEmail', 'assignedVehicleId', 'assignments',
-        'refundStatus', 'refundAmount'
-      ]);
 
       await sheet.addRow(newBooking);
       invalidateCache('Bookings');
@@ -606,18 +596,6 @@ async function startServer() {
       if (refundStatus !== undefined) row.set('refundStatus', refundStatus);
       if (refundAmount !== undefined) row.set('refundAmount', refundAmount.toString());
       
-      // Ensure headers include new fields before saving
-      if (sheet.columnCount < 33) {
-        await sheet.resize({ rowCount: sheet.rowCount, columnCount: 33 });
-      }
-      await sheet.setHeaderRow([
-        'id', 'userId', 'userName', 'userEmail', 'fromLocation', 'toLocation', 'rideDate', 
-        'rideType', 'numberOfPeople', 'rideStatus', 'paymentStatus', 'fareAmount', 'timestamp',
-        'tripType', 'returnDate', 'destinations', 'numberOfDays', 'numberOfCars', 'estimatedKM', 'suggestedVehicle',
-        'isAC', 'weddingDetails', 'intercityDetails', 'airportDetails', 'customRequirements', 'assignedDriverEmail', 'assignedVehicleId', 'assignments',
-        'refundStatus', 'refundAmount'
-      ]);
-
       await row.save();
       invalidateCache('Bookings');
 

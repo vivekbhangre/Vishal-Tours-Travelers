@@ -3,12 +3,15 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Fix for default marker icons in React Leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+const customIcon = new L.Icon({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+  shadowAnchor: [12, 41]
 });
 
 interface LocationData {
@@ -43,6 +46,11 @@ function MapUpdater({ from, to, destinations }: { from: LocationData | null, to:
       // Default to India
       map.setView([20.5937, 78.9629], 5);
     }
+    
+    // Fix for map not rendering correctly and pins being offset
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 200);
   }, [from, to, destinations, map]);
 
   return null;
@@ -58,26 +66,25 @@ export default function InteractiveMap({ fromLocation, toLocation, destinations 
 
   return (
     <div className="h-[300px] w-full rounded-2xl overflow-hidden shadow-sm border border-gray-100 z-0">
-      <MapContainer center={[20.5937, 78.9629]} zoom={5} style={{ height: '100%', width: '100%' }}>
+      <MapContainer center={[20.5937, 78.9629]} zoom={5} style={{ height: '100%', width: '100%' }} attributionControl={false}>
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         
         {fromLocation && (
-          <Marker position={[fromLocation.lat, fromLocation.lng]}>
+          <Marker position={[fromLocation.lat, fromLocation.lng]} icon={customIcon}>
             <Popup>Pickup: {fromLocation.displayName}</Popup>
           </Marker>
         )}
         
         {destinations.map((d, i) => d && (
-          <Marker key={i} position={[d.lat, d.lng]}>
+          <Marker key={i} position={[d.lat, d.lng]} icon={customIcon}>
             <Popup>Stop {i + 1}: {d.displayName}</Popup>
           </Marker>
         ))}
 
         {toLocation && (
-          <Marker position={[toLocation.lat, toLocation.lng]}>
+          <Marker position={[toLocation.lat, toLocation.lng]} icon={customIcon}>
             <Popup>Dropoff: {toLocation.displayName}</Popup>
           </Marker>
         )}

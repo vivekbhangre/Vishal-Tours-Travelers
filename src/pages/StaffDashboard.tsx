@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import ProfileSection from '../components/ProfileSection';
 import { api, socket } from '../lib/api';
+import { parseRideDate, safeFormatDate } from '../lib/validation';
 import { format } from 'date-fns';
 import { motion } from 'motion/react';
 import { RefreshCw } from 'lucide-react';
@@ -190,9 +191,9 @@ export default function StaffDashboard() {
                             )}
                           </div>
                           <div className="text-xs text-gray-500 text-right">
-                            {format(new Date(booking.rideDate), 'MMM d, yyyy')}
+                            {safeFormatDate(booking.rideDate, 'MMM d, yyyy')}
                             <br />
-                            {format(new Date(booking.rideDate), 'h:mm a')}
+                            {safeFormatDate(booking.rideDate, 'h:mm a')}
                           </div>
                         </div>
                         
@@ -275,7 +276,7 @@ export default function StaffDashboard() {
                                   ? `${booking.fromLocation} \u2192 ${booking.destinations}`
                                   : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
                               </div>
-                              <div className="text-sm text-gray-500">{format(new Date(booking.rideDate), 'PPp')}</div>
+                              <div className="text-sm text-gray-500">{safeFormatDate(booking.rideDate, 'PPp')}</div>
                               <div className="text-xs text-indigo-600 mt-1 font-medium">
                                 {booking.suggestedVehicle || 'Sedan'} {booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
                               </div>

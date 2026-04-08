@@ -93,10 +93,20 @@ export default function Navbar() {
           <div className="pt-2 pb-3 space-y-1">
             {user ? (
               <>
-                <div className="px-4 py-2 flex items-center text-gray-700 border-b border-gray-100">
+                <button 
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    if (user.role === 'customer') {
+                      localStorage.setItem('customerActiveTab', 'profile');
+                      navigate(`/dashboard/${user.role}`);
+                      window.dispatchEvent(new Event('storage'));
+                    }
+                  }}
+                  className="w-full text-left px-4 py-2 flex items-center text-gray-700 border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                >
                   <UserIcon className="h-5 w-5 mr-2" />
                   <span className="text-base font-medium">{user.name}</span>
-                </div>
+                </button>
                 <Link
                   to={`/dashboard/${user.role}`}
                   onClick={() => setIsMobileMenuOpen(false)}

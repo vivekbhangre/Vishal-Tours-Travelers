@@ -131,4 +131,9 @@
   .leaflet-container {
     @apply rounded-xl z-0;
   }
+  .leaflet-marker-icon,
+  .leaflet-marker-shadow {
+    max-width: none !important;
+    max-height: none !important;
+  }
 }

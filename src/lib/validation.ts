@@ -48,3 +48,52 @@ export const validateVehicleNumber = (number: string): string | null => {
   }
   return null;
 };
+
+export const parseRideDate = (rideDateStr: string): Date => {
+  if (!rideDateStr) return new Date(NaN);
+  let rideDate = new Date(rideDateStr);
+  
+  if (isNaN(rideDate.getTime())) {
+    try {
+      let match = rideDateStr.match(/(\d{4}-\d{2}-\d{2})\s+(\d{1,2}):(\d{2})\s+(AM|PM)/i);
+      if (match) {
+        const [_, datePart, hourStr, minStr, ampm] = match;
+        let hour = parseInt(hourStr, 10);
+        if (ampm.toUpperCase() === 'PM' && hour < 12) hour += 12;
+        if (ampm.toUpperCase() === 'AM' && hour === 12) hour = 0;
+        rideDate = new Date(`${datePart}T${hour.toString().padStart(2, '0')}:${minStr}:00`);
+      } else {
+        match = rideDateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2})\s+(AM|PM)/i);
+        if (match) {
+          const [_, month, day, year, hourStr, minStr, ampm] = match;
+          let hour = parseInt(hourStr, 10);
+          if (ampm.toUpperCase() === 'PM' && hour < 12) hour += 12;
+          if (ampm.toUpperCase() === 'AM' && hour === 12) hour = 0;
+          rideDate = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hour.toString().padStart(2, '0')}:${minStr}:00`);
+        }
+      }
+    } catch (e) {
+      console.error('Error parsing date:', e);
+    }
+  }
+  
+  if (!isNaN(rideDate.getTime()) && rideDateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    const [year, month, day] = rideDateStr.split('-');
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  }
+  
+  return rideDate;
+};
+
+import { format } from 'date-fns';
+
+export const safeFormatDate = (dateStr: string | undefined | null, formatStr: string, fallback: string = 'N/A'): string => {
+  if (!dateStr) return fallback;
+  const date = parseRideDate(dateStr);
+  if (isNaN(date.getTime())) return fallback;
+  try {
+    return format(date, formatStr);
+  } catch (e) {
+    return fallback;
+  }
+};
