@@ -32,10 +32,19 @@ export default function Navbar() {
             {user ? (
               <div className="flex items-center space-x-4">
                 <ThemeToggle />
-                <div className="flex items-center text-gray-700">
+                <button 
+                  onClick={() => {
+                    if (user.role === 'customer') {
+                      localStorage.setItem('customerActiveTab', 'profile');
+                      navigate(`/dashboard/${user.role}`);
+                      window.dispatchEvent(new Event('storage'));
+                    }
+                  }}
+                  className="flex items-center text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md transition-colors cursor-pointer"
+                >
                   <UserIcon className="h-5 w-5 mr-1" />
                   <span className="text-sm font-medium">{user.name}</span>
-                </div>
+                </button>
                 <Link
                   to={`/dashboard/${user.role}`}
                   className="text-gray-700 hover:text-indigo-600:text-indigo-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
