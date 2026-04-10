@@ -16,7 +16,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50 transition-colors duration-300">
+    <nav className="bg-white/80 backdrop-blur-xl shadow-sm border-b border-gray-200 sticky top-0 z-50 transition-colors duration-300">
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-12 xl:px-24">
         <div className="flex justify-between h-16">
           <div className="flex">
@@ -47,13 +47,13 @@ export default function Navbar() {
                 </button>
                 <Link
                   to={`/dashboard/${user.role}`}
-                  className="text-gray-700 hover:text-indigo-600:text-indigo-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   Dashboard
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center text-gray-700 hover:text-red-600:text-red-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="flex items-center text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   <LogOut className="h-5 w-5 mr-1" />
                   Logout
@@ -64,7 +64,7 @@ export default function Navbar() {
                 <ThemeToggle />
                 <Link
                   to="/login"
-                  className="text-gray-700 hover:text-indigo-600:text-indigo-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   Login
                 </Link>
@@ -83,7 +83,7 @@ export default function Navbar() {
             <ThemeToggle />
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500:text-gray-300 hover:bg-gray-100:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 transition-colors"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 transition-colors"
             >
               <span className="sr-only">Open main menu</span>
               {isMobileMenuOpen ? (
@@ -98,7 +98,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="sm:hidden border-t border-gray-200">
+        <div className="sm:hidden border-t border-gray-200 bg-white">
           <div className="pt-2 pb-3 space-y-1">
             {user ? (
               <>
@@ -119,13 +119,13 @@ export default function Navbar() {
                 <Link
                   to={`/dashboard/${user.role}`}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-4 py-2 text-base font-medium text-gray-700 hover:text-indigo-600:text-indigo-400 hover:bg-gray-50:bg-gray-800 transition-colors"
+                  className="block px-4 py-2 text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 transition-colors"
                 >
                   Dashboard
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="block w-full text-left px-4 py-2 text-base font-medium text-gray-700 hover:text-red-600:text-red-400 hover:bg-gray-50:bg-gray-800 transition-colors"
+                  className="block w-full text-left px-4 py-2 text-base font-medium text-gray-700 hover:text-red-600 hover:bg-gray-50 transition-colors"
                 >
                   Logout
                 </button>
@@ -135,7 +135,7 @@ export default function Navbar() {
                 <Link
                   to="/login"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-4 py-2 text-base font-medium text-gray-700 hover:text-indigo-600:text-indigo-400 hover:bg-gray-50:bg-gray-800 transition-colors"
+                  className="block px-4 py-2 text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 transition-colors"
                 >
                   Login
                 </Link>

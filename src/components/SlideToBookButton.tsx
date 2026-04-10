@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, useMotionValue, useTransform } from 'motion/react';
-import { Car, RefreshCw } from 'lucide-react';
+import { Car, RefreshCw, Check } from 'lucide-react';
 
 interface SlideToBookButtonProps {
   onConfirm: () => void;
@@ -38,7 +38,16 @@ export default function SlideToBookButton({ onConfirm, isLoading, disabled }: Sl
       // Confirmed
       x.set(maxDrag);
       setIsConfirmed(true);
-      onConfirm();
+      
+      // Haptic feedback (success pattern: two short bursts)
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate([30, 50, 30]);
+      }
+
+      // Delay onConfirm slightly to let the user see the green state and checkmark
+      setTimeout(() => {
+        onConfirm();
+      }, 700);
     } else {
       // Reset
       x.set(0);
@@ -60,21 +69,29 @@ export default function SlideToBookButton({ onConfirm, isLoading, disabled }: Sl
   return (
     <div 
       ref={containerRef}
-      className={`relative h-14 rounded-full flex items-center overflow-hidden transition-opacity ${
+      className={`relative h-14 rounded-full flex items-center overflow-hidden transition-colors duration-500 ${
         disabled ? 'opacity-50 cursor-not-allowed' : ''
-      }`}
-      style={{ backgroundColor: '#4f46e5' }} // indigo-600
+      } ${isConfirmed ? 'bg-green-500' : 'bg-indigo-600'}`}
     >
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <span className="text-white font-medium text-sm z-10 flex items-center gap-2">
+        <motion.span 
+          key={isConfirmed ? 'confirmed' : 'default'}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-white font-medium text-sm z-10 flex items-center gap-2"
+        >
           {isLoading ? (
             <>
               <RefreshCw className="w-4 h-4 animate-spin" /> Processing...
             </>
+          ) : isConfirmed ? (
+            <>
+              <Check className="w-4 h-4" /> Confirmed!
+            </>
           ) : (
             'Slide to Book'
           )}
-        </span>
+        </motion.span>
       </div>
 
       <motion.div
@@ -91,7 +108,18 @@ export default function SlideToBookButton({ onConfirm, isLoading, disabled }: Sl
         dragMomentum={false}
         onDragEnd={handleDragEnd}
       >
-        <Car className="w-5 h-5 text-indigo-600" />
+        <motion.div
+          key={isConfirmed ? 'check' : 'car'}
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        >
+          {isConfirmed ? (
+            <Check className="w-5 h-5 text-green-500" />
+          ) : (
+            <Car className="w-5 h-5 text-indigo-600" />
+          )}
+        </motion.div>
       </motion.div>
     </div>
   );

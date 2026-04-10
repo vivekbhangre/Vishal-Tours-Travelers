@@ -13,7 +13,7 @@ export default function Home() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col transition-colors duration-300"
+      className="min-h-screen bg-gray-50 flex flex-col transition-colors duration-300"
     >
       <Navbar />
       
@@ -29,9 +29,9 @@ export default function Home() {
               alt="Cinematic mountain highway sunset"
               referrerPolicy="no-referrer"
             />
-            {/* Dark gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent z-10"></div>
-            <div className="absolute inset-0 bg-indigo-900/30 mix-blend-multiply z-10"></div>
+            {/* Gradient overlay that adapts to theme */}
+            <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-white/60 to-transparent z-10"></div>
+            <div className="absolute inset-0 bg-indigo-100/30 mix-blend-multiply z-10"></div>
           </div>
 
           {/* Text Content */}
@@ -40,23 +40,16 @@ export default function Home() {
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="w-full max-w-2xl rounded-3xl p-8 sm:p-12 text-center lg:text-left shadow-2xl relative overflow-hidden"
-              style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                backdropFilter: 'blur(24px)',
-                WebkitBackdropFilter: 'blur(24px)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
-              }}
+              className="w-full max-w-2xl rounded-3xl p-8 sm:p-12 text-center lg:text-left shadow-2xl relative overflow-hidden bg-white/80 backdrop-blur-3xl border border-gray-200"
             >
               {/* Subtle noise overlay for premium glass feel */}
               <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
               
-              <h1 className="relative z-10 text-4xl tracking-tight font-extrabold text-white sm:text-5xl md:text-6xl drop-shadow-lg leading-tight">
+              <h1 className="relative z-10 text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl drop-shadow-sm leading-tight">
                 <span className="block mb-2">Your Journey,</span>
-                <span className="block text-indigo-400">Our Priority</span>
+                <span className="block text-indigo-600">Our Priority</span>
               </h1>
-              <p className="relative z-10 mt-6 text-base text-gray-200 sm:text-lg md:text-xl drop-shadow leading-relaxed font-light">
+              <p className="relative z-10 mt-6 text-base text-gray-700 sm:text-lg md:text-xl drop-shadow-sm leading-relaxed font-light">
                 Experience the best touring and traveling services with Vishal Tour & Travelers. We offer comfortable, safe, and reliable rides for all your needs.
               </p>
               <div className="relative z-10 mt-10 sm:flex sm:justify-center lg:justify-start gap-4">
@@ -70,13 +63,7 @@ export default function Home() {
                 {!user && (
                   <Link
                     to="/login"
-                    className="mt-4 sm:mt-0 w-full sm:w-auto flex items-center justify-center px-8 py-3.5 text-base font-medium rounded-xl text-white transition-all duration-300 hover:bg-white/10 hover:shadow-lg transform hover:-translate-y-1"
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      backdropFilter: 'blur(10px)',
-                      WebkitBackdropFilter: 'blur(10px)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)'
-                    }}
+                    className="mt-4 sm:mt-0 w-full sm:w-auto flex items-center justify-center px-8 py-3.5 text-base font-medium rounded-xl text-gray-900 bg-white/50 transition-all duration-300 hover:bg-white/80 hover:shadow-lg transform hover:-translate-y-1 border border-gray-200"
                   >
                     Login
                   </Link>
@@ -87,11 +74,11 @@ export default function Home() {
         </div>
 
         {/* Features Section - Bento Grid */}
-        <div className="py-24 bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
+        <div className="py-24 bg-gray-50 transition-colors duration-300">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-sm text-indigo-600 dark:text-indigo-400 font-bold tracking-widest uppercase mb-3">Why Choose Us</h2>
-              <p className="text-4xl leading-tight font-extrabold text-gray-900 dark:text-white sm:text-5xl">
+              <h2 className="text-sm text-indigo-600 font-bold tracking-widest uppercase mb-3">Why Choose Us</h2>
+              <p className="text-4xl leading-tight font-extrabold text-gray-900 sm:text-5xl">
                 A better way to travel
               </p>
             </div>
@@ -100,15 +87,15 @@ export default function Home() {
               {/* Large Bento Box */}
               <motion.div 
                 whileHover={{ y: -5 }}
-                className="md:col-span-2 bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden group"
+                className="md:col-span-2 bg-white rounded-3xl p-8 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all duration-300"
               >
-                <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-indigo-50 dark:bg-indigo-900/20 rounded-full blur-3xl group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 transition-colors duration-500"></div>
+                <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-indigo-50 rounded-full blur-3xl group-hover:bg-indigo-100 transition-colors duration-500"></div>
                 <div className="relative z-10">
-                  <div className="h-14 w-14 rounded-2xl bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-6">
+                  <div className="h-14 w-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-6 border border-indigo-100">
                     <MapPin className="h-7 w-7" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Anywhere, Anytime</h3>
-                  <p className="text-gray-600 dark:text-gray-400 text-lg leading-relaxed max-w-md">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Anywhere, Anytime</h3>
+                  <p className="text-gray-600 text-lg leading-relaxed max-w-md">
                     We cover a wide range of locations. Just tell us where you want to go, and we'll get you there safely and comfortably.
                   </p>
                 </div>
@@ -117,15 +104,15 @@ export default function Home() {
               {/* Small Bento Box 1 */}
               <motion.div 
                 whileHover={{ y: -5 }}
-                className="bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden group"
+                className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all duration-300"
               >
-                <div className="absolute bottom-0 right-0 w-24 h-24 bg-green-50 dark:bg-green-900/20 rounded-full blur-2xl group-hover:bg-green-100 dark:group-hover:bg-green-900/40 transition-colors duration-500"></div>
+                <div className="absolute bottom-0 right-0 w-24 h-24 bg-green-50 rounded-full blur-2xl group-hover:bg-green-100 transition-colors duration-500"></div>
                 <div className="relative z-10">
-                  <div className="h-12 w-12 rounded-xl bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 flex items-center justify-center mb-6">
+                  <div className="h-12 w-12 rounded-xl bg-green-100 text-green-600 flex items-center justify-center mb-6 border border-green-200">
                     <Calendar className="h-6 w-6" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Easy Booking</h3>
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Easy Booking</h3>
+                  <p className="text-gray-600">
                     Our simple booking process ensures you can reserve your ride in just a few clicks.
                   </p>
                 </div>
@@ -134,15 +121,15 @@ export default function Home() {
               {/* Small Bento Box 2 */}
               <motion.div 
                 whileHover={{ y: -5 }}
-                className="bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden group"
+                className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all duration-300"
               >
-                <div className="absolute top-0 left-0 w-24 h-24 bg-red-50 dark:bg-red-900/20 rounded-full blur-2xl group-hover:bg-red-100 dark:group-hover:bg-red-900/40 transition-colors duration-500"></div>
+                <div className="absolute top-0 left-0 w-24 h-24 bg-red-50 rounded-full blur-2xl group-hover:bg-red-100 transition-colors duration-500"></div>
                 <div className="relative z-10">
-                  <div className="h-12 w-12 rounded-xl bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 flex items-center justify-center mb-6">
+                  <div className="h-12 w-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center mb-6 border border-red-200">
                     <ShieldCheck className="h-6 w-6" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Safe & Secure</h3>
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Safe & Secure</h3>
+                  <p className="text-gray-600">
                     Your safety is our top priority. All our drivers are verified and vehicles are regularly inspected.
                   </p>
                 </div>
@@ -151,15 +138,15 @@ export default function Home() {
               {/* Medium Bento Box */}
               <motion.div 
                 whileHover={{ y: -5 }}
-                className="md:col-span-2 bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden group flex flex-col md:flex-row items-start md:items-center gap-6"
+                className="md:col-span-2 bg-white rounded-3xl p-8 shadow-sm border border-gray-100 relative overflow-hidden group flex flex-col md:flex-row items-start md:items-center gap-6 hover:shadow-md transition-all duration-300"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-50/30 to-transparent dark:via-indigo-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <div className="h-16 w-16 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-indigo-200 dark:shadow-none">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="h-16 w-16 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-indigo-200">
                   <CreditCard className="h-8 w-8" />
                 </div>
                 <div className="relative z-10">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Transparent Pricing</h3>
-                  <p className="text-gray-600 dark:text-gray-400 text-lg">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Transparent Pricing</h3>
+                  <p className="text-gray-600 text-lg">
                     No hidden fees. You know exactly what you'll pay before you book your ride. We believe in fair and honest pricing for all our customers.
                   </p>
                 </div>
@@ -170,56 +157,56 @@ export default function Home() {
       </div>
 
       {/* Footer Section */}
-      <footer className="bg-gray-950 text-white py-16 border-t border-gray-900">
+      <footer className="bg-white text-gray-900 py-16 border-t border-gray-200 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {/* About */}
             <div>
               <h3 className="text-2xl font-bold mb-6 font-heading">Vishal Tour & Travelers</h3>
-              <p className="text-gray-400 text-sm leading-relaxed max-w-sm">
+              <p className="text-gray-600 text-sm leading-relaxed max-w-sm">
                 Providing reliable, comfortable, and safe travel experiences. Your journey is our priority. Book with us today for a seamless ride.
               </p>
             </div>
 
             {/* Contact Info */}
             <div>
-              <h3 className="text-lg font-semibold mb-6 text-gray-200">Contact Us</h3>
+              <h3 className="text-lg font-semibold mb-6 text-gray-800">Contact Us</h3>
               <ul className="space-y-4">
                 <li className="flex items-start group">
-                  <div className="p-2 bg-gray-900 rounded-lg mr-4 group-hover:bg-indigo-900/50 transition-colors">
-                    <MapPin className="h-5 w-5 text-indigo-400" />
+                  <div className="p-2 bg-gray-50 rounded-lg mr-4 group-hover:bg-indigo-50 transition-colors border border-transparent">
+                    <MapPin className="h-5 w-5 text-indigo-600" />
                   </div>
-                  <span className="text-gray-400 text-sm mt-1">123 Main Street, City Center<br />State, Country 12345</span>
+                  <span className="text-gray-600 text-sm mt-1">123 Main Street, City Center<br />State, Country 12345</span>
                 </li>
                 <li className="flex items-start group">
-                  <div className="p-2 bg-gray-900 rounded-lg mr-4 group-hover:bg-indigo-900/50 transition-colors">
-                    <Phone className="h-5 w-5 text-indigo-400" />
+                  <div className="p-2 bg-gray-50 rounded-lg mr-4 group-hover:bg-indigo-50 transition-colors border border-transparent">
+                    <Phone className="h-5 w-5 text-indigo-600" />
                   </div>
-                  <span className="text-gray-400 text-sm mt-1">
+                  <span className="text-gray-600 text-sm mt-1">
                     +91 6266440222<br />
                     +91 9589681877
                   </span>
                 </li>
                 <li className="flex items-center group">
-                  <div className="p-2 bg-gray-900 rounded-lg mr-4 group-hover:bg-indigo-900/50 transition-colors">
-                    <Mail className="h-5 w-5 text-indigo-400" />
+                  <div className="p-2 bg-gray-50 rounded-lg mr-4 group-hover:bg-indigo-50 transition-colors border border-transparent">
+                    <Mail className="h-5 w-5 text-indigo-600" />
                   </div>
-                  <span className="text-gray-400 text-sm">info@vishaltravels.com</span>
+                  <span className="text-gray-600 text-sm">info@vishaltravels.com</span>
                 </li>
               </ul>
             </div>
 
             {/* Social Media */}
             <div>
-              <h3 className="text-lg font-semibold mb-6 text-gray-200">Follow Us</h3>
-              <p className="text-gray-400 text-sm mb-6">
+              <h3 className="text-lg font-semibold mb-6 text-gray-800">Follow Us</h3>
+              <p className="text-gray-600 text-sm mb-6">
                 Stay updated with our latest offers and travel stories.
               </p>
               <a 
                 href="https://www.instagram.com/ertiga__love__8952_seoni?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-4 py-2 bg-gray-900 hover:bg-gray-800 rounded-xl text-gray-300 hover:text-pink-500 transition-all duration-300 border border-gray-800 hover:border-pink-500/30"
+                className="inline-flex items-center px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-xl text-gray-700 hover:text-pink-600 transition-all duration-300 border border-gray-200 hover:border-pink-500/30"
               >
                 <Instagram className="h-5 w-5 mr-3" />
                 <span className="text-sm font-medium">@ertiga__love__8952_seoni</span>
@@ -227,13 +214,13 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="border-t border-gray-900 mt-16 pt-8 flex flex-col md:flex-row items-center justify-between">
+          <div className="border-t border-gray-200 mt-16 pt-8 flex flex-col md:flex-row items-center justify-between">
             <p className="text-gray-500 text-sm">
               &copy; {new Date().getFullYear()} Vishal Tour & Travelers. All rights reserved.
             </p>
             <div className="mt-4 md:mt-0 flex space-x-6">
-              <a href="#" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">Privacy Policy</a>
-              <a href="#" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">Terms of Service</a>
+              <a href="#" className="text-gray-500 hover:text-gray-700 text-sm transition-colors">Privacy Policy</a>
+              <a href="#" className="text-gray-500 hover:text-gray-700 text-sm transition-colors">Terms of Service</a>
             </div>
           </div>
         </div>

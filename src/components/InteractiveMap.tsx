@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -24,9 +24,10 @@ interface InteractiveMapProps {
   fromLocation: LocationData | null;
   toLocation: LocationData | null;
   destinations?: (LocationData | null)[];
+  isSheetExpanded?: boolean;
 }
 
-function MapUpdater({ from, to, destinations }: { from: LocationData | null, to: LocationData | null, destinations: (LocationData | null)[] }) {
+function MapUpdater({ from, to, destinations, isSheetExpanded }: { from: LocationData | null, to: LocationData | null, destinations: (LocationData | null)[], isSheetExpanded?: boolean }) {
   const map = useMap();
 
   useEffect(() => {
@@ -41,31 +42,98 @@ function MapUpdater({ from, to, destinations }: { from: LocationData | null, to:
 
     if (points.length > 0) {
       const bounds = L.latLngBounds(points);
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
+      
+      // Calculate padding dynamically based on sheet state
+      // If expanded, bottom sheet takes ~90vh, so we need huge bottom padding
+      // If collapsed, bottom sheet takes ~50vh, so we need medium bottom padding
+      const bottomPadding = isSheetExpanded ? window.innerHeight * 0.85 : window.innerHeight * 0.55;
+      
+      map.fitBounds(bounds, { 
+        paddingTopLeft: [50, 100], 
+        paddingBottomRight: [50, bottomPadding], 
+        maxZoom: 13,
+        animate: true,
+        duration: 0.5
+      });
     } else {
       // Default to India
       map.setView([20.5937, 78.9629], 5);
     }
     
     // Fix for map not rendering correctly and pins being offset
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       map.invalidateSize();
     }, 200);
-  }, [from, to, destinations, map]);
+
+    return () => clearTimeout(timeoutId);
+  }, [from, to, destinations, map, isSheetExpanded]);
 
   return null;
 }
 
-export default function InteractiveMap({ fromLocation, toLocation, destinations = [] }: InteractiveMapProps) {
-  const points: L.LatLngExpression[] = [];
-  if (fromLocation) points.push([fromLocation.lat, fromLocation.lng]);
-  destinations.forEach(d => {
-    if (d) points.push([d.lat, d.lng]);
-  });
-  if (toLocation) points.push([toLocation.lat, toLocation.lng]);
+export default function InteractiveMap({ fromLocation, toLocation, destinations = [], isSheetExpanded = false }: InteractiveMapProps) {
+  const [routePath, setRoutePath] = useState<L.LatLngExpression[]>([]);
+  const points = useMemo(() => {
+    const pts: L.LatLngExpression[] = [];
+    if (fromLocation) pts.push([fromLocation.lat, fromLocation.lng]);
+    destinations.forEach(d => {
+      if (d) pts.push([d.lat, d.lng]);
+    });
+    if (toLocation) pts.push([toLocation.lat, toLocation.lng]);
+    return pts;
+  }, [fromLocation?.lat, fromLocation?.lng, toLocation?.lat, toLocation?.lng, JSON.stringify(destinations)]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchRoute = async () => {
+      if (points.length < 2) {
+        if (isMounted) setRoutePath([]);
+        return;
+      }
+      
+      try {
+        // OSRM expects longitude,latitude
+        const coords = points.map(p => `${(p as number[])[1]},${(p as number[])[0]}`).join(';');
+        
+        // Using a more reliable public OSRM instance
+        const res = await fetch(`https://routing.openstreetmap.de/routed-car/route/v1/driving/${coords}?overview=full&geometries=geojson`);
+        
+        if (!res.ok) {
+          console.warn("Routing API returned an error:", res.status);
+          if (isMounted) setRoutePath(points);
+          return;
+        }
+
+        const data = await res.json();
+        
+        if (data.routes && data.routes[0] && isMounted) {
+          // GeoJSON coordinates are [longitude, latitude], Leaflet expects [latitude, longitude]
+          const routeCoords = data.routes[0].geometry.coordinates.map((c: [number, number]) => [c[1], c[0]]);
+          setRoutePath(routeCoords);
+        } else if (isMounted) {
+          // Fallback to straight line if routing fails
+          setRoutePath(points);
+        }
+      } catch (error) {
+        console.warn("Could not fetch road route, falling back to straight line.");
+        // Fallback to straight line
+        if (isMounted) setRoutePath(points);
+      }
+    };
+
+    const timeoutId = setTimeout(() => {
+      fetchRoute();
+    }, 500); // Debounce route fetching by 500ms
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
+  }, [points]);
 
   return (
-    <div className="h-[300px] w-full rounded-2xl overflow-hidden shadow-sm border border-gray-100 z-0">
+    <div className="h-full w-full z-0">
       <MapContainer center={[20.5937, 78.9629]} zoom={5} style={{ height: '100%', width: '100%' }} attributionControl={false}>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -78,7 +146,7 @@ export default function InteractiveMap({ fromLocation, toLocation, destinations 
         )}
         
         {destinations.map((d, i) => d && (
-          <Marker key={i} position={[d.lat, d.lng]} icon={customIcon}>
+          <Marker key={`dest-${d.lat}-${d.lng}-${i}`} position={[d.lat, d.lng]} icon={customIcon}>
             <Popup>Stop {i + 1}: {d.displayName}</Popup>
           </Marker>
         ))}
@@ -89,11 +157,11 @@ export default function InteractiveMap({ fromLocation, toLocation, destinations 
           </Marker>
         )}
 
-        {points.length > 1 && (
-          <Polyline positions={points} color="#4f46e5" weight={4} opacity={0.7} dashArray="10, 10" />
+        {routePath.length > 1 && (
+          <Polyline positions={routePath} color="#4f46e5" weight={5} opacity={0.8} />
         )}
 
-        <MapUpdater from={fromLocation} to={toLocation} destinations={destinations} />
+        <MapUpdater from={fromLocation} to={toLocation} destinations={destinations} isSheetExpanded={isSheetExpanded} />
       </MapContainer>
     </div>
   );

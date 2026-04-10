@@ -4,8 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { api, socket } from '../lib/api';
 import { validateEmail, validateName, validatePhone, parseRideDate, safeFormatDate } from '../lib/validation';
 import { format } from 'date-fns';
-import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'motion/react';
-import { CheckCircle, Calendar, Clock, Car, Users, MapPin, Grid, RefreshCw, Info, ChevronDown, ChevronUp, CreditCard, ChevronRight, ChevronLeft, Moon, Sun, Crown, Star, Shield, Radar } from 'lucide-react';
+import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useDragControls } from 'motion/react';
+import { CheckCircle, Calendar, Clock, Car, Users, MapPin, Grid, RefreshCw, Info, ChevronDown, ChevronUp, CreditCard, ChevronRight, ChevronLeft, Moon, Sun, Crown, Star, Shield, Radar, Snowflake, ArrowUpDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import debounce from 'lodash.debounce';
 import InteractiveMap from '../components/InteractiveMap';
@@ -150,76 +150,44 @@ const LoyaltyCard = ({ bookingsCount }: { bookingsCount: number,  }) => {
 };
 
 const VehicleShowroomCard = ({ vehicle, isSelected, isUnavailable,  onClick }: any) => {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const mouseXSpring = useSpring(x);
-  const mouseYSpring = useSpring(y);
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["10deg", "-10deg"]);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-10deg", "10deg"]);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    const xPct = mouseX / width - 0.5;
-    const yPct = mouseY / height - 0.5;
-    x.set(xPct);
-    y.set(yPct);
-  };
-
-  const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
-  };
-
   return (
-    <motion.div
-      style={{ rotateX, rotateY, transformStyle: "preserve-3d", perspective: 1000 }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+    <div
       onClick={onClick}
-      className={`relative p-4 sm:p-6 rounded-2xl border-2 cursor-pointer transition-colors duration-300 ${
+      className={`relative py-3 px-4 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-4 ${
         isSelected 
-          ? ('border-indigo-600 bg-indigo-50/80 shadow-xl ring-1 ring-indigo-600')
+          ? 'bg-indigo-50 border border-indigo-200 shadow-sm'
           : isUnavailable 
-            ? ('border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed')
-            : ('border-gray-200 bg-white hover:border-indigo-300 hover:shadow-lg')
+            ? 'opacity-50 cursor-not-allowed bg-transparent border border-transparent'
+            : 'bg-transparent border border-transparent hover:bg-gray-50'
       }`}
     >
-      <div style={{ transform: "translateZ(30px)" }} className="flex justify-between items-start mb-4">
-        <div>
-          <h4 className={`font-bold text-lg text-gray-900`}>{vehicle.name}</h4>
-          <p className={`text-sm flex items-center gap-1 mt-1 text-gray-500`}>
-            <Users className="w-4 h-4" /> Up to {vehicle.capacity}
-          </p>
-        </div>
-        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-          isSelected 
-            ? 'border-indigo-500 bg-indigo-500' 
-            : ('border-gray-300')
-        }`}>
-          {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
-        </div>
-      </div>
-      
-      <div style={{ transform: "translateZ(50px)" }} className="py-2 sm:py-6 flex justify-center items-center">
-        {/* 3D Parallax Car Representation */}
-        <div className={`w-24 sm:w-32 h-12 sm:h-16 rounded-full blur-xl absolute bottom-4 bg-gray-300/50`}></div>
-        <Car className={`w-16 h-16 sm:w-24 sm:h-24 drop-shadow-2xl ${isSelected ? ('text-indigo-600') : ('text-gray-400')}`} />
+      {/* Car Icon Box */}
+      <div className="w-12 h-10 flex items-center justify-center flex-shrink-0">
+        <Car className={`w-8 h-8 ${isSelected ? 'text-indigo-600' : 'text-gray-600'}`} />
       </div>
 
-      <div style={{ transform: "translateZ(20px)" }} className="mt-2 text-center">
-        {isUnavailable ? (
-          <span className="text-xs font-medium text-red-500 bg-red-500/10 px-3 py-1 rounded-full">Currently Unavailable</span>
-        ) : (
-          <span className={`text-xs font-medium px-3 py-1 rounded-full ${isSelected ? ('bg-indigo-100 text-indigo-700') : ('bg-gray-100 text-gray-600')}`}>
-            {vehicle.quantity} Available
-          </span>
-        )}
+      {/* Details */}
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <h4 className="font-semibold text-base text-gray-900">{vehicle.name}</h4>
+          <div className="flex items-center text-xs text-gray-500 gap-1">
+            <Users className="w-3 h-3" /> {vehicle.capacity}
+          </div>
+        </div>
+        <p className="text-xs text-gray-500 mt-0.5">
+          {isUnavailable ? 'Currently Unavailable' : `${vehicle.quantity} available near you`}
+        </p>
       </div>
-    </motion.div>
+
+      {/* Selection Indicator */}
+      {isSelected && (
+        <div className="flex-shrink-0">
+           <div className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center">
+             <div className="w-2 h-2 rounded-full bg-white" />
+           </div>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -271,6 +239,8 @@ export default function CustomerDashboard() {
   
   // Wizard State
   const [bookingStep, setBookingStep] = useState(1);
+  const [isSheetExpanded, setIsSheetExpanded] = useState(false);
+  const dragControls = useDragControls();
   
   // Theme State
   
@@ -405,6 +375,15 @@ export default function CustomerDashboard() {
       socket.off('booking:created');
     };
   }, [user]);
+
+  useEffect(() => {
+    if (profileSuccess) {
+      const timer = setTimeout(() => {
+        setProfileSuccess('');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [profileSuccess]);
 
   const fetchLocationSuggestions = useMemo(
     () =>
@@ -1099,19 +1078,77 @@ export default function CustomerDashboard() {
       className={`min-h-screen transition-colors duration-500 bg-gray-50 text-gray-900`}
     >
       {/* Dynamic Background Mesh */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className={`absolute inset-0 bg-gradient-to-br ${greetingData.gradient} opacity-50`}></div>
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl mix-blend-screen animate-blob"></div>
         <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl mix-blend-screen animate-blob animation-delay-2000"></div>
         <div className="absolute -bottom-8 left-1/3 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl mix-blend-screen animate-blob animation-delay-4000"></div>
       </div>
 
-      <div className="relative z-10">
+      {/* Map Component as Background */}
+      <div className="fixed inset-0 z-0 w-full h-full pt-16">
+        <InteractiveMap 
+          fromLocation={fromLocationData || (showFromSuggestions && fromSuggestions.length > 0 ? fromSuggestions[0] : null)} 
+          toLocation={toLocationData || (showToSuggestions && toSuggestions.length > 0 ? toSuggestions[0] : null)} 
+          destinations={destinationData.map((d, i) => d || (activeDestinationIndex === i && destinationSuggestions[i] && destinationSuggestions[i].length > 0 ? destinationSuggestions[i][0] : null))} 
+          isSheetExpanded={isSheetExpanded}
+        />
+      </div>
+
+      <div className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md shadow-sm">
         <Navbar />
+      </div>
         
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <div className="px-4 py-6 sm:px-0">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {profileSuccess && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -50, scale: 0.9 }}
+            className="fixed top-24 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3"
+          >
+            <CheckCircle className="w-5 h-5" />
+            <span className="font-medium">{profileSuccess}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Bottom Sheet Container */}
+      <motion.div 
+        drag={activeTab === 'dashboard' && bookingStep > 1 ? "y" : false}
+        dragControls={dragControls}
+        dragListener={false}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={0.2}
+        onDragEnd={(e, info) => {
+          if (info.offset.y < -50) setIsSheetExpanded(true);
+          if (info.offset.y > 50) setIsSheetExpanded(false);
+        }}
+        animate={{ 
+          height: activeTab === 'dashboard' && bookingStep > 1 
+            ? (isSheetExpanded ? '90vh' : '50vh') 
+            : 'calc(100vh - 64px)' 
+        }}
+        transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+        className={`fixed bottom-0 left-0 w-full z-40 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.1)] overflow-y-auto pb-8 ${
+          activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-3xl' : 'rounded-none'
+        }`}
+      >
+        {/* Drag Handle */}
+        {activeTab === 'dashboard' && bookingStep > 1 && (
+          <div 
+            className="w-full py-3 cursor-grab active:cursor-grabbing flex justify-center sticky top-0 bg-white z-10"
+            onPointerDown={(e) => dragControls.start(e)}
+            onClick={() => setIsSheetExpanded(!isSheetExpanded)}
+          >
+            <div className="w-12 h-1.5 bg-gray-300 rounded-full pointer-events-none"></div>
+          </div>
+        )}
+
+        <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${activeTab === 'dashboard' && bookingStep > 1 ? '' : 'pt-6'}`}>
+          <div className="py-2 sm:px-0">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
               <div className="flex items-center gap-4">
                 <div>
                   <h1 className={`text-3xl font-bold capitalize text-gray-900`}>
@@ -1144,22 +1181,13 @@ export default function CustomerDashboard() {
                   >
                     My Bookings
                   </button>
-                  <button
-                    onClick={() => setActiveTab('profile')}
-                    className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors text-center ${
-                      activeTab === 'profile' 
-                        ? ('bg-indigo-50 text-indigo-700') 
-                        : ('text-gray-500 hover:text-gray-700 hover:bg-gray-50')
-                    }`}
-                  >
-                    Profile
-                  </button>
                 </div>
               </div>
             </div>
           
           {activeTab === 'profile' ? (
-            <div className="max-w-2xl mx-auto">
+            <div className="max-w-2xl mx-auto space-y-8">
+              <LoyaltyCard bookingsCount={bookings.filter(b => b.rideStatus === 'Completed').length}  />
               <div className={`rounded-2xl shadow-sm border p-6 bg-white border-gray-100`}>
                 <div className={`flex justify-between items-start ${isEditingProfile ? 'mb-6' : ''}`}>
                   <div className="flex items-center gap-4">
@@ -1184,11 +1212,6 @@ export default function CustomerDashboard() {
                 {profileError && (
                   <div className="mb-4 bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-sm">
                     {profileError}
-                  </div>
-                )}
-                {profileSuccess && (
-                  <div className="mb-4 bg-green-50 border border-green-100 text-green-600 px-4 py-3 rounded-xl text-sm">
-                    {profileSuccess}
                   </div>
                 )}
                 
@@ -1247,9 +1270,8 @@ export default function CustomerDashboard() {
               </div>
             </div>
           ) : activeTab === 'dashboard' ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 flex flex-col gap-8">
-                <LoyaltyCard bookingsCount={bookings.filter(b => b.rideStatus === 'Completed').length}  />
+            <div className="flex flex-col gap-8">
+              <div className="flex flex-col gap-8">
                 
                 {/* Book a Ride Form */}
                 <div className={`relative overflow-hidden rounded-2xl shadow-sm border p-6 bg-white border-gray-100`}>
@@ -1321,116 +1343,137 @@ export default function CustomerDashboard() {
                           </div>
 
                       {tripType !== 'Car Renting' && (
-                        <div className="relative">
-                          <label htmlFor="fromLocation" className={`block text-sm font-medium mb-1 text-gray-700`}>From</label>
-                      <input
-                        type="text"
-                        id="fromLocation"
-                        required={tripType !== 'Car Renting'}
-                        value={fromLocation}
-                        onChange={(e) => {
-                          setFromLocation(e.target.value);
-                          setFromLocationData(null);
-                          setShowFromSuggestions(true);
-                        }}
-                        onFocus={() => setShowFromSuggestions(true)}
-                        onBlur={() => {
-                          setTimeout(() => {
-                            if (!fromLocationData && fromSuggestions.length > 0 && fromLocation.length > 0) {
-                              setFromLocation(fromSuggestions[0].displayName);
-                              setFromLocationData(fromSuggestions[0]);
-                            }
-                            setShowFromSuggestions(false);
-                          }, 200);
-                        }}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        placeholder="Pickup location"
-                        autoComplete="off"
-                      />
-                      {showFromSuggestions && fromSuggestions.length > 0 && (
-                        <ul className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-                          {fromSuggestions.map((loc, idx) => (
-                            <li
-                              key={idx}
-                              className="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50 hover:text-indigo-900"
-                              onMouseDown={(e) => {
-                                e.preventDefault(); // Prevent input from losing focus immediately
-                                setFromLocation(loc.displayName);
-                                setFromLocationData(loc);
-                                setShowFromSuggestions(false);
+                        <div className="relative flex flex-col gap-4">
+                          <div className="relative">
+                            <label htmlFor="fromLocation" className={`block text-sm font-medium mb-1 text-gray-700`}>From</label>
+                            <input
+                              type="text"
+                              id="fromLocation"
+                              required={tripType !== 'Car Renting'}
+                              value={fromLocation}
+                              onChange={(e) => {
+                                setFromLocation(e.target.value);
+                                setFromLocationData(null);
+                                setShowFromSuggestions(true);
                               }}
-                            >
-                              <div className="flex items-center">
-                                <MapPin className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                                <div className="flex flex-col">
-                                  <span className="font-medium truncate">{loc.primaryText || loc.displayName}</span>
-                                  {loc.secondaryText && (
-                                    <span className="text-xs text-gray-500 truncate">{loc.secondaryText}</span>
-                                  )}
-                                </div>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  )}
-                  
-                  {tripType !== 'Tour' && tripType !== 'Car Renting' && (
-                    <div className="relative">
-                      <label htmlFor="toLocation" className="block text-sm font-medium text-gray-700">To</label>
-                      <input
-                        type="text"
-                        id="toLocation"
-                        required={tripType !== 'Tour' && tripType !== 'Car Renting'}
-                        value={toLocation}
-                        onChange={(e) => {
-                          setToLocation(e.target.value);
-                          setToLocationData(null);
-                          setShowToSuggestions(true);
-                        }}
-                        onFocus={() => setShowToSuggestions(true)}
-                        onBlur={() => {
-                          setTimeout(() => {
-                            if (!toLocationData && toSuggestions.length > 0 && toLocation.length > 0) {
-                              setToLocation(toSuggestions[0].displayName);
-                              setToLocationData(toSuggestions[0]);
-                            }
-                            setShowToSuggestions(false);
-                          }, 200);
-                        }}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        placeholder="Drop-off location"
-                        autoComplete="off"
-                      />
-                      {showToSuggestions && toSuggestions.length > 0 && (
-                        <ul className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-                          {toSuggestions.map((loc, idx) => (
-                            <li
-                              key={idx}
-                              className="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50 hover:text-indigo-900"
-                              onMouseDown={(e) => {
-                                e.preventDefault(); // Prevent input from losing focus immediately
-                                setToLocation(loc.displayName);
-                                setToLocationData(loc);
-                                setShowToSuggestions(false);
+                              onFocus={() => setShowFromSuggestions(true)}
+                              onBlur={() => {
+                                setTimeout(() => {
+                                  if (!fromLocationData && fromSuggestions.length > 0 && fromLocation.length > 0) {
+                                    setFromLocation(fromSuggestions[0].displayName);
+                                    setFromLocationData(fromSuggestions[0]);
+                                  }
+                                  setShowFromSuggestions(false);
+                                }, 200);
                               }}
-                            >
-                              <div className="flex items-center">
-                                <MapPin className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                                <div className="flex flex-col">
-                                  <span className="font-medium truncate">{loc.primaryText || loc.displayName}</span>
-                                  {loc.secondaryText && (
-                                    <span className="text-xs text-gray-500 truncate">{loc.secondaryText}</span>
-                                  )}
-                                </div>
+                              className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 pl-3 ${tripType !== 'Tour' ? 'pr-12' : 'pr-3'} focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                              placeholder="Pickup location"
+                              autoComplete="off"
+                            />
+                            {showFromSuggestions && fromSuggestions.length > 0 && (
+                              <ul className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                                {fromSuggestions.map((loc, idx) => (
+                                  <li
+                                    key={idx}
+                                    className="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50 hover:text-indigo-900"
+                                    onMouseDown={(e) => {
+                                      e.preventDefault(); // Prevent input from losing focus immediately
+                                      setFromLocation(loc.displayName);
+                                      setFromLocationData(loc);
+                                      setShowFromSuggestions(false);
+                                    }}
+                                  >
+                                    <div className="flex items-center">
+                                      <MapPin className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                      <div className="flex flex-col">
+                                        <span className="font-medium truncate">{loc.primaryText || loc.displayName}</span>
+                                        {loc.secondaryText && (
+                                          <span className="text-xs text-gray-500 truncate">{loc.secondaryText}</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                          
+                          {tripType !== 'Tour' && (
+                            <>
+                              <div className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const tempLoc = fromLocation;
+                                    const tempData = fromLocationData;
+                                    setFromLocation(toLocation);
+                                    setFromLocationData(toLocationData);
+                                    setToLocation(tempLoc);
+                                    setToLocationData(tempData);
+                                  }}
+                                  className="bg-gray-900 text-green-400 p-2 rounded-full hover:bg-gray-800 transition-colors shadow-md border border-gray-700 flex items-center justify-center"
+                                  title="Swap locations"
+                                >
+                                  <ArrowUpDown className="h-4 w-4" />
+                                </button>
                               </div>
-                            </li>
-                          ))}
-                        </ul>
+                              <div className="relative">
+                                <label htmlFor="toLocation" className="block text-sm font-medium text-gray-700">To</label>
+                                <input
+                                  type="text"
+                                  id="toLocation"
+                                  required={tripType !== 'Tour' && tripType !== 'Car Renting'}
+                                  value={toLocation}
+                                  onChange={(e) => {
+                                    setToLocation(e.target.value);
+                                    setToLocationData(null);
+                                    setShowToSuggestions(true);
+                                  }}
+                                  onFocus={() => setShowToSuggestions(true)}
+                                  onBlur={() => {
+                                    setTimeout(() => {
+                                      if (!toLocationData && toSuggestions.length > 0 && toLocation.length > 0) {
+                                        setToLocation(toSuggestions[0].displayName);
+                                        setToLocationData(toSuggestions[0]);
+                                      }
+                                      setShowToSuggestions(false);
+                                    }, 200);
+                                  }}
+                                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 pl-3 pr-12 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  placeholder="Drop-off location"
+                                  autoComplete="off"
+                                />
+                                {showToSuggestions && toSuggestions.length > 0 && (
+                                  <ul className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                                    {toSuggestions.map((loc, idx) => (
+                                      <li
+                                        key={idx}
+                                        className="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50 hover:text-indigo-900"
+                                        onMouseDown={(e) => {
+                                          e.preventDefault(); // Prevent input from losing focus immediately
+                                          setToLocation(loc.displayName);
+                                          setToLocationData(loc);
+                                          setShowToSuggestions(false);
+                                        }}
+                                      >
+                                        <div className="flex items-center">
+                                          <MapPin className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                          <div className="flex flex-col">
+                                            <span className="font-medium truncate">{loc.primaryText || loc.displayName}</span>
+                                            {loc.secondaryText && (
+                                              <span className="text-xs text-gray-500 truncate">{loc.secondaryText}</span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
                       )}
-                    </div>
-                  )}
 
                   <AnimatePresence>
                     {tripType === 'Tour' && (
@@ -1824,13 +1867,12 @@ export default function CustomerDashboard() {
                       {bookingStep === 2 && (
                         <div className="space-y-6">
                           {/* Vehicle Selection Step */}
-                          <div className={`rounded-xl p-6 border bg-indigo-50 border-indigo-100`}>
-                            <div className="flex items-center gap-2 mb-4">
-                              <span className="text-xl">⭐</span>
-                              <h4 className={`text-lg font-bold text-indigo-900`}>Choose Your Vehicle</h4>
+                          <div className="bg-white">
+                            <div className="flex items-center gap-2 mb-4 px-2">
+                              <h4 className={`text-lg font-bold text-gray-900`}>Choose Your Vehicle</h4>
                             </div>
                             
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-1">
                               {AVAILABLE_VEHICLES.map(v => {
                                 const isSelected = selectedVehicle === v.name;
                                 const isUnavailable = v.quantity <= 0;
@@ -1853,7 +1895,7 @@ export default function CustomerDashboard() {
                             </div>
                             
                             {AVAILABLE_VEHICLES.find(v => v.name === selectedVehicle)?.capacity! < numberOfPeople && (
-                              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mt-3">
+                              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mt-3 mx-2">
                                 <p className="text-sm text-yellow-800 mb-2">
                                   ⚠️ Selected vehicle may not accommodate all passengers.
                                 </p>
@@ -1870,7 +1912,7 @@ export default function CustomerDashboard() {
                             )}
 
                             {tripType === 'Tour' && (
-                              <div className="mt-4">
+                              <div className="mt-4 mx-2">
                                 <label className={`block text-sm font-medium mb-1 text-gray-700`}>Number of Vehicles</label>
                                 <input
                                   type="number"
@@ -1885,12 +1927,15 @@ export default function CustomerDashboard() {
 
                             {/* AC Selection */}
                             {tripType !== 'Car Renting' && (
-                              <div className={`mt-6 border rounded-lg p-4 shadow-sm flex items-center justify-between bg-white border-gray-200`}>
-                                <div>
-                                  <h4 className={`font-medium text-gray-900`}>Air Conditioning</h4>
-                                  <p className={`text-sm text-gray-500`}>Add AC for a more comfortable ride</p>
+                              <div className={`mt-6 mx-2 border rounded-2xl p-4 shadow-sm flex items-center gap-4 bg-white border-gray-200`}>
+                                <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                                  <Snowflake className="w-6 h-6 text-indigo-400" />
                                 </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
+                                <div className="flex-1">
+                                  <h4 className={`font-bold text-base text-gray-900`}>Air Conditioning</h4>
+                                  <p className={`text-xs text-gray-500`}>Cooler cabin · Ideal for summer</p>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
                                   <input 
                                     type="checkbox" 
                                     className="sr-only peer"
@@ -1954,7 +1999,10 @@ export default function CustomerDashboard() {
                         {bookingStep > 1 ? (
                           <button
                             type="button"
-                            onClick={() => setBookingStep(bookingStep - 1)}
+                            onClick={() => {
+                              setBookingStep(bookingStep - 1);
+                              if (bookingStep === 2) setIsSheetExpanded(false);
+                            }}
                             className={`flex items-center px-4 py-2 text-sm font-medium rounded-xl transition-colors ${
                               'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
                             }`}
@@ -1995,18 +2043,10 @@ export default function CustomerDashboard() {
                     </motion.form>
                 </AnimatePresence>
               </div>
-            </div>
-            <div className="lg:col-span-1 flex flex-col gap-8">
-              {/* Map Component */}
-              <InteractiveMap 
-                fromLocation={fromLocationData} 
-                toLocation={toLocationData} 
-                destinations={destinationData} 
-              />
-              
+
               {/* Dynamic Receipt Component */}
               {bookingStep > 1 && (
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-6">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                   <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <CreditCard className="h-5 w-5 text-indigo-600" />
                     Trip Summary
@@ -2332,7 +2372,7 @@ export default function CustomerDashboard() {
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
 
     {/* Cancel Modal */}
       <AnimatePresence>
@@ -2600,6 +2640,7 @@ export default function CustomerDashboard() {
                     onClick={() => {
                       setBookingSuccessData(null);
                       setBookingStep(1);
+                      setIsSheetExpanded(false);
                     }}
                     className={`flex-1 justify-center py-2.5 px-4 border rounded-md shadow-sm text-sm font-medium transition-colors border-indigo-600 text-indigo-600 bg-white hover:bg-indigo-50`}
                   >
