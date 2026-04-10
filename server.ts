@@ -68,7 +68,7 @@ async function startServer() {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
-    const { name, email, phone, password, role } = req.body;
+    const { name, email, phone, password, role, acceptedTerms } = req.body;
     const userRole = role || 'customer';
     
     try {
@@ -89,6 +89,7 @@ async function startServer() {
         phone: phone || '',
         password, // Storing plain text as requested
         role: userRole,
+        acceptedTerms: acceptedTerms ? 'Yes' : 'No',
         createdAt: new Date().toISOString()
       });
       invalidateCache(targetSheetName);

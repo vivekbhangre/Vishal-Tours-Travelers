@@ -12,6 +12,7 @@ export default function Register() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -45,10 +46,15 @@ export default function Register() {
       return;
     }
 
+    if (!acceptedTerms) {
+      setError("You must agree to the Terms of Service and Privacy Policy.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const user = await api.register({ name, email, phone, password, role: 'customer' });
+      const user = await api.register({ name, email, phone, password, role: 'customer', acceptedTerms });
       login(user);
       navigate(`/dashboard/${user.role}`);
     } catch (err: any) {
@@ -193,6 +199,24 @@ export default function Register() {
                     <Eye className="h-5 w-5" aria-hidden="true" />
                   )}
                 </button>
+              </div>
+            </div>
+
+            <div className="flex items-start mt-4">
+              <div className="flex items-center h-5">
+                <input
+                  id="terms"
+                  name="terms"
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded bg-white/10 border-white/20"
+                />
+              </div>
+              <div className="ml-3 text-sm">
+                <label htmlFor="terms" className="font-medium text-gray-200">
+                  I agree to the Terms of Service and Privacy Policy.
+                </label>
               </div>
             </div>
 
