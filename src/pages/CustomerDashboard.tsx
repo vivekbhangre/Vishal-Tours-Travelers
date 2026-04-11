@@ -241,6 +241,13 @@ export default function CustomerDashboard() {
   const [bookingStep, setBookingStep] = useState(1);
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
   const dragControls = useDragControls();
+
+  useEffect(() => {
+    const container = document.getElementById('bottom-sheet-container');
+    if (container) {
+      container.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [bookingStep]);
   
   // Theme State
   
@@ -510,7 +517,11 @@ export default function CustomerDashboard() {
 
         totalDistance += calculateLegDistance(currentCoords.lat, currentCoords.lng, seoniCoords.lat, seoniCoords.lng);
 
-        const perKmRate = isAC ? 14 : 13;
+        let perKmRate = 13;
+        if (selectedVehicle === 'Swift Dzire') perKmRate = 13;
+        else if (selectedVehicle === 'Ertiga') perKmRate = 14;
+        else if (selectedVehicle.includes('Force Traveller') || selectedVehicle.includes('Force Van')) perKmRate = 28;
+
         const basePrice = totalDistance * perKmRate;
         let finalPrice = Math.ceil(basePrice / 100) * 100;
 
@@ -533,7 +544,7 @@ export default function CustomerDashboard() {
 
     const timeoutId = setTimeout(calculateDistance, 500);
     return () => clearTimeout(timeoutId);
-  }, [fromLocationData, toLocationData, destinationData, tripType, numberOfDays, numberOfCars, isAC, vehiclesRequired]);
+  }, [fromLocationData, toLocationData, destinationData, tripType, numberOfDays, numberOfCars, isAC, vehiclesRequired, selectedVehicle]);
 
   useEffect(() => {
     let recommended = '';
@@ -772,7 +783,12 @@ export default function CustomerDashboard() {
       if (tripType === 'Car Renting') {
         finalEstimatedPrice = (days * 2000 * cars);
       } else {
-        let fallbackPrice = estimatedKM * (isAC ? 14 : 13);
+        let perKmRate = 13;
+        if (selectedVehicle === 'Swift Dzire') perKmRate = 13;
+        else if (selectedVehicle === 'Ertiga') perKmRate = 14;
+        else if (selectedVehicle.includes('Force Traveller') || selectedVehicle.includes('Force Van')) perKmRate = 28;
+
+        let fallbackPrice = estimatedKM * perKmRate;
         if (tripType === 'Wedding') {
           fallbackPrice *= parseInt(vehiclesRequired) || 1;
         } else if (tripType === 'Tour') {
@@ -1070,12 +1086,18 @@ export default function CustomerDashboard() {
 
   const greetingData = getGreeting();
 
+  const handleInputFocus = (e: React.FocusEvent<HTMLElement>) => {
+    setTimeout(() => {
+      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 300);
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className={`min-h-screen transition-colors duration-500 bg-gray-50 text-gray-900`}
+      className={`min-h-screen transition-colors duration-500 bg-gray-50 text-gray-900 overscroll-none`}
     >
       {/* Dynamic Background Mesh */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -1131,24 +1153,25 @@ export default function CustomerDashboard() {
             : 'calc(100vh - 64px)' 
         }}
         transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
-        className={`fixed bottom-0 left-0 w-full z-40 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.1)] overflow-y-auto pb-8 ${
+        className={`fixed bottom-0 left-0 w-full z-40 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.1)] overflow-y-auto pb-8 overscroll-none ${
           activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-3xl' : 'rounded-none'
         }`}
+        id="bottom-sheet-container"
       >
-        {/* Drag Handle */}
-        {activeTab === 'dashboard' && bookingStep > 1 && (
-          <div 
-            className="w-full py-3 cursor-grab active:cursor-grabbing flex justify-center sticky top-0 bg-white z-10"
-            onPointerDown={(e) => dragControls.start(e)}
-            onClick={() => setIsSheetExpanded(!isSheetExpanded)}
-          >
-            <div className="w-12 h-1.5 bg-gray-300 rounded-full pointer-events-none"></div>
-          </div>
-        )}
+        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-gray-100 pb-2">
+          {/* Drag Handle */}
+          {activeTab === 'dashboard' && bookingStep > 1 && (
+            <div 
+              className="w-full py-3 cursor-grab active:cursor-grabbing flex justify-center touch-none"
+              onPointerDown={(e) => dragControls.start(e)}
+              onClick={() => setIsSheetExpanded(!isSheetExpanded)}
+            >
+              <div className="w-12 h-1.5 bg-gray-300 rounded-full pointer-events-none"></div>
+            </div>
+          )}
 
-        <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${activeTab === 'dashboard' && bookingStep > 1 ? '' : 'pt-6'}`}>
-          <div className="py-2 sm:px-0">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${activeTab === 'dashboard' && bookingStep > 1 ? '' : 'pt-6'}`}>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="flex items-center gap-4">
                 <div>
                   <h1 className={`text-3xl font-bold capitalize text-gray-900`}>
@@ -1184,6 +1207,11 @@ export default function CustomerDashboard() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6`}>
+          <div className="py-2 sm:px-0">
           
           {activeTab === 'profile' ? (
             <div className="max-w-2xl mx-auto space-y-8">
@@ -1225,6 +1253,7 @@ export default function CustomerDashboard() {
                         required
                         value={profileName}
                         onChange={(e) => setProfileName(e.target.value)}
+                        onFocus={handleInputFocus}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       />
                     </div>
@@ -1236,6 +1265,7 @@ export default function CustomerDashboard() {
                         required
                         value={profileEmail}
                         onChange={(e) => setProfileEmail(e.target.value)}
+                        onFocus={handleInputFocus}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       />
                     </div>
@@ -1246,6 +1276,7 @@ export default function CustomerDashboard() {
                         id="profilePhone"
                         value={profilePhone}
                         onChange={(e) => setProfilePhone(e.target.value)}
+                        onFocus={handleInputFocus}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       />
                     </div>
@@ -1310,10 +1341,10 @@ export default function CustomerDashboard() {
                     <motion.form 
                       id="booking-form"
                       key={`form-step-${bookingStep}`}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.3 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
                       onSubmit={handleBookRide} 
                       className="space-y-6"
                     >
@@ -1356,7 +1387,10 @@ export default function CustomerDashboard() {
                                 setFromLocationData(null);
                                 setShowFromSuggestions(true);
                               }}
-                              onFocus={() => setShowFromSuggestions(true)}
+                              onFocus={(e) => {
+                                setShowFromSuggestions(true);
+                                handleInputFocus(e);
+                              }}
                               onBlur={() => {
                                 setTimeout(() => {
                                   if (!fromLocationData && fromSuggestions.length > 0 && fromLocation.length > 0) {
@@ -1429,7 +1463,10 @@ export default function CustomerDashboard() {
                                     setToLocationData(null);
                                     setShowToSuggestions(true);
                                   }}
-                                  onFocus={() => setShowToSuggestions(true)}
+                                  onFocus={(e) => {
+                                    setShowToSuggestions(true);
+                                    handleInputFocus(e);
+                                  }}
                                   onBlur={() => {
                                     setTimeout(() => {
                                       if (!toLocationData && toSuggestions.length > 0 && toLocation.length > 0) {
@@ -1504,7 +1541,10 @@ export default function CustomerDashboard() {
                                   
                                   setActiveDestinationIndex(index);
                                 }}
-                                onFocus={() => setActiveDestinationIndex(index)}
+                                onFocus={(e) => {
+                                  setActiveDestinationIndex(index);
+                                  handleInputFocus(e);
+                                }}
                                 onBlur={() => {
                                   setTimeout(() => {
                                     if (!destinationData[index] && destinationSuggestions[index] && destinationSuggestions[index].length > 0 && destinations[index].length > 0) {
@@ -1606,6 +1646,7 @@ export default function CustomerDashboard() {
                         min={new Date().toISOString().split('T')[0]}
                         value={rideDate}
                         onChange={(e) => setRideDate(e.target.value)}
+                        onFocus={handleInputFocus}
                         className="block w-full sm:flex-1 min-w-[150px] border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       />
                       <div className="flex gap-2 items-center flex-1 min-w-[240px]">
@@ -1659,6 +1700,7 @@ export default function CustomerDashboard() {
                             min={rideDate || new Date().toISOString().split('T')[0]}
                             value={returnDate}
                             onChange={(e) => setReturnDate(e.target.value)}
+                            onFocus={handleInputFocus}
                             className={`block w-full sm:flex-1 min-w-[150px] border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900`}
                           />
                           <div className="flex gap-2 items-center flex-1 min-w-[240px]">
@@ -1714,6 +1756,7 @@ export default function CustomerDashboard() {
                               max="30"
                               value={numberOfDays}
                               onChange={(e) => setNumberOfDays(e.target.value === '' ? '' : parseInt(e.target.value))}
+                              onFocus={handleInputFocus}
                               className={`mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900`}
                             />
                           </div>
@@ -1727,32 +1770,9 @@ export default function CustomerDashboard() {
                               max={AVAILABLE_VEHICLES.find(v => v.name === selectedVehicle)?.quantity || 10}
                               value={numberOfCars}
                               onChange={(e) => setNumberOfCars(e.target.value === '' ? '' : parseInt(e.target.value))}
+                              onFocus={handleInputFocus}
                               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Select Vehicle</label>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {AVAILABLE_VEHICLES.map(v => {
-                              const isSelected = selectedVehicle === v.name;
-                              const isUnavailable = v.quantity <= 0;
-                              return (
-                                <VehicleShowroomCard
-                                  key={v.name}
-                                  vehicle={v}
-                                  isSelected={isSelected}
-                                  isUnavailable={isUnavailable}
-                                  
-                                  onClick={() => {
-                                    if (!isUnavailable) {
-                                      setSelectedVehicle(v.name);
-                                      setConfirmCapacity(false);
-                                    }
-                                  }}
-                                />
-                              );
-                            })}
                           </div>
                         </div>
                       </motion.div>
@@ -1778,6 +1798,7 @@ export default function CustomerDashboard() {
                               min={new Date().toISOString().split('T')[0]}
                               value={weddingDate}
                               onChange={(e) => setWeddingDate(e.target.value)}
+                              onFocus={handleInputFocus}
                               className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900"
                             />
                           </div>
@@ -1789,6 +1810,7 @@ export default function CustomerDashboard() {
                               required={tripType === 'Wedding'}
                               value={eventLocation}
                               onChange={(e) => setEventLocation(e.target.value)}
+                              onFocus={handleInputFocus}
                               placeholder="e.g., Grand Hotel, City Center"
                               className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900"
                             />
@@ -1805,6 +1827,7 @@ export default function CustomerDashboard() {
                               max="10"
                               value={vehiclesRequired}
                               onChange={(e) => setVehiclesRequired(e.target.value)}
+                              onFocus={handleInputFocus}
                               className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900"
                             />
                           </div>
@@ -1834,6 +1857,7 @@ export default function CustomerDashboard() {
                         required
                         value={rideType}
                         onChange={(e) => setRideType(e.target.value)}
+                        onFocus={handleInputFocus}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
                       >
                         <option value="Intercity">Intercity</option>
@@ -1855,6 +1879,7 @@ export default function CustomerDashboard() {
                           max="50"
                           value={numberOfPeople}
                           onChange={(e) => setNumberOfPeople(e.target.value === '' ? '' : parseInt(e.target.value))}
+                          onFocus={handleInputFocus}
                           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                         />
                       </div>
@@ -1954,12 +1979,16 @@ export default function CustomerDashboard() {
                         <div className="space-y-6">
                           {/* Review Step */}
                           <div className={`rounded-xl p-6 border bg-gray-50 border-gray-200`}>
-                            <h4 className={`text-lg font-bold mb-4 text-gray-900`}>Review Your Trip</h4>
+                            {tripType === 'Car Renting' ? (
+                              <h4 className={`text-lg font-bold mb-4 text-gray-900`}>Review Your Rental Car for {user?.name}</h4>
+                            ) : (
+                              <h4 className={`text-lg font-bold mb-4 text-gray-900`}>Review Your Trip</h4>
+                            )}
                             <div className="space-y-4">
                               <div className="flex items-start gap-3">
                                 <MapPin className={`w-5 h-5 mt-0.5 text-indigo-600`} />
                                 <div>
-                                  <p className={`text-sm text-gray-500`}>Route</p>
+                                  <p className={`text-sm text-gray-500`}>{tripType === 'Car Renting' ? 'Booking Type' : 'Route'}</p>
                                   <p className={`font-medium text-gray-900`}>
                                     {tripType === 'Car Renting' ? 'Car Rental' : 
                                      tripType === 'Tour' ? `${fromLocation} → ${destinations.join(' → ')}` :
@@ -2023,6 +2052,7 @@ export default function CustomerDashboard() {
                         ) : (
                           <div className="w-full max-w-xs ml-auto">
                             <SlideToBookButton 
+                              text={tripType === 'Car Renting' ? 'Slide to Rent' : 'Slide to Book'}
                               onConfirm={() => {
                                 const btn = document.getElementById('hidden-submit-btn') as HTMLButtonElement;
                                 if (btn) {
@@ -2078,7 +2108,7 @@ export default function CustomerDashboard() {
                         <span className="text-2xl font-extrabold text-indigo-600">₹{
                           tripType === 'Car Renting' 
                             ? (Number(numberOfDays) || 1) * 2000 * (Number(numberOfCars) || 1)
-                            : (estimatedPrice || (estimatedKM * (isAC ? 14 : 13) * (tripType === 'Wedding' ? (parseInt(vehiclesRequired) || 1) : (tripType === 'Tour' ? (Number(numberOfCars) || 1) : 1)))) + (tripType === 'Round-trip' ? calculateHaltCharge() : 0)
+                            : (estimatedPrice || (estimatedKM * (selectedVehicle === 'Swift Dzire' ? 13 : selectedVehicle === 'Ertiga' ? 14 : 28) * (tripType === 'Wedding' ? (parseInt(vehiclesRequired) || 1) : (tripType === 'Tour' ? (Number(numberOfCars) || 1) : 1)))) + (tripType === 'Round-trip' ? calculateHaltCharge() : 0)
                         }</span>
                       </div>
                       <p className="text-xs text-gray-400 mt-2 text-right">*Final fare may vary based on actual distance and tolls.</p>
@@ -2498,6 +2528,7 @@ export default function CustomerDashboard() {
                       min={new Date().toISOString().split('T')[0]}
                       value={rebookDate}
                       onChange={(e) => setRebookDate(e.target.value)}
+                      onFocus={handleInputFocus}
                       className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white border-gray-300 text-gray-900`}
                     />
                   </div>

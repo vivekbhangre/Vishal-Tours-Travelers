@@ -214,9 +214,10 @@ export default function Register() {
                 />
               </div>
               <div className="ml-3 text-sm">
-                <label htmlFor="terms" className="font-medium text-gray-200">
-                  I agree to the Terms of Service and Privacy Policy.
-                </label>
+                <span className="font-medium text-gray-200">
+                  <label htmlFor="terms" className="cursor-pointer">I agree to the </label>
+                  <Link to="/terms" className="text-indigo-300 hover:text-indigo-200 underline transition-colors">Terms of Service</Link> and <Link to="/privacy" className="text-indigo-300 hover:text-indigo-200 underline transition-colors">Privacy Policy</Link>.
+                </span>
               </div>
             </div>
 

@@ -6,9 +6,10 @@ interface SlideToBookButtonProps {
   onConfirm: () => void;
   isLoading: boolean;
   disabled: boolean;
+  text?: string;
 }
 
-export default function SlideToBookButton({ onConfirm, isLoading, disabled }: SlideToBookButtonProps) {
+export default function SlideToBookButton({ onConfirm, isLoading, disabled, text = 'Slide to Book' }: SlideToBookButtonProps) {
   const [isConfirmed, setIsConfirmed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const sliderWidth = 56; // Width of the sliding button (circle)
@@ -89,7 +90,7 @@ export default function SlideToBookButton({ onConfirm, isLoading, disabled }: Sl
               <Check className="w-4 h-4" /> Confirmed!
             </>
           ) : (
-            'Slide to Book'
+            text
           )}
         </motion.span>
       </div>

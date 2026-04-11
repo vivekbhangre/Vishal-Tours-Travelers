@@ -219,8 +219,8 @@ export default function Home() {
               &copy; {new Date().getFullYear()} Vishal Tour & Travelers. All rights reserved.
             </p>
             <div className="mt-4 md:mt-0 flex space-x-6">
-              <a href="#" className="text-gray-500 hover:text-gray-700 text-sm transition-colors">Privacy Policy</a>
-              <a href="#" className="text-gray-500 hover:text-gray-700 text-sm transition-colors">Terms of Service</a>
+              <Link to="/privacy" className="text-gray-500 hover:text-gray-700 text-sm transition-colors">Privacy Policy</Link>
+              <Link to="/terms" className="text-gray-500 hover:text-gray-700 text-sm transition-colors">Terms of Service</Link>
             </div>
           </div>
         </div>
