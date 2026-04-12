@@ -1078,10 +1078,10 @@ export default function CustomerDashboard() {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    const firstName = profileName.split(' ')[0];
-    if (hour < 12) return { text: `Good morning, ${firstName}. Traffic is light today.`, gradient: 'from-orange-500/10 via-rose-500/5 to-transparent' };
-    if (hour < 18) return { text: `Good afternoon, ${firstName}. Ready for your next journey?`, gradient: 'from-blue-500/10 via-cyan-500/5 to-transparent' };
-    return { text: `Good evening, ${firstName}. Need a safe ride home?`, gradient: 'from-indigo-500/10 via-purple-500/5 to-transparent' };
+    const firstName = profileName ? profileName.split(' ')[0] : 'Guest';
+    if (hour < 12) return { greeting: `Good morning, ${firstName}.`, sub: `Traffic is light today.`, gradient: 'from-orange-500/10 via-rose-500/5 to-transparent' };
+    if (hour < 18) return { greeting: `Good afternoon, ${firstName}.`, sub: `Ready for your next journey?`, gradient: 'from-blue-500/10 via-cyan-500/5 to-transparent' };
+    return { greeting: `Good evening, ${firstName}.`, sub: `Need a safe ride home?`, gradient: 'from-indigo-500/10 via-purple-500/5 to-transparent' };
   };
 
   const greetingData = getGreeting();
@@ -1174,11 +1174,11 @@ export default function CustomerDashboard() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="flex items-center gap-4">
                 <div>
-                  <h1 className={`text-3xl font-bold capitalize text-gray-900`}>
-                    {greetingData.text.split('.')[0]}.
+                  <h1 className={`text-2xl sm:text-3xl font-bold capitalize text-gray-900 break-words`}>
+                    {greetingData.greeting}
                   </h1>
                   <p className={`text-sm mt-1 text-gray-500`}>
-                    {greetingData.text.split('.')[1]}
+                    {greetingData.sub}
                   </p>
                 </div>
               </div>
