@@ -16,18 +16,18 @@ export const validateEmail = (email: string, restrictDomains: boolean = true): s
 
 export const validatePhone = (phone: string): string | null => {
   if (!phone) return 'Phone number is required';
-  if (!/^\+?[\d\s-]{10,15}$/.test(phone)) {
-    return 'Please enter a valid phone number (10-15 digits)';
+  if (!/^\d{10}$/.test(phone)) {
+    return 'Please enter exactly 10 digits';
   }
   return null;
 };
 
 export const validateName = (name: string): string | null => {
-  if (!name || name.trim().length < 2) {
-    return 'Name must be at least 2 characters long';
+  if (!name || name.trim().length < 3) {
+    return 'Name must be at least 3 characters long';
   }
-  if (!/^[a-zA-Z\s\.]+$/.test(name)) {
-    return 'Name can only contain letters and spaces';
+  if (!/^[a-zA-Z\s]+$/.test(name)) {
+    return 'Name can only contain letters and spaces (no special characters or numbers)';
   }
   return null;
 };

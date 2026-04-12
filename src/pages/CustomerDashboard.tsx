@@ -27,8 +27,8 @@ interface LocationData {
 const AVAILABLE_VEHICLES = [
   { name: 'Swift Dzire', capacity: 4, quantity: 1 },
   { name: 'Ertiga', capacity: 7, quantity: 2 },
-  { name: 'Force Traveller (18 Seater)', capacity: 18, quantity: 1 },
-  { name: 'Force Traveller (22 Seater)', capacity: 22, quantity: 1 },
+  { name: 'Force Traveller', capacity: 18, quantity: 1 },
+  { name: 'Force Traveller', capacity: 22, quantity: 1 },
 ];
 
 const getInitialDateTime = () => {
@@ -169,14 +169,18 @@ const VehicleShowroomCard = ({ vehicle, isSelected, isUnavailable,  onClick }: a
       {/* Details */}
       <div className="flex-1">
         <div className="flex items-center gap-2">
-          <h4 className="font-semibold text-base text-gray-900">{vehicle.name}</h4>
+          <h4 className="font-semibold text-base text-gray-900">
+            {vehicle.name.replace(/ \(\d+ Seater\)/, '')}
+          </h4>
           <div className="flex items-center text-xs text-gray-500 gap-1">
             <Users className="w-3 h-3" /> {vehicle.capacity}
           </div>
         </div>
-        <p className="text-xs text-gray-500 mt-0.5">
-          {isUnavailable ? 'Currently Unavailable' : `${vehicle.quantity} available near you`}
-        </p>
+        {isUnavailable && (
+          <p className="text-xs text-red-500 mt-0.5">
+            Currently Unavailable
+          </p>
+        )}
       </div>
 
       {/* Selection Indicator */}
@@ -550,8 +554,8 @@ export default function CustomerDashboard() {
     let recommended = '';
     if (numberOfPeople >= 1 && numberOfPeople <= 4) recommended = 'Swift Dzire';
     else if (numberOfPeople >= 5 && numberOfPeople <= 7) recommended = 'Ertiga';
-    else if (numberOfPeople >= 8 && numberOfPeople <= 18) recommended = 'Force Traveller (18 Seater)';
-    else if (numberOfPeople >= 19 && numberOfPeople <= 22) recommended = 'Force Traveller (22 Seater)';
+    else if (numberOfPeople >= 8 && numberOfPeople <= 18) recommended = 'Force Traveller';
+    else if (numberOfPeople >= 19 && numberOfPeople <= 22) recommended = 'Force Traveller';
     
     if (recommended) {
       setSelectedVehicle(recommended);
@@ -1092,6 +1096,37 @@ export default function CustomerDashboard() {
     }, 300);
   };
 
+  const isNextDisabled = useMemo(() => {
+    if (bookingStep !== 1) return false;
+    
+    // Number of people must be a positive integer
+    if (!numberOfPeople || Number(numberOfPeople) < 1 || !Number.isInteger(Number(numberOfPeople))) return true;
+
+    if (tripType === 'Car Renting') {
+      return !rideDate || !numberOfDays || !numberOfCars;
+    } else if (tripType === 'Wedding') {
+      return !weddingDate || !eventLocation || !vehiclesRequired;
+    } else if (tripType === 'Tour') {
+      if (!fromLocationData) return true;
+      if (destinationData.length === 0 || destinationData.some(d => d === null)) return true;
+      
+      // Check for duplicate locations in tour
+      const allLocations = [fromLocationData.displayName, ...destinationData.map(d => d?.displayName)];
+      const uniqueLocations = new Set(allLocations);
+      if (uniqueLocations.size !== allLocations.length) return true;
+
+      if (!rideDate) return true;
+      return false;
+    } else {
+      // One-way or Round-trip
+      if (!fromLocationData || !toLocationData) return true;
+      if (fromLocationData.displayName === toLocationData.displayName) return true;
+      if (!rideDate) return true;
+      if (tripType === 'Round-trip' && !returnDate) return true;
+      return false;
+    }
+  }, [bookingStep, tripType, fromLocationData, toLocationData, destinationData, rideDate, returnDate, numberOfDays, numberOfCars, weddingDate, eventLocation, vehiclesRequired, numberOfPeople]);
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -1252,7 +1287,12 @@ export default function CustomerDashboard() {
                         id="profileName"
                         required
                         value={profileName}
-                        onChange={(e) => setProfileName(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (/^[a-zA-Z\s]*$/.test(val)) {
+                            setProfileName(val);
+                          }
+                        }}
                         onFocus={handleInputFocus}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       />
@@ -1275,7 +1315,12 @@ export default function CustomerDashboard() {
                         type="tel"
                         id="profilePhone"
                         value={profilePhone}
-                        onChange={(e) => setProfilePhone(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          if (val.length <= 10) {
+                            setProfilePhone(val);
+                          }
+                        }}
                         onFocus={handleInputFocus}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       />
@@ -1507,6 +1552,11 @@ export default function CustomerDashboard() {
                                   </ul>
                                 )}
                               </div>
+                              {fromLocationData && toLocationData && fromLocationData.displayName === toLocationData.displayName && (
+                                <p className="mt-2 text-sm text-amber-600 flex items-center gap-1">
+                                  <Info className="w-4 h-4" /> Pickup and drop-off locations cannot be the same.
+                                </p>
+                              )}
                             </>
                           )}
                         </div>
@@ -1523,10 +1573,11 @@ export default function CustomerDashboard() {
                         className="space-y-4"
                       >
                         {destinations.map((dest, index) => (
-                          <div key={index} className="flex gap-2 items-end">
-                            <div className="flex-grow relative">
-                              <label className="block text-sm font-medium text-gray-700">Destination {index + 1}</label>
-                              <input
+                          <div key={index} className="flex flex-col gap-1">
+                            <div className="flex gap-2 items-end">
+                              <div className="flex-grow relative">
+                                <label className="block text-sm font-medium text-gray-700">Destination {index + 1}</label>
+                                <input
                                 type="text"
                                 required
                                 value={dest}
@@ -1619,7 +1670,8 @@ export default function CustomerDashboard() {
                               </button>
                             )}
                           </div>
-                        ))}
+                        </div>
+                      ))}
                         <button
                           type="button"
                           onClick={() => {
@@ -1922,7 +1974,7 @@ export default function CustomerDashboard() {
                             {AVAILABLE_VEHICLES.find(v => v.name === selectedVehicle)?.capacity! < numberOfPeople && (
                               <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mt-3 mx-2">
                                 <p className="text-sm text-yellow-800 mb-2">
-                                  ⚠️ Selected vehicle may not accommodate all passengers.
+                                  ⚠️ Exceeds vehicle capacity (Max: {AVAILABLE_VEHICLES.find(v => v.name === selectedVehicle)?.capacity}).
                                 </p>
                                 <label className="flex items-center gap-2 text-sm text-yellow-900">
                                   <input
@@ -2043,8 +2095,11 @@ export default function CustomerDashboard() {
                         {bookingStep < 3 ? (
                           <button
                             type="submit"
+                            disabled={isNextDisabled}
                             className={`flex items-center px-6 py-2.5 text-sm font-medium rounded-xl text-white transition-all ${
-                              'bg-indigo-600 hover:bg-indigo-700 shadow-sm'
+                              isNextDisabled 
+                                ? 'bg-gray-400 cursor-not-allowed' 
+                                : 'bg-indigo-600 hover:bg-indigo-700 shadow-sm'
                             }`}
                           >
                             Next <ChevronRight className="w-4 h-4 ml-1" />
@@ -2075,7 +2130,7 @@ export default function CustomerDashboard() {
               </div>
 
               {/* Dynamic Receipt Component */}
-              {bookingStep > 1 && (
+              {bookingStep === 3 && (
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                   <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <CreditCard className="h-5 w-5 text-indigo-600" />
@@ -2652,7 +2707,7 @@ export default function CustomerDashboard() {
                   </div>
                   <div className={`p-3 rounded-lg text-sm border flex items-start gap-2 text-left bg-blue-50 text-blue-700 border-blue-100`}>
                     <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                    <p>Driver & vehicle information will be given to you once the admin assigns these details to your ride.</p>
+                    <p>You will receive an SMS with driver and vehicle information once assigned.</p>
                   </div>
                 </div>
               </div>
@@ -2662,6 +2717,7 @@ export default function CustomerDashboard() {
                     onClick={() => {
                       setActiveTab('bookings');
                       setBookingSuccessData(null);
+                      setBookingStep(1);
                     }}
                     className={`flex-1 justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition-colors bg-indigo-600 hover:bg-indigo-700`}
                   >

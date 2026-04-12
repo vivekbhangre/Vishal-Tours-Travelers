@@ -2,17 +2,38 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { useTheme } from '../context/ThemeContext';
 
-const customIcon = new L.Icon({
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-  shadowAnchor: [12, 41]
-});
+const createCustomIcon = (color: string, label: string) => {
+  return new L.DivIcon({
+    className: 'custom-leaflet-icon',
+    html: `
+      <div style="
+        background-color: ${color};
+        width: 32px;
+        height: 32px;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        border: 3px solid white;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <span style="transform: rotate(45deg); color: white; font-weight: bold; font-size: 14px; font-family: sans-serif;">
+          ${label}
+        </span>
+      </div>
+    `,
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32]
+  });
+};
+
+const startIcon = createCustomIcon('#22c55e', 'A'); // Green
+const endIcon = createCustomIcon('#ef4444', 'B'); // Red
+const waypointIcon = (index: number) => createCustomIcon('#3b82f6', String(index)); // Blue
 
 interface LocationData {
   lat: number;
@@ -72,6 +93,7 @@ function MapUpdater({ from, to, destinations, isSheetExpanded }: { from: Locatio
 }
 
 export default function InteractiveMap({ fromLocation, toLocation, destinations = [], isSheetExpanded = false }: InteractiveMapProps) {
+  const { theme } = useTheme();
   const [routePath, setRoutePath] = useState<L.LatLngExpression[]>([]);
   const points = useMemo(() => {
     const pts: L.LatLngExpression[] = [];
@@ -132,33 +154,37 @@ export default function InteractiveMap({ fromLocation, toLocation, destinations 
     };
   }, [points]);
 
+  const tileUrl = theme === 'dark' 
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+
   return (
     <div className="h-full w-full z-0">
       <MapContainer center={[20.5937, 78.9629]} zoom={5} style={{ height: '100%', width: '100%' }} attributionControl={false}>
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url={tileUrl}
         />
         
         {fromLocation && (
-          <Marker position={[fromLocation.lat, fromLocation.lng]} icon={customIcon}>
+          <Marker position={[fromLocation.lat, fromLocation.lng]} icon={startIcon}>
             <Popup>Pickup: {fromLocation.displayName}</Popup>
           </Marker>
         )}
         
         {destinations.map((d, i) => d && (
-          <Marker key={`dest-${d.lat}-${d.lng}-${i}`} position={[d.lat, d.lng]} icon={customIcon}>
+          <Marker key={`dest-${d.lat}-${d.lng}-${i}`} position={[d.lat, d.lng]} icon={waypointIcon(i + 1)}>
             <Popup>Stop {i + 1}: {d.displayName}</Popup>
           </Marker>
         ))}
 
         {toLocation && (
-          <Marker position={[toLocation.lat, toLocation.lng]} icon={customIcon}>
+          <Marker position={[toLocation.lat, toLocation.lng]} icon={endIcon}>
             <Popup>Dropoff: {toLocation.displayName}</Popup>
           </Marker>
         )}
 
         {routePath.length > 1 && (
-          <Polyline positions={routePath} color="#4f46e5" weight={5} opacity={0.8} />
+          <Polyline positions={routePath} color={theme === 'dark' ? '#818cf8' : '#4f46e5'} weight={5} opacity={0.8} />
         )}
 
         <MapUpdater from={fromLocation} to={toLocation} destinations={destinations} isSheetExpanded={isSheetExpanded} />
