@@ -13,28 +13,27 @@ export default function SlideToBookButton({ onConfirm, isLoading, disabled, text
   const [isConfirmed, setIsConfirmed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const sliderWidth = 56; // Width of the sliding button (circle)
-  const containerWidth = useRef(0);
+  const [maxDrag, setMaxDrag] = useState(200);
   
   const x = useMotionValue(0);
   
+  // Smoothly transition background and icon color based on drag position
+  const backgroundColor = useTransform(x, [0, maxDrag], ['#4f46e5', '#22c55e']);
+  const iconColor = useTransform(x, [0, maxDrag], ['#4f46e5', '#22c55e']);
+  
   useEffect(() => {
-    if (containerRef.current) {
-      containerWidth.current = containerRef.current.offsetWidth;
-    }
-    
-    const handleResize = () => {
+    const updateMaxDrag = () => {
       if (containerRef.current) {
-        containerWidth.current = containerRef.current.offsetWidth;
+        setMaxDrag(containerRef.current.offsetWidth - (sliderWidth - 8) - 8);
       }
     };
     
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    updateMaxDrag();
+    window.addEventListener('resize', updateMaxDrag);
+    return () => window.removeEventListener('resize', updateMaxDrag);
   }, []);
 
   const handleDragEnd = () => {
-    const maxDrag = containerWidth.current - (sliderWidth - 8) - 8; // 8px for padding (4px left + 4px right)
-    
     if (x.get() >= maxDrag * 0.8) {
       // Confirmed
       x.set(maxDrag);
@@ -68,11 +67,15 @@ export default function SlideToBookButton({ onConfirm, isLoading, disabled, text
   }, [isLoading, disabled, isConfirmed, x]);
 
   return (
-    <div 
+    <motion.div 
       ref={containerRef}
-      className={`relative h-14 rounded-full flex items-center overflow-hidden transition-colors duration-500 ${
+      className={`relative h-14 rounded-full flex items-center overflow-hidden ${
         disabled ? 'opacity-50 cursor-not-allowed' : ''
-      } ${isConfirmed ? 'bg-green-500' : 'bg-indigo-600'}`}
+      }`}
+      style={{ 
+        backgroundColor,
+        touchAction: 'none' // Fixes the stuttering/stuck issue on mobile
+      }}
     >
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <motion.span 
@@ -101,10 +104,11 @@ export default function SlideToBookButton({ onConfirm, isLoading, disabled, text
           width: sliderWidth - 8, // Adjust for smaller height
           height: sliderWidth - 8,
           x,
-          pointerEvents: disabled || isLoading || isConfirmed ? 'none' : 'auto'
+          pointerEvents: disabled || isLoading || isConfirmed ? 'none' : 'auto',
+          touchAction: 'none'
         }}
         drag={disabled || isLoading || isConfirmed ? false : "x"}
-        dragConstraints={{ left: 0, right: containerWidth.current ? containerWidth.current - (sliderWidth - 8) - 8 : 200 }}
+        dragConstraints={{ left: 0, right: maxDrag }}
         dragElastic={0.1}
         dragMomentum={false}
         onDragEnd={handleDragEnd}
@@ -114,14 +118,17 @@ export default function SlideToBookButton({ onConfirm, isLoading, disabled, text
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          className="flex items-center justify-center w-full h-full"
         >
           {isConfirmed ? (
             <Check className="w-5 h-5 text-green-500" />
           ) : (
-            <Car className="w-5 h-5 text-indigo-600" />
+            <motion.div style={{ color: iconColor }} className="flex items-center justify-center">
+              <Car className="w-5 h-5" />
+            </motion.div>
           )}
         </motion.div>
       </motion.div>
-    </div>
+    </motion.div>
   );
 }
