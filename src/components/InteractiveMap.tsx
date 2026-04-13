@@ -147,9 +147,7 @@ export default function InteractiveMap({ fromLocation, toLocation, destinations 
     };
   }, [points]);
 
-  const tileUrl = theme === 'dark' 
-    ? 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'
-    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+  const tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
   return (
     <div className="h-full w-full z-0">
@@ -177,7 +175,7 @@ export default function InteractiveMap({ fromLocation, toLocation, destinations 
         )}
 
         {routePath.length > 1 && (
-          <Polyline positions={routePath} color={theme === 'dark' ? '#818cf8' : '#4f46e5'} weight={5} opacity={0.8} />
+          <Polyline positions={routePath} color="#4f46e5" weight={5} opacity={0.8} />
         )}
 
         <MapUpdater from={fromLocation} to={toLocation} destinations={destinations} isSheetExpanded={isSheetExpanded} />
