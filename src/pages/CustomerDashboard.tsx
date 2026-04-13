@@ -244,7 +244,6 @@ export default function CustomerDashboard() {
   // Wizard State
   const [bookingStep, setBookingStep] = useState(1);
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
-  const dragControls = useDragControls();
 
   useEffect(() => {
     const container = document.getElementById('bottom-sheet-container');
@@ -1206,32 +1205,22 @@ export default function CustomerDashboard() {
 
       {/* Bottom Sheet Container */}
       <motion.div 
-        drag={activeTab === 'dashboard' && bookingStep > 1 ? "y" : false}
-        dragControls={dragControls}
-        dragListener={false}
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={0.2}
-        onDragEnd={(e, info) => {
-          if (info.offset.y < -50) setIsSheetExpanded(true);
-          if (info.offset.y > 50) setIsSheetExpanded(false);
-        }}
         animate={{ 
           height: activeTab === 'dashboard' && bookingStep > 1 
             ? (isSheetExpanded ? '90dvh' : '50dvh') 
             : 'calc(100dvh - 64px)' 
         }}
         transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
-        className={`fixed bottom-0 left-0 w-full z-40 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.1)] overflow-y-auto pb-8 overscroll-none ${
+        className={`fixed bottom-0 left-0 w-full z-40 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.1),0_50vh_0_50vh_#ffffff] overflow-y-auto pb-8 overscroll-none ${
           activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-3xl' : 'rounded-none'
         }`}
         id="bottom-sheet-container"
       >
-        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-gray-100 pb-2">
-          {/* Drag Handle */}
+        <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-100 pb-2">
+          {/* Expand/Collapse Handle */}
           {activeTab === 'dashboard' && bookingStep > 1 && (
             <div 
-              className="w-full py-3 cursor-grab active:cursor-grabbing flex justify-center touch-none"
-              onPointerDown={(e) => dragControls.start(e)}
+              className="w-full py-3 cursor-pointer flex justify-center"
               onClick={() => setIsSheetExpanded(!isSheetExpanded)}
             >
               <div className="w-12 h-1.5 bg-gray-300 rounded-full pointer-events-none"></div>
