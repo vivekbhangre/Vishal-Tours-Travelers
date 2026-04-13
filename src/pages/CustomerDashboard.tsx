@@ -1222,12 +1222,15 @@ export default function CustomerDashboard() {
             : 'calc(100dvh - 64px)' 
         }}
         transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
-        className={`fixed bottom-0 left-0 w-full z-40 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.1),0_50vh_0_50vh_var(--color-white)] overflow-y-auto pb-8 overscroll-none ${
+        className={`fixed bottom-0 left-0 w-full z-40 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex flex-col ${
           activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-3xl' : 'rounded-none'
         }`}
-        id="bottom-sheet-container"
       >
-        <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-100 pb-2">
+        {/* Filler for overscroll to prevent map from peeking through without ruining rounded corners */}
+        <div className="absolute top-full left-0 w-full h-[100vh] bg-white pointer-events-none" />
+
+        <div className="flex-1 overflow-y-auto pb-8 overscroll-none" id="bottom-sheet-container">
+          <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-100 pb-2">
           {/* Drag Handle */}
           {activeTab === 'dashboard' && bookingStep > 1 && (
             <div 
@@ -2490,8 +2493,9 @@ export default function CustomerDashboard() {
             </div>
           )}
         </div>
-      </div>
-    </motion.div>
+        </div>
+        </div>
+      </motion.div>
 
     {/* Cancel Modal */}
       <AnimatePresence>
