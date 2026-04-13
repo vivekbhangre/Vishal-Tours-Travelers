@@ -1217,8 +1217,8 @@ export default function CustomerDashboard() {
         }}
         animate={{ 
           height: activeTab === 'dashboard' && bookingStep > 1 
-            ? (isSheetExpanded ? '90vh' : '50vh') 
-            : 'calc(100vh - 64px)' 
+            ? (isSheetExpanded ? '90dvh' : '50dvh') 
+            : 'calc(100dvh - 64px)' 
         }}
         transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
         className={`fixed bottom-0 left-0 w-full z-40 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.1)] overflow-y-auto pb-8 overscroll-none ${
@@ -2690,7 +2690,7 @@ export default function CustomerDashboard() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.3 }}
-              className={`rounded-2xl shadow-xl max-w-md w-full overflow-hidden bg-white max-h-[90vh] flex flex-col`}
+              className={`rounded-2xl shadow-xl max-w-md w-full overflow-hidden bg-white max-h-[90dvh] flex flex-col`}
             >
               <div className="p-6 text-center overflow-y-auto flex-1 relative">
                 <div className="relative mx-auto w-24 h-24 mb-6 flex items-center justify-center">
