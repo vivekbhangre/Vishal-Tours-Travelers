@@ -80,13 +80,6 @@ function MapUpdater({ from, to, destinations, isSheetExpanded }: { from: Locatio
       // Default to India
       map.setView([20.5937, 78.9629], 5);
     }
-    
-    // Fix for map not rendering correctly and pins being offset
-    const timeoutId = setTimeout(() => {
-      map.invalidateSize();
-    }, 200);
-
-    return () => clearTimeout(timeoutId);
   }, [from, to, destinations, map, isSheetExpanded]);
 
   return null;
@@ -155,7 +148,7 @@ export default function InteractiveMap({ fromLocation, toLocation, destinations 
   }, [points]);
 
   const tileUrl = theme === 'dark' 
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    ? 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'
     : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
   return (
