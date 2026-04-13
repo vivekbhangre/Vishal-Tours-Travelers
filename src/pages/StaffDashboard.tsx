@@ -177,7 +177,7 @@ export default function StaffDashboard() {
                               {booking.tripType === 'Car Renting'
                                 ? `Car Rental: ${booking.numberOfDays} days, ${booking.numberOfCars} cars`
                                 : booking.tripType === 'Tour' 
-                                ? `${booking.fromLocation} \u2192 ${booking.destinations}`
+                                ? `${booking.fromLocation} \u2192 ${Array.isArray(booking.destinations) ? booking.destinations.join(', ') : booking.destinations}`
                                 : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
                             </div>
                             <div className="text-xs text-indigo-600 mt-1 font-medium">
@@ -273,7 +273,7 @@ export default function StaffDashboard() {
                                 {booking.tripType === 'Car Renting'
                                   ? `Car Rental: ${booking.numberOfDays} days, ${booking.numberOfCars} cars`
                                   : booking.tripType === 'Tour' 
-                                  ? `${booking.fromLocation} \u2192 ${booking.destinations}`
+                                  ? `${booking.fromLocation} \u2192 ${Array.isArray(booking.destinations) ? booking.destinations.join(', ') : booking.destinations}`
                                   : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
                               </div>
                               <div className="text-sm text-gray-500">{safeFormatDate(booking.rideDate, 'PPp')}</div>

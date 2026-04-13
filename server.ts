@@ -501,7 +501,7 @@ async function startServer() {
             userEmail: r.get('userEmail'),
             fromLocation: r.get('fromLocation'),
             toLocation: r.get('toLocation'),
-            destinations: r.get('destinations'),
+            destinations: (() => { try { return r.get('destinations') ? JSON.parse(r.get('destinations')) : undefined; } catch(e) { return r.get('destinations'); } })(),
             rideDate: rideDateStr,
             returnDate: r.get('returnDate'),
             tripType: r.get('tripType'),

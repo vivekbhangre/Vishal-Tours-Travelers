@@ -27,8 +27,8 @@ interface LocationData {
 const AVAILABLE_VEHICLES = [
   { name: 'Swift Dzire', capacity: 4, quantity: 1 },
   { name: 'Ertiga', capacity: 7, quantity: 2 },
-  { name: 'Force Traveller', capacity: 18, quantity: 1 },
-  { name: 'Force Traveller', capacity: 22, quantity: 1 },
+  { name: 'Force Traveller (18 Seater)', capacity: 18, quantity: 1 },
+  { name: 'Force Traveller (22 Seater)', capacity: 22, quantity: 1 },
 ];
 
 const getInitialDateTime = () => {
@@ -554,8 +554,8 @@ export default function CustomerDashboard() {
     let recommended = '';
     if (numberOfPeople >= 1 && numberOfPeople <= 4) recommended = 'Swift Dzire';
     else if (numberOfPeople >= 5 && numberOfPeople <= 7) recommended = 'Ertiga';
-    else if (numberOfPeople >= 8 && numberOfPeople <= 18) recommended = 'Force Traveller';
-    else if (numberOfPeople >= 19 && numberOfPeople <= 22) recommended = 'Force Traveller';
+    else if (numberOfPeople >= 8 && numberOfPeople <= 18) recommended = 'Force Traveller (18 Seater)';
+    else if (numberOfPeople >= 19 && numberOfPeople <= 22) recommended = 'Force Traveller (22 Seater)';
     
     if (recommended) {
       setSelectedVehicle(recommended);
@@ -661,6 +661,39 @@ export default function CustomerDashboard() {
     else if (selectedVehicle.includes('Force Traveller') || selectedVehicle.includes('Force Van')) rate = 3000;
     
     return diffDays * rate;
+  };
+
+  const resetForm = () => {
+    setBookingStep(1);
+    setIsSheetExpanded(false);
+    setTripType('One-way');
+    setFromLocation('');
+    setFromLocationData(null);
+    setToLocation('');
+    setToLocationData(null);
+    setDestinations(['']);
+    setDestinationData([null]);
+    setRideDate('');
+    setRideTimeHour('12');
+    setRideTimeMinute('00');
+    setRideTimeAmPm('AM');
+    setRideType('Intercity');
+    setReturnDate('');
+    setReturnTimeHour('12');
+    setReturnTimeMinute('00');
+    setReturnTimeAmPm('AM');
+    setNumberOfDays(1);
+    setNumberOfCars(1);
+    setEstimatedKM(0);
+    setWeddingDate('');
+    setEventLocation('');
+    setVehiclesRequired('1');
+    setNumberOfPeople(1);
+    setSelectedVehicle('Swift Dzire');
+    setCustomRequirements('');
+    setDecorationRequired('No');
+    setPickupType('Arrival');
+    setAcceptedTerms(false);
   };
 
   const handleBookRide = async (e: React.FormEvent) => {
@@ -2066,7 +2099,7 @@ export default function CustomerDashboard() {
                                 <div>
                                   <p className={`text-sm text-gray-500`}>Vehicle</p>
                                   <p className={`font-medium text-gray-900`}>
-                                    {selectedVehicle} {isAC ? '(AC)' : '(Non-AC)'}
+                                    {selectedVehicle.replace(/ \(\d+ Seater\)/, '')} {isAC ? '(AC)' : '(Non-AC)'}
                                   </p>
                                 </div>
                               </div>
@@ -2149,7 +2182,7 @@ export default function CustomerDashboard() {
                     )}
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Vehicle</span>
-                      <span className="font-medium text-gray-900">{selectedVehicle}</span>
+                      <span className="font-medium text-gray-900">{selectedVehicle.replace(/ \(\d+ Seater\)/, '')}</span>
                     </div>
                     {tripType === 'Round-trip' && (
                       <div className="flex justify-between text-sm">
@@ -2241,7 +2274,7 @@ export default function CustomerDashboard() {
                           >
                             <AbstractMiniMap 
                               from={booking.fromLocation} 
-                              to={booking.tripType === 'Tour' ? booking.destinations : booking.toLocation || 'Destination'} 
+                              to={booking.tripType === 'Tour' ? (Array.isArray(booking.destinations) ? booking.destinations.join(', ') : booking.destinations) : booking.toLocation || 'Destination'} 
                                
                             />
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2 sm:gap-4">
@@ -2249,7 +2282,7 @@ export default function CustomerDashboard() {
                                 {booking.tripType === 'Car Renting'
                                   ? `Car Rental: ${booking.numberOfDays} days, ${booking.numberOfCars} cars`
                                   : booking.tripType === 'Tour' 
-                                  ? `${booking.fromLocation} \u2192 ${booking.destinations}`
+                                  ? `${booking.fromLocation} \u2192 ${Array.isArray(booking.destinations) ? booking.destinations.join(', ') : booking.destinations}`
                                   : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
                               </h4>
                               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
@@ -2486,7 +2519,7 @@ export default function CustomerDashboard() {
                 
                 <div className={`mb-6 p-4 rounded-xl border bg-gray-50 border-gray-100`}>
                   <p className={`text-sm mb-2 text-gray-600`}>
-                    <span className={`font-medium text-gray-900`}>Route:</span> {cancelModal.booking.tripType === 'Car Renting' ? `Car Rental: ${cancelModal.booking.numberOfDays} days, ${cancelModal.booking.numberOfCars} cars` : cancelModal.booking.tripType === 'Tour' ? `${cancelModal.booking.fromLocation} \u2192 ${cancelModal.booking.destinations}` : `${cancelModal.booking.fromLocation} \u2192 ${cancelModal.booking.toLocation}`}
+                    <span className={`font-medium text-gray-900`}>Route:</span> {cancelModal.booking.tripType === 'Car Renting' ? `Car Rental: ${cancelModal.booking.numberOfDays} days, ${cancelModal.booking.numberOfCars} cars` : cancelModal.booking.tripType === 'Tour' ? `${cancelModal.booking.fromLocation} \u2192 ${Array.isArray(cancelModal.booking.destinations) ? cancelModal.booking.destinations.join(', ') : cancelModal.booking.destinations}` : `${cancelModal.booking.fromLocation} \u2192 ${cancelModal.booking.toLocation}`}
                   </p>
                   <p className={`text-sm mb-2 text-gray-600`}>
                     <span className={`font-medium text-gray-900`}>Departure:</span> {cancelModal.booking.rideDate}
@@ -2561,7 +2594,7 @@ export default function CustomerDashboard() {
                 
                 <div className={`mb-6 p-4 rounded-xl border bg-gray-50 border-gray-100`}>
                   <p className={`text-sm mb-2 text-gray-600`}>
-                    <span className={`font-medium text-gray-900`}>Route:</span> {rebookModal.booking.tripType === 'Car Renting' ? `Car Rental: ${rebookModal.booking.numberOfDays} days, ${rebookModal.booking.numberOfCars} cars` : rebookModal.booking.tripType === 'Tour' ? `${rebookModal.booking.fromLocation} \u2192 ${rebookModal.booking.destinations}` : `${rebookModal.booking.fromLocation} \u2192 ${rebookModal.booking.toLocation}`}
+                    <span className={`font-medium text-gray-900`}>Route:</span> {rebookModal.booking.tripType === 'Car Renting' ? `Car Rental: ${rebookModal.booking.numberOfDays} days, ${rebookModal.booking.numberOfCars} cars` : rebookModal.booking.tripType === 'Tour' ? `${rebookModal.booking.fromLocation} \u2192 ${Array.isArray(rebookModal.booking.destinations) ? rebookModal.booking.destinations.join(', ') : rebookModal.booking.destinations}` : `${rebookModal.booking.fromLocation} \u2192 ${rebookModal.booking.toLocation}`}
                   </p>
                   <p className={`text-sm text-gray-600`}>
                     <span className={`font-medium text-gray-900`}>Vehicle:</span> {rebookModal.booking.suggestedVehicle} {rebookModal.booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}

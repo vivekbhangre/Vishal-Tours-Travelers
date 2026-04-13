@@ -687,7 +687,7 @@ export default function AdminDashboard() {
                             {booking.tripType === 'Car Renting'
                               ? `Car Rental: ${booking.numberOfDays} days, ${booking.numberOfCars} cars`
                               : booking.tripType === 'Tour' 
-                              ? `${booking.fromLocation} \u2192 ${booking.destinations}`
+                              ? `${booking.fromLocation} \u2192 ${Array.isArray(booking.destinations) ? booking.destinations.join(', ') : booking.destinations}`
                               : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
                             {booking.tripType === 'Tour' && <div className="text-xs text-indigo-600 mt-1">{booking.numberOfCars} Vehicle(s)</div>}
                             {booking.tripType === 'Wedding' && booking.weddingDetails && (
