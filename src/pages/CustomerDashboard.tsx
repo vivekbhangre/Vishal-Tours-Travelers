@@ -244,6 +244,7 @@ export default function CustomerDashboard() {
   // Wizard State
   const [bookingStep, setBookingStep] = useState(1);
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
+  const dragControls = useDragControls();
 
   useEffect(() => {
     const container = document.getElementById('bottom-sheet-container');
@@ -1205,6 +1206,15 @@ export default function CustomerDashboard() {
 
       {/* Bottom Sheet Container */}
       <motion.div 
+        drag={activeTab === 'dashboard' && bookingStep > 1 ? "y" : false}
+        dragControls={dragControls}
+        dragListener={false}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={0.2}
+        onDragEnd={(e, info) => {
+          if (info.offset.y < -50) setIsSheetExpanded(true);
+          if (info.offset.y > 50) setIsSheetExpanded(false);
+        }}
         animate={{ 
           height: activeTab === 'dashboard' && bookingStep > 1 
             ? (isSheetExpanded ? '90dvh' : '50dvh') 
@@ -1217,10 +1227,11 @@ export default function CustomerDashboard() {
         id="bottom-sheet-container"
       >
         <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-100 pb-2">
-          {/* Expand/Collapse Handle */}
+          {/* Drag Handle */}
           {activeTab === 'dashboard' && bookingStep > 1 && (
             <div 
-              className="w-full py-3 cursor-pointer flex justify-center"
+              className="w-full py-3 cursor-grab active:cursor-grabbing flex justify-center touch-none"
+              onPointerDown={(e) => dragControls.start(e)}
               onClick={() => setIsSheetExpanded(!isSheetExpanded)}
             >
               <div className="w-12 h-1.5 bg-gray-300 rounded-full pointer-events-none"></div>

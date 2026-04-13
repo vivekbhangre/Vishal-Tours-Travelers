@@ -80,15 +80,14 @@ function MapUpdater({ from, to, destinations, isSheetExpanded }: { from: Locatio
       // Default to India
       map.setView([20.5937, 78.9629], 5);
     }
-  }, [from, to, destinations, map, isSheetExpanded]);
-
-  // Fix for map not rendering correctly on initial load
-  useEffect(() => {
+    
+    // Fix for map not rendering correctly and pins being offset
     const timeoutId = setTimeout(() => {
       map.invalidateSize();
     }, 200);
+
     return () => clearTimeout(timeoutId);
-  }, [map]);
+  }, [from, to, destinations, map, isSheetExpanded]);
 
   return null;
 }
