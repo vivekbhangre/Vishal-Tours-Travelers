@@ -9,18 +9,13 @@ export default function Home() {
   const { user } = useAuth();
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="min-h-screen bg-gray-50 flex flex-col transition-colors duration-300"
-    >
+    <div className="min-h-screen bg-gray-50 flex flex-col transition-colors duration-300">
       <Navbar />
       
       {/* Main Content Wrapper to push footer to bottom if content is short */}
       <div className="flex-grow">
         {/* Hero Section */}
-        <div className="relative w-full min-h-[calc(100dvh-64px)] flex items-center justify-center lg:justify-start overflow-hidden">
+        <div className="relative w-full min-h-[calc(100dvh-64px)] flex items-center justify-center lg:justify-start overflow-hidden bg-gray-900">
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
             <img
@@ -225,6 +220,6 @@ export default function Home() {
           </div>
         </div>
       </footer>
-    </motion.div>
+    </div>
   );
 }

@@ -1206,6 +1206,7 @@ export default function CustomerDashboard() {
 
       {/* Bottom Sheet Container */}
       <motion.div 
+        initial={false}
         drag={activeTab === 'dashboard' && bookingStep > 1 ? "y" : false}
         dragControls={dragControls}
         dragListener={false}
@@ -1221,7 +1222,7 @@ export default function CustomerDashboard() {
             : 'calc(100dvh - 64px)' 
         }}
         transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
-        className={`fixed bottom-0 left-0 w-full z-40 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.1),0_50vh_0_50vh_#ffffff] overflow-y-auto pb-8 overscroll-none ${
+        className={`fixed bottom-0 left-0 w-full z-40 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.1),0_50vh_0_50vh_var(--color-white)] overflow-y-auto pb-8 overscroll-none ${
           activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-3xl' : 'rounded-none'
         }`}
         id="bottom-sheet-container"
