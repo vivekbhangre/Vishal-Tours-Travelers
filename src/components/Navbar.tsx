@@ -45,12 +45,20 @@ export default function Navbar() {
                   <UserIcon className="h-5 w-5 mr-1" />
                   <span className="text-sm font-medium">{user.name}</span>
                 </button>
-                <Link
-                  to={`/dashboard/${user.role}`}
-                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                <button
+                  onClick={() => {
+                    if (user.role === 'customer') {
+                      localStorage.setItem('customerActiveTab', 'dashboard');
+                    } else if (user.role === 'admin') {
+                      localStorage.setItem('adminMainTab', 'Bookings');
+                    }
+                    navigate(`/dashboard/${user.role}`);
+                    window.dispatchEvent(new Event('storage'));
+                  }}
+                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
                 >
                   Dashboard
-                </Link>
+                </button>
                 <button
                   onClick={handleLogout}
                   className="flex items-center text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
@@ -116,13 +124,21 @@ export default function Navbar() {
                   <UserIcon className="h-5 w-5 mr-2" />
                   <span className="text-base font-medium">{user.name}</span>
                 </button>
-                <Link
-                  to={`/dashboard/${user.role}`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-4 py-2 text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 transition-colors"
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    if (user.role === 'customer') {
+                      localStorage.setItem('customerActiveTab', 'dashboard');
+                    } else if (user.role === 'admin') {
+                      localStorage.setItem('adminMainTab', 'Bookings');
+                    }
+                    navigate(`/dashboard/${user.role}`);
+                    window.dispatchEvent(new Event('storage'));
+                  }}
+                  className="block w-full text-left px-4 py-2 text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 transition-colors"
                 >
                   Dashboard
-                </Link>
+                </button>
                 <button
                   onClick={handleLogout}
                   className="block w-full text-left px-4 py-2 text-base font-medium text-gray-700 hover:text-red-600 hover:bg-gray-50 transition-colors"

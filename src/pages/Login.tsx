@@ -52,6 +52,7 @@ export default function Login() {
       }
       
       login(user);
+      localStorage.setItem('customerActiveTab', 'dashboard');
       navigate(`/dashboard/customer`);
     } catch (err: any) {
       let errorMessage = 'Failed to login';

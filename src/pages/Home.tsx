@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { MapPin, Calendar, CreditCard, ShieldCheck, Phone, Mail, Instagram, ArrowRight, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -8,6 +8,35 @@ import GenuineIndiaMap from '../components/GenuineIndiaMap';
 
 export default function Home() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleRouteClick = (destination: string) => {
+    const routes: Record<string, any> = {
+      'Chhindwara': {
+        from: { name: 'Seoni', city: 'Seoni', state: 'Madhya Pradesh', country: 'India', lat: 22.0869, lng: 79.5435, displayName: 'Seoni, Madhya Pradesh, India' },
+        to: { name: 'Chhindwara', city: 'Chhindwara', state: 'Madhya Pradesh', country: 'India', lat: 22.0574, lng: 78.9382, displayName: 'Chhindwara, Madhya Pradesh, India' }
+      },
+      'Nagpur': {
+        from: { name: 'Seoni', city: 'Seoni', state: 'Madhya Pradesh', country: 'India', lat: 22.0869, lng: 79.5435, displayName: 'Seoni, Madhya Pradesh, India' },
+        to: { name: 'Nagpur', city: 'Nagpur', state: 'Maharashtra', country: 'India', lat: 21.1458, lng: 79.0882, displayName: 'Nagpur, Maharashtra, India' }
+      },
+      'Jabalpur': {
+        from: { name: 'Seoni', city: 'Seoni', state: 'Madhya Pradesh', country: 'India', lat: 22.0869, lng: 79.5435, displayName: 'Seoni, Madhya Pradesh, India' },
+        to: { name: 'Jabalpur', city: 'Jabalpur', state: 'Madhya Pradesh', country: 'India', lat: 23.1815, lng: 79.9864, displayName: 'Jabalpur, Madhya Pradesh, India' }
+      }
+    };
+
+    localStorage.setItem('pendingRoute', JSON.stringify(routes[destination]));
+    
+    if (user) {
+      if (user.role === 'customer') {
+        localStorage.setItem('customerActiveTab', 'dashboard');
+      }
+      navigate(`/dashboard/${user.role}`);
+    } else {
+      navigate('/register');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col transition-colors duration-300">
@@ -174,6 +203,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Card 1: Seoni to Chhindwara */}
               <motion.div
+                onClick={() => handleRouteClick('Chhindwara')}
                 initial={{ opacity: 0, y: 20, scale: 0.95 }}
                 whileInView={{ opacity: 1, y: 0, scale: 1 }}
                 viewport={{ once: true }}
@@ -181,25 +211,29 @@ export default function Home() {
                 className="relative h-72 rounded-2xl overflow-hidden group cursor-pointer shadow-sm hover:shadow-xl transition-shadow"
               >
                 <img 
-                  src="https://images.unsplash.com/photo-1626684496076-07e23c6361ff?auto=format&fit=crop&w=800&q=80" 
+                  src="/images/chhindwara.png" 
                   alt="Chhindwara" 
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                   referrerPolicy="no-referrer" 
+                  onError={(e) => {
+                    // Fallback to Unsplash if the local image isn't uploaded yet
+                    (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1626684496076-07e23c6361ff?auto=format&fit=crop&w=800&q=80";
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
                 
                 <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <h3 className="text-2xl font-bold text-white flex items-center gap-2 mb-2">
-                        Seoni <ArrowRight className="h-5 w-5 text-indigo-400" /> Chhindwara
+                  <div className="flex justify-between items-end gap-2">
+                    <div className="min-w-0">
+                      <h3 className="text-xl sm:text-2xl font-bold text-[#ffffff] flex items-center gap-2 mb-2">
+                        Seoni <ArrowRight className="h-5 w-5 text-indigo-400 flex-shrink-0" /> <span className="truncate">Chhindwara</span>
                       </h3>
-                      <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-sm font-medium border border-white/10">
-                        <Clock className="h-4 w-4 mr-1.5" />
+                      <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#ffffff]/20 backdrop-blur-md text-[#ffffff] text-sm font-medium border border-[#ffffff]/10 whitespace-nowrap">
+                        <Clock className="h-4 w-4 mr-1.5 flex-shrink-0" />
                         50 Mins
                       </div>
                     </div>
-                    <div className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-bold shadow-lg">
+                    <div className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-600 text-[#ffffff] text-sm font-bold shadow-lg whitespace-nowrap flex-shrink-0">
                       From ₹2200
                     </div>
                   </div>
@@ -208,6 +242,7 @@ export default function Home() {
 
               {/* Card 2: Seoni to Nagpur */}
               <motion.div
+                onClick={() => handleRouteClick('Nagpur')}
                 initial={{ opacity: 0, y: 20, scale: 0.95 }}
                 whileInView={{ opacity: 1, y: 0, scale: 1 }}
                 viewport={{ once: true }}
@@ -215,25 +250,29 @@ export default function Home() {
                 className="relative h-72 rounded-2xl overflow-hidden group cursor-pointer shadow-sm hover:shadow-xl transition-shadow"
               >
                 <img 
-                  src="https://images.unsplash.com/photo-1555505019-8c3f1c4aba5f?auto=format&fit=crop&w=800&q=80" 
+                  src="/images/nagpur.png" 
                   alt="Nagpur" 
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                   referrerPolicy="no-referrer" 
+                  onError={(e) => {
+                    // Fallback to Unsplash if the local image isn't uploaded yet
+                    (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1555505019-8c3f1c4aba5f?auto=format&fit=crop&w=800&q=80";
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
                 
                 <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <h3 className="text-2xl font-bold text-white flex items-center gap-2 mb-2">
-                        Seoni <ArrowRight className="h-5 w-5 text-indigo-400" /> Nagpur
+                  <div className="flex justify-between items-end gap-2">
+                    <div className="min-w-0">
+                      <h3 className="text-xl sm:text-2xl font-bold text-[#ffffff] flex items-center gap-2 mb-2">
+                        Seoni <ArrowRight className="h-5 w-5 text-indigo-400 flex-shrink-0" /> <span className="truncate">Nagpur</span>
                       </h3>
-                      <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-sm font-medium border border-white/10">
-                        <Clock className="h-4 w-4 mr-1.5" />
+                      <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#ffffff]/20 backdrop-blur-md text-[#ffffff] text-sm font-medium border border-[#ffffff]/10 whitespace-nowrap">
+                        <Clock className="h-4 w-4 mr-1.5 flex-shrink-0" />
                         2.0 Hours
                       </div>
                     </div>
-                    <div className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-bold shadow-lg">
+                    <div className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-600 text-[#ffffff] text-sm font-bold shadow-lg whitespace-nowrap flex-shrink-0">
                       From ₹4000
                     </div>
                   </div>
@@ -242,6 +281,7 @@ export default function Home() {
 
               {/* Card 3: Seoni to Jabalpur */}
               <motion.div
+                onClick={() => handleRouteClick('Jabalpur')}
                 initial={{ opacity: 0, y: 20, scale: 0.95 }}
                 whileInView={{ opacity: 1, y: 0, scale: 1 }}
                 viewport={{ once: true }}
@@ -249,25 +289,29 @@ export default function Home() {
                 className="relative h-72 rounded-2xl overflow-hidden group cursor-pointer shadow-sm hover:shadow-xl transition-shadow"
               >
                 <img 
-                  src="https://images.unsplash.com/photo-1586899028174-e7098604235b?auto=format&fit=crop&w=800&q=80" 
+                  src="/images/jabalpur.png" 
                   alt="Jabalpur" 
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                   referrerPolicy="no-referrer" 
+                  onError={(e) => {
+                    // Fallback to Unsplash if the local image isn't uploaded yet
+                    (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1586899028174-e7098604235b?auto=format&fit=crop&w=800&q=80";
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
                 
                 <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <h3 className="text-2xl font-bold text-white flex items-center gap-2 mb-2">
-                        Seoni <ArrowRight className="h-5 w-5 text-indigo-400" /> Jabalpur
+                  <div className="flex justify-between items-end gap-2">
+                    <div className="min-w-0">
+                      <h3 className="text-xl sm:text-2xl font-bold text-[#ffffff] flex items-center gap-2 mb-2">
+                        Seoni <ArrowRight className="h-5 w-5 text-indigo-400 flex-shrink-0" /> <span className="truncate">Jabalpur</span>
                       </h3>
-                      <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-sm font-medium border border-white/10">
-                        <Clock className="h-4 w-4 mr-1.5" />
+                      <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#ffffff]/20 backdrop-blur-md text-[#ffffff] text-sm font-medium border border-[#ffffff]/10 whitespace-nowrap">
+                        <Clock className="h-4 w-4 mr-1.5 flex-shrink-0" />
                         2.6 Hours
                       </div>
                     </div>
-                    <div className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-bold shadow-lg">
+                    <div className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-600 text-[#ffffff] text-sm font-bold shadow-lg whitespace-nowrap flex-shrink-0">
                       From ₹4300
                     </div>
                   </div>

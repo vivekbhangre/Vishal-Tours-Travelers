@@ -359,6 +359,27 @@ export default function CustomerDashboard() {
   const [showToSuggestions, setShowToSuggestions] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
+  // Check for pending route from homepage
+  useEffect(() => {
+    const pendingRouteStr = localStorage.getItem('pendingRoute');
+    if (pendingRouteStr) {
+      try {
+        const pendingRoute = JSON.parse(pendingRouteStr);
+        if (pendingRoute.from && pendingRoute.to) {
+          setFromLocation(pendingRoute.from.displayName);
+          setFromLocationData(pendingRoute.from);
+          setToLocation(pendingRoute.to.displayName);
+          setToLocationData(pendingRoute.to);
+          
+          // Clear it so it doesn't auto-fill next time
+          localStorage.removeItem('pendingRoute');
+        }
+      } catch (e) {
+        console.error('Error parsing pending route', e);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('customerActiveTab', activeTab);
   }, [activeTab]);

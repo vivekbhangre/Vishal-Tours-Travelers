@@ -56,6 +56,9 @@ export default function Register() {
     try {
       const user = await api.register({ name, email, phone, password, role: 'customer', acceptedTerms });
       login(user);
+      if (user.role === 'customer') {
+        localStorage.setItem('customerActiveTab', 'dashboard');
+      }
       navigate(`/dashboard/${user.role}`);
     } catch (err: any) {
       setError(err.message || 'Failed to register');
