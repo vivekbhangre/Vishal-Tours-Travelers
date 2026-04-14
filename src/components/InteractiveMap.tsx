@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useTheme } from '../context/ThemeContext';
+import MovingCarMarker from './MovingCarMarker';
 
 const createCustomIcon = (color: string, label: string) => {
   return new L.DivIcon({
@@ -175,7 +176,20 @@ export default function InteractiveMap({ fromLocation, toLocation, destinations 
         )}
 
         {routePath.length > 1 && (
-          <Polyline positions={routePath} color="#4f46e5" weight={5} opacity={0.8} />
+          <>
+            {/* Background solid line */}
+            <Polyline positions={routePath} color="#4f46e5" weight={5} opacity={0.3} />
+            {/* Foreground animated dashed line */}
+            <Polyline 
+              positions={routePath} 
+              color="#4f46e5" 
+              weight={5} 
+              opacity={0.9} 
+              className="animated-route-path"
+            />
+            {/* Moving Car */}
+            <MovingCarMarker routePath={routePath} />
+          </>
         )}
 
         <MapUpdater from={fromLocation} to={toLocation} destinations={destinations} isSheetExpanded={isSheetExpanded} />

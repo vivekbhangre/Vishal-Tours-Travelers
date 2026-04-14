@@ -138,4 +138,15 @@
     max-width: none !important;
     max-height: none !important;
   }
+
+  .animated-route-path {
+    stroke-dasharray: 15, 15;
+    animation: dash 1.5s linear infinite;
+  }
+
+  @keyframes dash {
+    to {
+      stroke-dashoffset: -30;
+    }
+  }
 }

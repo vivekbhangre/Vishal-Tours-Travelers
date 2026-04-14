@@ -5,6 +5,7 @@ import { api } from '../lib/api';
 import { validateEmail, validatePassword } from '../lib/validation';
 import { Map, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'motion/react';
+import GenuineIndiaMap from '../components/GenuineIndiaMap';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -76,16 +77,8 @@ export default function Login() {
       className="min-h-[100dvh] relative flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300 overflow-y-auto"
     >
       {/* Background Image */}
-      <div className="fixed inset-0 z-0">
-        <img
-          className="w-full h-full object-cover"
-          src="https://images.unsplash.com/photo-1494783367193-149034c05e8f?auto=format&fit=crop&w=1920&q=80"
-          alt="Cinematic mountain highway sunset"
-          referrerPolicy="no-referrer"
-        />
-        {/* Dark gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent z-10"></div>
-        <div className="absolute inset-0 bg-indigo-900/20 mix-blend-multiply z-10"></div>
+      <div className="fixed inset-0 z-0 bg-gray-900">
+        <GenuineIndiaMap />
       </div>
 
       <div className="relative z-20 w-full max-w-md mx-auto">
@@ -99,34 +92,34 @@ export default function Login() {
           }}
         >
           <div className="flex justify-center mb-6">
-            <Link to="/" className="hover:opacity-80 transition-opacity bg-white/10 p-3 rounded-full border border-white/20">
-              <Map className="h-10 w-10 text-white" />
+            <Link to="/" className="hover:opacity-80 transition-opacity bg-white/50 p-3 rounded-full border border-gray-200">
+              <Map className="h-10 w-10 text-indigo-600" />
             </Link>
           </div>
-          <h2 className="text-center text-3xl font-extrabold text-white drop-shadow-md">
+          <h2 className="text-center text-3xl font-extrabold text-gray-900 drop-shadow-sm">
             Welcome Back
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-200">
+          <p className="mt-2 text-center text-sm text-gray-500">
             Don't have an account?{' '}
-            <Link to="/register" className="font-medium text-indigo-300 hover:text-indigo-200 transition-colors">
+            <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
               Register here
             </Link>
           </p>
 
           <form className="mt-6 sm:mt-8 space-y-3 sm:space-y-6" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-red-500/20 border border-red-500/50 text-white px-4 py-3 rounded-xl relative backdrop-blur-sm" role="alert">
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl relative backdrop-blur-sm" role="alert">
                 <span className="block sm:inline">{error}</span>
               </div>
             )}
             {success && (
-              <div className="bg-green-500/20 border border-green-500/50 text-white px-4 py-3 rounded-xl relative backdrop-blur-sm" role="alert">
+              <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-xl relative backdrop-blur-sm" role="alert">
                 <span className="block sm:inline">{success}</span>
               </div>
             )}
             
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-200 ml-1">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 ml-1">
                 Email address
               </label>
               <div className="mt-2">
@@ -138,14 +131,14 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
+                  className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/50 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
                   placeholder="you@example.com"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-200 ml-1">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 ml-1">
                 Password
               </label>
               <div className="mt-2 relative">
@@ -157,13 +150,13 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm pr-10"
+                  className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/50 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm pr-10"
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" aria-hidden="true" />
@@ -185,7 +178,7 @@ export default function Login() {
             </div>
             
             <div className="text-center mt-4">
-              <Link to="/forgot-password" className="text-sm font-medium text-indigo-300 hover:text-indigo-200 transition-colors">
+              <Link to="/forgot-password" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
                 Forgot password?
               </Link>
             </div>

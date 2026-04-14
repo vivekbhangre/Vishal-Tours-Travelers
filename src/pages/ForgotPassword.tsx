@@ -4,6 +4,7 @@ import { api } from '../lib/api';
 import { validateEmail, validatePassword, validateName, validatePhone } from '../lib/validation';
 import { Map, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'motion/react';
+import GenuineIndiaMap from '../components/GenuineIndiaMap';
 
 export default function ForgotPassword() {
   const [step, setStep] = useState(1);
@@ -93,16 +94,8 @@ export default function ForgotPassword() {
       className="min-h-[100dvh] relative flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300 overflow-y-auto"
     >
       {/* Background Image */}
-      <div className="fixed inset-0 z-0">
-        <img
-          className="w-full h-full object-cover"
-          src="https://images.unsplash.com/photo-1494783367193-149034c05e8f?auto=format&fit=crop&w=1920&q=80"
-          alt="Cinematic mountain highway sunset"
-          referrerPolicy="no-referrer"
-        />
-        {/* Dark gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent z-10"></div>
-        <div className="absolute inset-0 bg-indigo-900/20 mix-blend-multiply z-10"></div>
+      <div className="fixed inset-0 z-0 bg-gray-900">
+        <GenuineIndiaMap />
       </div>
 
       <div className="relative z-20 w-full max-w-md mx-auto">
@@ -116,20 +109,20 @@ export default function ForgotPassword() {
           }}
         >
           <div className="flex justify-center mb-6">
-            <Link to="/" className="hover:opacity-80 transition-opacity bg-white/10 p-3 rounded-full border border-white/20">
-              <Map className="h-10 w-10 text-white" />
+            <Link to="/" className="hover:opacity-80 transition-opacity bg-white/50 p-3 rounded-full border border-gray-200">
+              <Map className="h-10 w-10 text-indigo-600" />
             </Link>
           </div>
-          <h2 className="text-center text-3xl font-extrabold text-white drop-shadow-md">
+          <h2 className="text-center text-3xl font-extrabold text-gray-900 drop-shadow-sm">
             {step === 1 ? 'Reset Password' : 'Create New Password'}
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-200">
+          <p className="mt-2 text-center text-sm text-gray-500">
             {step === 1 ? 'Enter your details to verify your account.' : 'Please enter your new password below.'}
           </p>
 
           <form className="mt-6 sm:mt-8 space-y-3 sm:space-y-6" onSubmit={step === 1 ? handleVerify : handleReset}>
             {error && (
-              <div className="bg-red-500/20 border border-red-500/50 text-white px-4 py-3 rounded-xl relative backdrop-blur-sm" role="alert">
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl relative backdrop-blur-sm" role="alert">
                 <span className="block sm:inline">{error}</span>
               </div>
             )}
@@ -137,7 +130,7 @@ export default function ForgotPassword() {
             {step === 1 ? (
               <>
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-200 ml-1">
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 ml-1">
                     Full Name
                   </label>
                   <div className="mt-2">
@@ -148,14 +141,14 @@ export default function ForgotPassword() {
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
+                      className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/50 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
                       placeholder="John Doe"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-200 ml-1">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 ml-1">
                     Email address
                   </label>
                   <div className="mt-2">
@@ -166,14 +159,14 @@ export default function ForgotPassword() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
+                      className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/50 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
                       placeholder="you@example.com"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-200 ml-1">
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 ml-1">
                     Phone Number
                   </label>
                   <div className="mt-2">
@@ -184,7 +177,7 @@ export default function ForgotPassword() {
                       required
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
+                      className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/50 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
                       placeholder="+1 (555) 000-0000"
                     />
                   </div>
@@ -193,7 +186,7 @@ export default function ForgotPassword() {
             ) : (
               <>
                 <div>
-                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-200 ml-1">
+                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 ml-1">
                     New Password
                   </label>
                   <div className="mt-2 relative">
@@ -204,13 +197,13 @@ export default function ForgotPassword() {
                       required
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm pr-10"
+                      className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/50 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm pr-10"
                       placeholder="••••••••"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                     >
                       {showPassword ? (
                         <EyeOff className="h-5 w-5" aria-hidden="true" />
@@ -222,7 +215,7 @@ export default function ForgotPassword() {
                 </div>
 
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-200 ml-1">
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 ml-1">
                     Confirm Password
                   </label>
                   <div className="mt-2 relative">
@@ -233,13 +226,13 @@ export default function ForgotPassword() {
                       required
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-xl shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm pr-10"
+                      className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/50 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm pr-10"
                       placeholder="••••••••"
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                     >
                       {showConfirmPassword ? (
                         <EyeOff className="h-5 w-5" aria-hidden="true" />
@@ -264,7 +257,7 @@ export default function ForgotPassword() {
             
             {step === 1 && (
               <div className="text-center mt-4">
-                <Link to="/login" className="text-sm font-medium text-indigo-300 hover:text-indigo-200 transition-colors">
+                <Link to="/login" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
                   Back to login
                 </Link>
               </div>
