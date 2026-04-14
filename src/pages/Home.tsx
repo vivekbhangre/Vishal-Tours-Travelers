@@ -1,9 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { MapPin, Calendar, CreditCard, ShieldCheck, Phone, Mail, Instagram, ArrowRight } from 'lucide-react';
+import { MapPin, Calendar, CreditCard, ShieldCheck, Phone, Mail, Instagram, ArrowRight, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'motion/react';
+import GenuineIndiaMap from '../components/GenuineIndiaMap';
 
 export default function Home() {
   const { user } = useAuth();
@@ -16,17 +17,9 @@ export default function Home() {
       <div className="flex-grow">
         {/* Hero Section */}
         <div className="relative w-full min-h-[calc(100dvh-64px)] flex items-center justify-center lg:justify-start overflow-hidden bg-gray-900">
-          {/* Background Image */}
+          {/* Background */}
           <div className="absolute inset-0 z-0">
-            <img
-              className="w-full h-full object-cover"
-              src="https://images.unsplash.com/photo-1494783367193-149034c05e8f?auto=format&fit=crop&w=1920&q=80"
-              alt="Cinematic mountain highway sunset"
-              referrerPolicy="no-referrer"
-            />
-            {/* Gradient overlay that adapts to theme */}
-            <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-white/60 to-transparent z-10"></div>
-            <div className="absolute inset-0 bg-indigo-100/30 mix-blend-multiply z-10"></div>
+            <GenuineIndiaMap />
           </div>
 
           {/* Text Content */}
@@ -35,7 +28,7 @@ export default function Home() {
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="w-full max-w-2xl rounded-3xl p-8 sm:p-12 text-center lg:text-left shadow-2xl relative overflow-hidden bg-white/80 backdrop-blur-3xl border border-gray-200"
+              className="w-full max-w-2xl rounded-3xl p-8 sm:p-12 text-center lg:text-left shadow-2xl relative overflow-hidden bg-white/30 backdrop-blur-xl border border-white/50"
             >
               {/* Subtle noise overlay for premium glass feel */}
               <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
@@ -66,6 +59,16 @@ export default function Home() {
               </div>
             </motion.div>
           </div>
+
+          {/* Smooth Blend/Blur into next section */}
+          <div 
+            className="absolute bottom-0 left-0 right-0 h-48 z-20 pointer-events-none bg-gradient-to-t from-gray-50 to-transparent"
+            style={{
+              backdropFilter: 'blur(8px)',
+              WebkitMaskImage: 'linear-gradient(to top, black 10%, transparent 100%)',
+              maskImage: 'linear-gradient(to top, black 10%, transparent 100%)'
+            }}
+          ></div>
         </div>
 
         {/* Features Section - Bento Grid */}
@@ -144,6 +147,130 @@ export default function Home() {
                   <p className="text-gray-600 text-lg">
                     No hidden fees. You know exactly what you'll pay before you book your ride. We believe in fair and honest pricing for all our customers.
                   </p>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+
+        {/* Popular Intercity Routes Section */}
+        <div className="py-16 sm:py-24 bg-white transition-colors duration-300">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
+              <div className="max-w-2xl">
+                <h2 className="text-sm text-indigo-600 font-bold tracking-widest uppercase mb-3">Top Destinations</h2>
+                <p className="text-3xl leading-tight font-extrabold text-gray-900 sm:text-4xl">
+                  Popular Intercity Routes
+                </p>
+              </div>
+              <Link to="/routes" className="mt-4 md:mt-0 inline-flex items-center text-indigo-600 font-semibold hover:text-indigo-500 transition-colors group">
+                View all routes
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+
+            {/* Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Card 1: Seoni to Chhindwara */}
+              <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="relative h-72 rounded-2xl overflow-hidden group cursor-pointer shadow-sm hover:shadow-xl transition-shadow"
+              >
+                <img 
+                  src="https://images.unsplash.com/photo-1626684496076-07e23c6361ff?auto=format&fit=crop&w=800&q=80" 
+                  alt="Chhindwara" 
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                  referrerPolicy="no-referrer" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+                
+                <div className="absolute inset-0 p-6 flex flex-col justify-end">
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <h3 className="text-2xl font-bold text-white flex items-center gap-2 mb-2">
+                        Seoni <ArrowRight className="h-5 w-5 text-indigo-400" /> Chhindwara
+                      </h3>
+                      <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-sm font-medium border border-white/10">
+                        <Clock className="h-4 w-4 mr-1.5" />
+                        50 Mins
+                      </div>
+                    </div>
+                    <div className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-bold shadow-lg">
+                      From ₹2200
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Card 2: Seoni to Nagpur */}
+              <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="relative h-72 rounded-2xl overflow-hidden group cursor-pointer shadow-sm hover:shadow-xl transition-shadow"
+              >
+                <img 
+                  src="https://images.unsplash.com/photo-1555505019-8c3f1c4aba5f?auto=format&fit=crop&w=800&q=80" 
+                  alt="Nagpur" 
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                  referrerPolicy="no-referrer" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+                
+                <div className="absolute inset-0 p-6 flex flex-col justify-end">
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <h3 className="text-2xl font-bold text-white flex items-center gap-2 mb-2">
+                        Seoni <ArrowRight className="h-5 w-5 text-indigo-400" /> Nagpur
+                      </h3>
+                      <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-sm font-medium border border-white/10">
+                        <Clock className="h-4 w-4 mr-1.5" />
+                        2.0 Hours
+                      </div>
+                    </div>
+                    <div className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-bold shadow-lg">
+                      From ₹4000
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Card 3: Seoni to Jabalpur */}
+              <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="relative h-72 rounded-2xl overflow-hidden group cursor-pointer shadow-sm hover:shadow-xl transition-shadow"
+              >
+                <img 
+                  src="https://images.unsplash.com/photo-1586899028174-e7098604235b?auto=format&fit=crop&w=800&q=80" 
+                  alt="Jabalpur" 
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                  referrerPolicy="no-referrer" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+                
+                <div className="absolute inset-0 p-6 flex flex-col justify-end">
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <h3 className="text-2xl font-bold text-white flex items-center gap-2 mb-2">
+                        Seoni <ArrowRight className="h-5 w-5 text-indigo-400" /> Jabalpur
+                      </h3>
+                      <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-sm font-medium border border-white/10">
+                        <Clock className="h-4 w-4 mr-1.5" />
+                        2.6 Hours
+                      </div>
+                    </div>
+                    <div className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-bold shadow-lg">
+                      From ₹4300
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             </div>

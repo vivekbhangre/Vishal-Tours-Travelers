@@ -1230,7 +1230,7 @@ export default function CustomerDashboard() {
         <div className="absolute top-full left-0 w-full h-[100vh] bg-white pointer-events-none" />
 
         <div className="flex-1 overflow-y-auto pb-8 overscroll-none" id="bottom-sheet-container">
-          <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-100 pb-2">
+          <div className={`sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-100 pb-2 ${activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-3xl' : ''}`}>
           {/* Drag Handle */}
           {activeTab === 'dashboard' && bookingStep > 1 && (
             <div 
