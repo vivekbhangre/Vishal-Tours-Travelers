@@ -29,7 +29,12 @@ export default function MovingCarMarker({ routePath }: MovingCarMarkerProps) {
       segments.push(dist);
     }
 
-    const duration = 8000; // 8 seconds for full trip
+    // Calculate duration based on distance so it feels consistent, 
+    // but keep it between 15 and 45 seconds.
+    // Assuming a visual speed of roughly 1000km per 30 seconds.
+    const calculatedDuration = (totalDistance / 1000) * 30; 
+    const duration = Math.max(15000, Math.min(45000, calculatedDuration));
+    
     let startTime: number | null = null;
 
     const animate = (timestamp: number) => {
@@ -84,30 +89,37 @@ export default function MovingCarMarker({ routePath }: MovingCarMarkerProps) {
 
   if (!position) return null;
 
+  const svgString = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="-5 -5 30 50" width="100%" height="100%">
+      <defs>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="rgba(0,0,0,0.4)" />
+        </filter>
+      </defs>
+      <g filter="url(#shadow)">
+        <!-- Car Body -->
+        <rect x="2" y="2" width="16" height="36" rx="4" fill="#ef4444" />
+        <!-- Roof -->
+        <rect x="4" y="12" width="12" height="16" rx="2" fill="#991b1b" />
+        <!-- Front Windshield -->
+        <path d="M 4 12 L 16 12 L 14 8 L 6 8 Z" fill="#3b82f6" />
+        <!-- Rear Windshield -->
+        <path d="M 4 28 L 16 28 L 14 32 L 6 32 Z" fill="#3b82f6" />
+        <!-- Headlights -->
+        <circle cx="5" cy="3" r="2" fill="#fef08a" />
+        <circle cx="15" cy="3" r="2" fill="#fef08a" />
+        <!-- Taillights -->
+        <rect x="3" y="36" width="4" height="2" fill="#f472b6" />
+        <rect x="13" y="36" width="4" height="2" fill="#f472b6" />
+      </g>
+    </svg>
+  `;
+
   const rotatedIcon = new L.DivIcon({
-    className: 'moving-car-icon',
-    html: `
-      <div style="
-        width: 32px;
-        height: 32px;
-        background-color: white;
-        border-radius: 50%;
-        box-shadow: 0 3px 8px rgba(0,0,0,0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transform: rotate(${rotation}deg);
-      ">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(-90deg);">
-          <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
-          <circle cx="7" cy="17" r="2"/>
-          <path d="M9 17h6"/>
-          <circle cx="17" cy="17" r="2"/>
-        </svg>
-      </div>
-    `,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
+    className: 'custom-car-icon',
+    html: `<div style="transform: rotate(${rotation}deg); width: 20px; height: 40px; margin-left: -10px; margin-top: -20px; transition: transform 0.1s linear;">${svgString}</div>`,
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
   });
 
   return <Marker position={position} icon={rotatedIcon} zIndexOffset={1000} />;
