@@ -1,4 +1,4 @@
-import { getDoc, getCachedRows, invalidateCache } from './sheets.js';
+import { getDoc, getCachedRows, invalidateCache } from './sheets.ts';
 
 export const setupFleetRoutes = (app: any, io: any) => {
   // Get all vehicles

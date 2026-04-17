@@ -4,7 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 // Custom Car SVG Icon Generator
-const getCarIcon = (angle: number) => {
+const getCarIcon = () => {
   const svgString = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="-5 -5 30 50" width="100%" height="100%">
       <defs>
@@ -33,7 +33,7 @@ const getCarIcon = (angle: number) => {
 
   return new L.DivIcon({
     className: 'custom-car-icon',
-    html: `<div style="transform: rotate(${angle}deg); width: 20px; height: 40px; margin-left: -10px; margin-top: -20px; transition: transform 0.1s linear;">${svgString}</div>`,
+    html: `<div class="car-rotator" style="width: 20px; height: 40px; margin-left: -10px; margin-top: -20px; will-change: transform;">${svgString}</div>`,
     iconSize: [0, 0], // Handled by inner div
     iconAnchor: [0, 0]
   });
@@ -47,9 +47,8 @@ interface AnimatedCarMarkerProps {
 }
 
 const AnimatedCarMarker: React.FC<AnimatedCarMarkerProps> = ({ start, end, duration, delay }) => {
-  const [position, setPosition] = useState<[number, number]>(start);
-  const [angle, setAngle] = useState<number>(0);
   const markerRef = useRef<L.Marker>(null);
+  const iconRef = useRef(getCarIcon()); // Create icon once
 
   useEffect(() => {
     let startTime: number | null = null;
@@ -74,21 +73,27 @@ const AnimatedCarMarker: React.FC<AnimatedCarMarkerProps> = ({ start, end, durat
       const lat = start[0] + (end[0] - start[0]) * progress;
       const lng = start[1] + (end[1] - start[1]) * progress;
       
-      // Update position
-      setPosition([lat, lng]);
-
       // Calculate angle
       const latDiff = end[0] - start[0];
       const lngDiff = end[1] - start[1];
       
-      // Math.atan2(y, x). In map coords, North (up) is +lat, East (right) is +lng.
-      // CSS rotate goes clockwise from North (0 deg).
-      // So x = latDiff, y = lngDiff
       let currentAngle = Math.atan2(lngDiff, latDiff) * (180 / Math.PI);
       if (!isForward) {
         currentAngle += 180;
       }
-      setAngle(currentAngle);
+
+      // Update DOM directly for 60fps performance without React re-renders
+      const marker = markerRef.current;
+      if (marker) {
+        marker.setLatLng([lat, lng]);
+        const el = marker.getElement();
+        if (el) {
+          const rotator = el.querySelector('.car-rotator') as HTMLElement;
+          if (rotator) {
+            rotator.style.transform = `rotate(${currentAngle}deg)`;
+          }
+        }
+      }
 
       reqId = requestAnimationFrame(animate);
     };
@@ -100,7 +105,7 @@ const AnimatedCarMarker: React.FC<AnimatedCarMarkerProps> = ({ start, end, durat
   return (
     <>
       <Polyline positions={[start, end]} color="#3b82f6" weight={3} dashArray="5, 10" opacity={0.6} />
-      <Marker position={position} icon={getCarIcon(angle)} ref={markerRef} />
+      <Marker position={start} icon={iconRef.current} ref={markerRef} />
     </>
   );
 };
@@ -132,7 +137,7 @@ const ROUTES: AnimatedCarMarkerProps[] = [
 
 export default function GenuineIndiaMap() {
   return (
-    <div className="absolute inset-0 w-full h-full overflow-hidden">
+    <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
       {/* Map Container */}
       <MapContainer
         center={[22.5, 79.5]}
@@ -161,7 +166,7 @@ export default function GenuineIndiaMap() {
       </MapContainer>
 
       {/* Uniform Overlay for text readability without uneven gradients */}
-      <div className="absolute inset-0 bg-white/30 pointer-events-none z-[400]"></div>
+      <div className="absolute inset-0 bg-white/10 pointer-events-none z-[400]"></div>
     </div>
   );
 }

@@ -59,7 +59,7 @@ export default function Home() {
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="w-full max-w-2xl rounded-3xl p-8 sm:p-12 text-center lg:text-left shadow-2xl relative overflow-hidden bg-white/30 backdrop-blur-xl border border-white/50"
+              className="w-full max-w-2xl rounded-3xl p-8 sm:p-12 text-center lg:text-left shadow-2xl relative overflow-hidden bg-white/10 backdrop-blur-sm border border-white/20"
             >
               {/* Subtle noise overlay for premium glass feel */}
               <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>

@@ -1,7 +1,9 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { AnimatePresence } from 'framer-motion';
+import { PageTransition } from './components/PageTransition';
 
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -25,39 +27,43 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
 };
 
 function AppRoutes() {
+  const location = useLocation();
+  
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/privacy" element={<PrivacyPolicy />} />
-      <Route path="/terms" element={<TermsOfService />} />
-      
-      <Route path="/dashboard/customer" element={
-        <ProtectedRoute allowedRoles={['customer']}>
-          <CustomerDashboard />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/admin" element={<AdminLogin />} />
-      <Route path="/admin/login" element={<Navigate to="/admin" replace />} />
-      <Route path="/dashboard/admin" element={
-        <ProtectedRoute allowedRoles={['admin']}>
-          <AdminDashboard />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/staff" element={<StaffLogin />} />
-      <Route path="/staff/login" element={<Navigate to="/staff" replace />} />
-      <Route path="/dashboard/staff" element={
-        <ProtectedRoute allowedRoles={['staff']}>
-          <StaffDashboard />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<PageTransition><Home /></PageTransition>} />
+        <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
+        <Route path="/register" element={<PageTransition><Register /></PageTransition>} />
+        <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
+        <Route path="/privacy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
+        <Route path="/terms" element={<PageTransition><TermsOfService /></PageTransition>} />
+        
+        <Route path="/dashboard/customer" element={
+          <ProtectedRoute allowedRoles={['customer']}>
+            <PageTransition><CustomerDashboard /></PageTransition>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/admin" element={<PageTransition><AdminLogin /></PageTransition>} />
+        <Route path="/admin/login" element={<Navigate to="/admin" replace />} />
+        <Route path="/dashboard/admin" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <PageTransition><AdminDashboard /></PageTransition>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/staff" element={<PageTransition><StaffLogin /></PageTransition>} />
+        <Route path="/staff/login" element={<Navigate to="/staff" replace />} />
+        <Route path="/dashboard/staff" element={
+          <ProtectedRoute allowedRoles={['staff']}>
+            <PageTransition><StaffDashboard /></PageTransition>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AnimatePresence>
   );
 }
 

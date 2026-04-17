@@ -5,9 +5,9 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { initSheets, getDoc, getCachedRows, invalidateCache, startCacheWarmer } from './server/sheets.js';
-import { setupFleetRoutes } from './server/fleet.js';
-import cityAutocompleteRouter from './server/cityAutocomplete.js';
+import { initSheets, getDoc, getCachedRows, invalidateCache, startCacheWarmer } from './server/sheets.ts';
+import { setupFleetRoutes } from './server/fleet.ts';
+import cityAutocompleteRouter from './server/cityAutocomplete.ts';
 import PDFDocument from 'pdfkit';
 import { GoogleGenAI } from "@google/genai";
 import fs from "fs";
@@ -885,9 +885,10 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static('dist'));
+    const distPath = path.join(process.cwd(), 'dist');
+    app.use(express.static(distPath));
     app.get('*', (req, res) => {
-      res.sendFile(path.join(process.cwd(), 'dist', 'index.html'));
+      res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 

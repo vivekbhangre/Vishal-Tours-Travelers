@@ -115,8 +115,12 @@
     --theme-green-800: #dcfce7;
   }
 
+  html {
+    @apply relative;
+  }
+
   body {
-    @apply bg-gray-50 text-gray-900 transition-colors duration-300 ease-in-out font-sans;
+    @apply relative bg-gray-50 text-gray-900 transition-colors duration-300 ease-in-out font-sans;
   }
   
   h1, h2, h3, h4, h5, h6 {

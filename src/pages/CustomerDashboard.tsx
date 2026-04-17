@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { api, socket } from '../lib/api';
 import { validateEmail, validateName, validatePhone, parseRideDate, safeFormatDate } from '../lib/validation';
 import { format } from 'date-fns';
+import { Tabs, Tab } from "@heroui/react";
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useDragControls } from 'motion/react';
 import { CheckCircle, Calendar, Clock, Car, Users, MapPin, Grid, RefreshCw, Info, ChevronDown, ChevronUp, CreditCard, ChevronRight, ChevronLeft, Moon, Sun, Crown, Star, Shield, Radar, Snowflake, ArrowUpDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -882,7 +883,11 @@ export default function CustomerDashboard() {
         }
         const depDate = parseRideDate(`${rideDate} ${rideTimeHour}:${rideTimeMinute} ${rideTimeAmPm}`);
         const retDate = parseRideDate(`${returnDate} ${returnTimeHour}:${returnTimeMinute} ${returnTimeAmPm}`);
-        if (retDate <= depDate) {
+        if (retDate.getTime() === depDate.getTime()) {
+          setBookingError('Departure Time cannot be same as Return Time, choose different Time');
+          setBookingLoading(false);
+          return;
+        } else if (retDate < depDate) {
           setBookingError('Return date must be later than departure date');
           setBookingLoading(false);
           return;
@@ -1276,28 +1281,21 @@ export default function CustomerDashboard() {
                 </div>
               </div>
               <div className="flex items-center gap-4 w-full sm:w-auto">
-                <div className={`flex flex-row rounded-lg shadow-sm border p-1 w-full sm:w-auto bg-white border-gray-100`}>
-                  <button
-                    onClick={() => setActiveTab('dashboard')}
-                    className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors text-center ${
-                      activeTab === 'dashboard' 
-                        ? ('bg-indigo-50 text-indigo-700') 
-                        : ('text-gray-500 hover:text-gray-700 hover:bg-gray-50')
-                    }`}
-                  >
-                    Dashboard
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('bookings')}
-                    className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors text-center ${
-                      activeTab === 'bookings' 
-                        ? ('bg-indigo-50 text-indigo-700') 
-                        : ('text-gray-500 hover:text-gray-700 hover:bg-gray-50')
-                    }`}
-                  >
-                    My Bookings
-                  </button>
-                </div>
+                <Tabs 
+                  aria-label="Dashboard Options" 
+                  selectedKey={activeTab} 
+                  onSelectionChange={(key) => setActiveTab(key as any)}
+                  className="rounded-lg shadow-sm border bg-white border-gray-100 p-1"
+                >
+                  <Tabs.List className="flex">
+                    <Tabs.Tab id="dashboard" className="flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors text-center cursor-pointer outline-none data-[selected]:bg-indigo-50 data-[selected]:text-indigo-700 text-gray-500 hover:text-gray-700 hover:bg-gray-50">
+                      Dashboard
+                    </Tabs.Tab>
+                    <Tabs.Tab id="bookings" className="flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors text-center cursor-pointer outline-none data-[selected]:bg-indigo-50 data-[selected]:text-indigo-700 text-gray-500 hover:text-gray-700 hover:bg-gray-50">
+                      My Bookings
+                    </Tabs.Tab>
+                  </Tabs.List>
+                </Tabs>
               </div>
             </div>
           </div>
@@ -1504,7 +1502,7 @@ export default function CustomerDashboard() {
                                 }, 200);
                               }}
                               className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 pl-3 ${tripType !== 'Tour' ? 'pr-12' : 'pr-3'} focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
-                              placeholder="Pickup location"
+                              placeholder="Source City"
                               autoComplete="off"
                             />
                             {showFromSuggestions && fromSuggestions.length > 0 && (
@@ -1580,7 +1578,7 @@ export default function CustomerDashboard() {
                                     }, 200);
                                   }}
                                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 pl-3 pr-12 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                  placeholder="Drop-off location"
+                                  placeholder="Destination City"
                                   autoComplete="off"
                                 />
                                 {showToSuggestions && toSuggestions.length > 0 && (
