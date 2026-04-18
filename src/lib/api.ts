@@ -4,9 +4,26 @@ const API_URL = '/api';
 
 export const socket = io();
 
+const fetchWithRetry = async (url: string, options: RequestInit = {}, retries = 1): Promise<Response> => {
+  try {
+    const res = await fetch(url, options);
+    console.log(`Fetch ${options.method || 'GET'} ${url} - Status: ${res.status}`);
+    return res;
+  } catch (err) {
+    if (retries > 0) {
+      console.warn(`Fetch failed for ${url}, retrying... (${retries} left)`, err);
+      // Wait a bit before retry
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return fetchWithRetry(url, options, retries - 1);
+    }
+    console.error(`Fetch failed after all retries for ${url}:`, err);
+    throw err;
+  }
+};
+
 export const api = {
   async register(data: any) {
-    const res = await fetch(`${API_URL}/auth/register`, {
+    const res = await fetchWithRetry(`${API_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -16,7 +33,7 @@ export const api = {
   },
 
   async login(data: any) {
-    const res = await fetch(`${API_URL}/auth/login`, {
+    const res = await fetchWithRetry(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -26,7 +43,7 @@ export const api = {
   },
 
   async verifyReset(data: any) {
-    const res = await fetch(`${API_URL}/auth/verify-reset`, {
+    const res = await fetchWithRetry(`${API_URL}/auth/verify-reset`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -36,7 +53,7 @@ export const api = {
   },
 
   async resetPassword(data: any) {
-    const res = await fetch(`${API_URL}/auth/reset-password`, {
+    const res = await fetchWithRetry(`${API_URL}/auth/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -46,13 +63,13 @@ export const api = {
   },
 
   async getUser(id: string) {
-    const res = await fetch(`${API_URL}/users/${id}`);
+    const res = await fetchWithRetry(`${API_URL}/users/${id}`);
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
   async updateUser(id: string, data: any) {
-    const res = await fetch(`${API_URL}/users/${id}`, {
+    const res = await fetchWithRetry(`${API_URL}/users/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -62,7 +79,7 @@ export const api = {
   },
 
   async createBooking(data: any) {
-    const res = await fetch(`${API_URL}/bookings`, {
+    const res = await fetchWithRetry(`${API_URL}/bookings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -80,13 +97,13 @@ export const api = {
     params.append('_t', Date.now().toString());
     if (params.toString()) url += `?${params.toString()}`;
     
-    const res = await fetch(url);
+    const res = await fetchWithRetry(url);
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
   async updateBooking(id: string, data: any) {
-    const res = await fetch(`${API_URL}/bookings/${id}`, {
+    const res = await fetchWithRetry(`${API_URL}/bookings/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -103,7 +120,7 @@ export const api = {
     const params = new URLSearchParams();
     if (forceRefresh) params.append('forceRefresh', 'true');
     params.append('_t', Date.now().toString());
-    const res = await fetch(`${API_URL}/revenue?${params.toString()}`);
+    const res = await fetchWithRetry(`${API_URL}/revenue?${params.toString()}`);
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
@@ -112,7 +129,7 @@ export const api = {
     const params = new URLSearchParams();
     if (forceRefresh) params.append('forceRefresh', 'true');
     params.append('_t', Date.now().toString());
-    const res = await fetch(`${API_URL}/vehicles?${params.toString()}`);
+    const res = await fetchWithRetry(`${API_URL}/vehicles?${params.toString()}`);
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
@@ -121,13 +138,13 @@ export const api = {
     const params = new URLSearchParams();
     if (forceRefresh) params.append('forceRefresh', 'true');
     params.append('_t', Date.now().toString());
-    const res = await fetch(`${API_URL}/drivers?${params.toString()}`);
+    const res = await fetchWithRetry(`${API_URL}/drivers?${params.toString()}`);
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
   async addDriver(data: { name: string; phone: string; email: string }) {
-    const res = await fetch(`${API_URL}/drivers`, {
+    const res = await fetchWithRetry(`${API_URL}/drivers`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -137,7 +154,7 @@ export const api = {
   },
 
   async deleteDriver(id: string) {
-    const res = await fetch(`${API_URL}/drivers/${encodeURIComponent(id)}`, {
+    const res = await fetchWithRetry(`${API_URL}/drivers/${encodeURIComponent(id)}`, {
       method: 'DELETE',
     });
     if (!res.ok) throw new Error(await res.text());
@@ -145,7 +162,7 @@ export const api = {
   },
 
   async addVehicle(data: { name: string; number: string }) {
-    const res = await fetch(`${API_URL}/vehicles`, {
+    const res = await fetchWithRetry(`${API_URL}/vehicles`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -155,7 +172,7 @@ export const api = {
   },
 
   async deleteVehicle(id: string) {
-    const res = await fetch(`${API_URL}/vehicles/${encodeURIComponent(id)}`, {
+    const res = await fetchWithRetry(`${API_URL}/vehicles/${encodeURIComponent(id)}`, {
       method: 'DELETE',
     });
     if (!res.ok) throw new Error(await res.text());
@@ -164,7 +181,7 @@ export const api = {
 
   async assignDriver(bookingId: string, driverId: string, vehicleId: string, assignments?: {driverId: string, vehicleId: string}[]) {
     const payload = assignments ? { assignments } : { driverId, vehicleId };
-    const res = await fetch(`${API_URL}/bookings/${bookingId}/assign`, {
+    const res = await fetchWithRetry(`${API_URL}/bookings/${bookingId}/assign`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

@@ -1,28 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import ThemeToggle from './ThemeToggle';
 import { LogOut, User as UserIcon, Map, Menu, X } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { resetTheme } = useTheme();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 20) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLogout = () => {
     logout();
+    resetTheme();
     navigate('/');
     setIsMobileMenuOpen(false);
   };
 
   return (
-    <nav className="bg-white/80 backdrop-blur-xl shadow-sm border-b border-gray-200 sticky top-0 z-50 transition-colors duration-300">
+    <nav className={`sticky top-0 z-50 transition-all duration-500 ${
+      isScrolled 
+        ? "bg-white/70 dark:bg-black/50 backdrop-blur-2xl shadow-[0_1px_0_rgba(0,0,0,0.05)] dark:shadow-[0_1px_0_rgba(255,255,255,0.05)]" 
+        : "bg-transparent shadow-none"
+    }`}>
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-12 xl:px-24">
         <div className="flex justify-between h-16">
           <div className="flex">
             <Link to="/" className="flex-shrink-0 flex items-center">
-              <Map className="h-8 w-8 text-indigo-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900 truncate">Vishal Tour & Travelers</span>
+              <Map className="h-8 w-8 text-indigo-500" />
+              <span className="ml-2 text-xl font-bold text-gray-900 dark:text-[#ffffff] truncate tracking-tight transition-colors duration-500">Vishal Tour & Travelers</span>
             </Link>
           </div>
           
@@ -40,7 +61,7 @@ export default function Navbar() {
                       window.dispatchEvent(new Event('storage'));
                     }
                   }}
-                  className="flex items-center text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md transition-colors cursor-pointer"
+                  className="flex items-center text-gray-600 dark:text-[#ffffff]/70 hover:text-gray-900 dark:hover:text-[#ffffff] px-3 py-2 rounded-md transition-colors cursor-pointer"
                 >
                   <UserIcon className="h-5 w-5 mr-1" />
                   <span className="text-sm font-medium">{user.name}</span>
@@ -55,13 +76,13 @@ export default function Navbar() {
                     navigate(`/dashboard/${user.role}`);
                     window.dispatchEvent(new Event('storage'));
                   }}
-                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
+                  className="text-gray-600 dark:text-[#ffffff]/70 hover:text-gray-900 dark:hover:text-[#ffffff] px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
                 >
                   Dashboard
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="flex items-center text-gray-600 dark:text-[#ffffff]/70 hover:text-red-500 dark:hover:text-red-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   <LogOut className="h-5 w-5 mr-1" />
                   Logout
@@ -72,13 +93,13 @@ export default function Navbar() {
                 <ThemeToggle />
                 <Link
                   to="/login"
-                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="text-gray-600 dark:text-[#ffffff]/70 hover:text-gray-900 dark:hover:text-[#ffffff] px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   Login
                 </Link>
                 <Link
                   to="/register"
-                  className="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-[#ffffff] hover:bg-gray-200 dark:hover:bg-white/20 px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm dark:shadow-lg"
                 >
                   Register
                 </Link>
@@ -106,7 +127,11 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="sm:hidden border-t border-gray-200 bg-white">
+        <div className={`sm:hidden border-t border-gray-200 dark:border-white/10 shadow-lg transition-all duration-500 ${
+          isScrolled 
+            ? "bg-white/90 dark:bg-black/90 backdrop-blur-2xl" 
+            : "bg-white/80 dark:bg-black/80 backdrop-blur-xl"
+        }`}>
           <div className="pt-2 pb-3 space-y-1">
             {user ? (
               <>
@@ -119,7 +144,7 @@ export default function Navbar() {
                       window.dispatchEvent(new Event('storage'));
                     }
                   }}
-                  className="w-full text-left px-4 py-2 flex items-center text-gray-700 border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                  className="w-full text-left px-4 py-2 flex items-center text-gray-700 dark:text-[#ffffff] border-b border-gray-100 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
                   <UserIcon className="h-5 w-5 mr-2" />
                   <span className="text-base font-medium">{user.name}</span>
@@ -135,13 +160,13 @@ export default function Navbar() {
                     navigate(`/dashboard/${user.role}`);
                     window.dispatchEvent(new Event('storage'));
                   }}
-                  className="block w-full text-left px-4 py-2 text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 transition-colors"
+                  className="block w-full text-left px-4 py-2 text-base font-medium text-gray-700 dark:text-[#ffffff] hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
                   Dashboard
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="block w-full text-left px-4 py-2 text-base font-medium text-gray-700 hover:text-red-600 hover:bg-gray-50 transition-colors"
+                  className="block w-full text-left px-4 py-2 text-base font-medium text-gray-700 dark:text-[#ffffff] hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
                   Logout
                 </button>
@@ -151,14 +176,14 @@ export default function Navbar() {
                 <Link
                   to="/login"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-4 py-2 text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 transition-colors"
+                  className="block px-4 py-2 text-base font-medium text-gray-700 dark:text-[#ffffff] hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
                   Login
                 </Link>
                 <Link
                   to="/register"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-4 py-2 text-base font-medium text-indigo-600 hover:bg-indigo-50"
+                  className="block px-4 py-2 text-base font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors duration-300"
                 >
                   Register
                 </Link>

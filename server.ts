@@ -47,8 +47,18 @@ async function startServer() {
   // API Routes
   setupFleetRoutes(app, io);
 
+  // Global error handler for middleware
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('Unhandled Middleware Error:', err);
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+  });
+
   app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', sheetsReady: !!getDoc() });
+    res.json({ 
+      status: 'ok', 
+      sheetsReady: !!getDoc(),
+      timestamp: new Date().toISOString()
+    });
   });
 
   app.get('/api/test-resize', async (req, res) => {
@@ -894,6 +904,17 @@ async function startServer() {
 
   httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    console.log('Environment:', process.env.NODE_ENV || 'development');
+  });
+
+  // Handle unhandled rejections
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  });
+
+  // Handle uncaught exceptions
+  process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
   });
 }
 

@@ -3,6 +3,8 @@ import { MapContainer, TileLayer, Marker, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
+import { useTheme } from '../context/ThemeContext';
+
 // Custom Car SVG Icon Generator
 const getCarIcon = () => {
   const svgString = `
@@ -44,9 +46,10 @@ interface AnimatedCarMarkerProps {
   end: [number, number];
   duration: number;
   delay: number;
+  theme?: string;
 }
 
-const AnimatedCarMarker: React.FC<AnimatedCarMarkerProps> = ({ start, end, duration, delay }) => {
+const AnimatedCarMarker: React.FC<AnimatedCarMarkerProps> = ({ start, end, duration, delay, theme }) => {
   const markerRef = useRef<L.Marker>(null);
   const iconRef = useRef(getCarIcon()); // Create icon once
 
@@ -104,7 +107,7 @@ const AnimatedCarMarker: React.FC<AnimatedCarMarkerProps> = ({ start, end, durat
 
   return (
     <>
-      <Polyline positions={[start, end]} color="#3b82f6" weight={3} dashArray="5, 10" opacity={0.6} />
+      <Polyline positions={[start, end]} color={theme === 'dark' ? '#000000' : '#3b82f6'} weight={theme === 'dark' ? 4 : 3} dashArray="5, 10" opacity={theme === 'dark' ? 0.9 : 0.6} />
       <Marker position={start} icon={iconRef.current} ref={markerRef} />
     </>
   );
@@ -135,21 +138,29 @@ const ROUTES: AnimatedCarMarkerProps[] = [
   { start: [9.9312, 76.2673], end: [8.5241, 76.9366], duration: 2500, delay: 2100 },    // Kochi to Trivandrum
 ];
 
+const INDIA_BOUNDS: L.LatLngBoundsExpression = [
+  [8.4, 68.7],
+  [37.6, 97.2]
+];
+
 export default function GenuineIndiaMap() {
+  const { theme } = useTheme();
+
   return (
-    <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
-      {/* Map Container */}
-      <MapContainer
-        center={[22.5, 79.5]}
-        zoom={6}
-        zoomControl={false}
-        scrollWheelZoom={false}
-        doubleClickZoom={false}
-        dragging={false}
-        touchZoom={false}
-        attributionControl={false}
-        className="w-full h-full rounded-none contrast-[1.1] saturate-[1.2]"
-      >
+    <div className="absolute inset-0 flex justify-center items-center overflow-hidden pointer-events-none">
+      {/* Wrapper forcing map aspect ratio to match India's coordinates, guaranteeing Gilgit and Sri Lanka align with page top/bottom */}
+      <div className="relative h-full min-w-full flex-shrink-0" style={{ aspectRatio: '28.5 / 29.2' }}>
+        {/* Map Container */}
+        <MapContainer
+          bounds={INDIA_BOUNDS}
+          zoomControl={false}
+          scrollWheelZoom={false}
+          doubleClickZoom={false}
+          dragging={false}
+          touchZoom={false}
+          attributionControl={false}
+          className={`absolute inset-0 w-full h-full rounded-none transition-[filter] duration-500 ${theme === 'dark' ? 'invert hue-rotate-180 brightness-[0.85] contrast-[1.2] grayscale-[0.2]' : 'brightness-[1.02] contrast-[1.05] saturate-[1.1]'}`}
+        >
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
@@ -161,9 +172,11 @@ export default function GenuineIndiaMap() {
             end={route.end}
             duration={route.duration}
             delay={route.delay}
+            theme={theme}
           />
         ))}
       </MapContainer>
+      </div>
 
       {/* Uniform Overlay for text readability without uneven gradients */}
       <div className="absolute inset-0 bg-white/10 pointer-events-none z-[400]"></div>

@@ -74,39 +74,36 @@ export default function Login() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-[100dvh] relative flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300 overflow-y-auto"
+      className="min-h-[100dvh] relative flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-500 overflow-y-auto"
     >
       {/* Background Image */}
-      <div className="fixed inset-0 z-0 bg-gray-900">
+      <div className="fixed inset-0 z-0 bg-[#F5F5F7] dark:bg-[#060608] transition-colors duration-500">
         <GenuineIndiaMap />
       </div>
 
       <div className="relative z-20 w-full max-w-md mx-auto">
         <div 
-          className="rounded-[24px] p-6 sm:p-12 shadow-2xl w-full"
-          style={{
-            background: 'rgba(255, 255, 255, 0.12)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.25)'
-          }}
+          className="rounded-[24px] p-6 sm:p-12 shadow-2xl w-full bg-white/70 backdrop-blur-3xl border border-gray-200 transition-colors duration-500 relative overflow-hidden"
         >
-          <div className="flex justify-center mb-6">
+          {/* Subtle noise for premium dark mode */}
+          <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none mix-blend-overlay"></div>
+          
+          <div className="relative z-10 flex justify-center mb-6">
             <Link to="/" className="hover:opacity-80 transition-opacity bg-white/50 p-3 rounded-full border border-gray-200">
               <Map className="h-10 w-10 text-indigo-600" />
             </Link>
           </div>
-          <h2 className="text-center text-3xl font-extrabold text-gray-900 drop-shadow-sm">
+          <h2 className="relative z-10 text-center text-3xl font-extrabold text-gray-900 drop-shadow-sm transition-colors duration-500">
             Welcome Back
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-500">
+          <p className="relative z-10 mt-2 text-center text-sm text-gray-500 transition-colors duration-500">
             Don't have an account?{' '}
-            <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
+            <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors">
               Register here
             </Link>
           </p>
 
-          <form className="mt-6 sm:mt-8 space-y-3 sm:space-y-6" onSubmit={handleSubmit}>
+          <form className="relative z-10 mt-6 sm:mt-8 space-y-3 sm:space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl relative backdrop-blur-sm" role="alert">
                 <span className="block sm:inline">{error}</span>
@@ -119,7 +116,7 @@ export default function Login() {
             )}
             
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 ml-1">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 ml-1 transition-colors duration-500">
                 Email address
               </label>
               <div className="mt-2">
@@ -131,14 +128,14 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/50 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
+                  className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/50 border border-gray-200 rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm"
                   placeholder="you@example.com"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 ml-1">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 ml-1 transition-colors duration-500">
                 Password
               </label>
               <div className="mt-2 relative">
@@ -150,7 +147,7 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/50 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm pr-10"
+                  className="appearance-none block w-full px-4 py-2.5 sm:py-3 bg-white/50 border border-gray-200 rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all backdrop-blur-sm pr-10"
                   placeholder="••••••••"
                 />
                 <button
@@ -178,7 +175,7 @@ export default function Login() {
             </div>
             
             <div className="text-center mt-4">
-              <Link to="/forgot-password" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
+              <Link to="/forgot-password" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors">
                 Forgot password?
               </Link>
             </div>

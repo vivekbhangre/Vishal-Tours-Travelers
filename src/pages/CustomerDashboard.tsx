@@ -4,9 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { api, socket } from '../lib/api';
 import { validateEmail, validateName, validatePhone, parseRideDate, safeFormatDate } from '../lib/validation';
 import { format } from 'date-fns';
-import { Tabs, Tab } from "@heroui/react";
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useDragControls } from 'motion/react';
-import { CheckCircle, Calendar, Clock, Car, Users, MapPin, Grid, RefreshCw, Info, ChevronDown, ChevronUp, CreditCard, ChevronRight, ChevronLeft, Moon, Sun, Crown, Star, Shield, Radar, Snowflake, ArrowUpDown } from 'lucide-react';
+import { CheckCircle, Calendar, Clock, Car, Users, MapPin, Grid, RefreshCw, Info, ChevronDown, ChevronUp, CreditCard, ChevronRight, ChevronLeft, Moon, Sun, Crown, Star, Shield, Radar, Snowflake, ArrowUpDown, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import debounce from 'lodash.debounce';
 import InteractiveMap from '../components/InteractiveMap';
@@ -102,9 +101,9 @@ const LoyaltyCard = ({ bookingsCount }: { bookingsCount: number,  }) => {
   const progress = tier === 'Silver' ? (bookingsCount / 3) * 100 : tier === 'Gold' ? ((bookingsCount - 3) / 3) * 100 : 100;
   
   const getTierStyles = () => {
-    if (tier === 'Black') return 'from-gray-900 via-gray-800 to-black border-gray-700 text-gray-100 shadow-[0_0_20px_rgba(255,255,255,0.1)]';
-    if (tier === 'Gold') return 'from-yellow-600 via-yellow-500 to-yellow-700 border-yellow-400 text-yellow-50 shadow-[0_0_20px_rgba(234,179,8,0.2)]';
-    return 'from-gray-300 via-gray-200 to-gray-400 border-gray-300 text-gray-800 shadow-[0_0_15px_rgba(156,163,175,0.2)]';
+    if (tier === 'Black') return 'from-gray-900 via-gray-800 to-black border-gray-700 text-white shadow-[0_0_30px_rgba(0,0,0,0.8)] border border-white/5';
+    if (tier === 'Gold') return 'from-amber-700 via-yellow-600 to-amber-800 border-yellow-500/50 text-white shadow-[0_0_30px_rgba(217,119,6,0.3)] border';
+    return 'from-slate-700 via-slate-600 to-slate-800 border-slate-500/30 text-white shadow-[0_0_30px_rgba(71,85,105,0.3)] border';
   };
 
   const Icon = tier === 'Black' ? Crown : tier === 'Gold' ? Star : Shield;
@@ -154,31 +153,31 @@ const VehicleShowroomCard = ({ vehicle, isSelected, isUnavailable,  onClick }: a
   return (
     <div
       onClick={onClick}
-      className={`relative py-3 px-4 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-4 ${
+      className={`relative py-3 px-4 rounded-xl cursor-pointer transition-all duration-300 flex items-center gap-4 ${
         isSelected 
-          ? 'bg-indigo-50 border border-indigo-200 shadow-sm'
+          ? 'bg-indigo-500/10 border border-indigo-500/30 shadow-[0_0_20px_rgba(99,102,241,0.15)]'
           : isUnavailable 
-            ? 'opacity-50 cursor-not-allowed bg-transparent border border-transparent'
-            : 'bg-transparent border border-transparent hover:bg-gray-50'
+            ? 'opacity-40 cursor-not-allowed bg-transparent border border-transparent'
+            : 'bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10'
       }`}
     >
       {/* Car Icon Box */}
       <div className="w-12 h-10 flex items-center justify-center flex-shrink-0">
-        <Car className={`w-8 h-8 ${isSelected ? 'text-indigo-600' : 'text-gray-600'}`} />
+        <Car className={`w-8 h-8 ${isSelected ? 'text-indigo-400' : 'text-white/50'}`} />
       </div>
 
       {/* Details */}
       <div className="flex-1">
         <div className="flex items-center gap-2">
-          <h4 className="font-semibold text-base text-gray-900">
+          <h4 className={`font-semibold text-base ${isSelected ? 'text-white' : 'text-white/80'}`}>
             {vehicle.name.replace(/ \(\d+ Seater\)/, '')}
           </h4>
-          <div className="flex items-center text-xs text-gray-500 gap-1">
+          <div className="flex items-center text-xs text-white/40 gap-1 bg-[#0A0A0C] px-2 py-0.5 rounded-full border border-white/5">
             <Users className="w-3 h-3" /> {vehicle.capacity}
           </div>
         </div>
         {isUnavailable && (
-          <p className="text-xs text-red-500 mt-0.5">
+          <p className="text-xs text-red-400 mt-1">
             Currently Unavailable
           </p>
         )}
@@ -187,8 +186,8 @@ const VehicleShowroomCard = ({ vehicle, isSelected, isUnavailable,  onClick }: a
       {/* Selection Indicator */}
       {isSelected && (
         <div className="flex-shrink-0">
-           <div className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center">
-             <div className="w-2 h-2 rounded-full bg-white" />
+           <div className="w-6 h-6 rounded-full bg-indigo-500/20 border border-indigo-500 flex items-center justify-center shadow-[0_0_10px_rgba(99,102,241,0.5)]">
+             <div className="w-2.5 h-2.5 rounded-full bg-indigo-400 shadow-[0_0_5px_rgba(99,102,241,1)]" />
            </div>
         </div>
       )}
@@ -201,26 +200,26 @@ const ConciergeLoading = () => (
     initial={{ opacity: 0 }} 
     animate={{ opacity: 1 }} 
     exit={{ opacity: 0 }}
-    className={`absolute inset-0 z-50 flex flex-col items-center justify-center rounded-2xl backdrop-blur-md bg-white/80`}
+    className={`absolute inset-0 z-50 flex flex-col items-center justify-center rounded-[2rem] backdrop-blur-xl bg-[#060608]/80`}
   >
     <div className="relative w-32 h-32 flex items-center justify-center mb-6">
       <motion.div 
-        animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+        animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.7, 0.3] }}
         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        className={`absolute inset-0 rounded-full blur-xl bg-indigo-300/40`}
+        className={`absolute inset-0 rounded-full blur-2xl bg-indigo-500/30`}
       />
-      <Car className={`w-16 h-16 relative z-10 animate-pulse text-indigo-600`} />
+      <Car className={`w-16 h-16 relative z-10 animate-pulse text-indigo-400`} />
       
       {/* Shimmering effect */}
       <motion.div 
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 100, opacity: [0, 1, 0] }}
         transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12 z-20"
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 z-20"
       />
     </div>
-    <h3 className={`text-xl font-bold mb-2 text-gray-900`}>Curating your route...</h3>
-    <p className={`text-sm text-gray-500`}>Preparing your premium vehicle</p>
+    <h3 className={`text-xl font-bold mb-2 text-white tracking-tight`}>Curating your route...</h3>
+    <p className={`text-sm text-white/50`}>Preparing your premium vehicle</p>
   </motion.div>
 );
 
@@ -314,6 +313,7 @@ export default function CustomerDashboard() {
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [cancelMessage, setCancelMessage] = useState<{id: string, text: string, type: 'success' | 'error'} | null>(null);
   const [cancelModal, setCancelModal] = useState<{ isOpen: boolean, booking: any | null, refundInfo: any | null }>({ isOpen: false, booking: null, refundInfo: null });
 
@@ -587,12 +587,14 @@ export default function CustomerDashboard() {
 
   const fetchBookings = async (forceRefresh: boolean = false) => {
     try {
+      setFetchError(null);
       if (user) {
         const data = await api.getBookings(user.id, false, forceRefresh);
         setBookings(data);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch bookings:', error);
+      setFetchError(error.message || 'Failed to fetch bookings');
     } finally {
       setLoading(false);
     }
@@ -606,8 +608,9 @@ export default function CustomerDashboard() {
         setProfileEmail(data.email);
         setProfilePhone(data.phone || '');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch profile:', error);
+      // We don't necessarily want to block the dashboard for a profile fetch failure
     }
   };
 
@@ -1188,17 +1191,20 @@ export default function CustomerDashboard() {
 
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className={`min-h-screen transition-colors duration-500 bg-gray-50 text-gray-900 overscroll-none`}
+      initial={{ opacity: 0, filter: 'blur(10px)' }}
+      animate={{ opacity: 1, filter: 'blur(0px)' }}
+      exit={{ opacity: 0, filter: 'blur(10px)' }}
+      className={`min-h-screen transition-colors duration-500 bg-[#F5F5F7] dark:bg-[#060608] text-gray-900 overscroll-none`}
     >
-      {/* Dynamic Background Mesh */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className={`absolute inset-0 bg-gradient-to-br ${greetingData.gradient} opacity-50`}></div>
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl mix-blend-screen animate-blob"></div>
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl mix-blend-screen animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-1/3 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl mix-blend-screen animate-blob animation-delay-4000"></div>
+      {/* Dynamic Background Mesh (Viktor Oddy Dark Style) */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 bg-[#F5F5F7] dark:bg-[#060608] transition-colors duration-500">
+        <div className={`absolute inset-0 bg-gradient-to-br from-indigo-900/20 to-purple-900/20 opacity-60 mix-blend-screen`}></div>
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px] mix-blend-screen animate-blob"></div>
+        <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-violet-600/20 rounded-full blur-[120px] mix-blend-screen animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-1/3 w-[500px] h-[500px] bg-fuchsia-600/20 rounded-full blur-[120px] mix-blend-screen animate-blob animation-delay-4000"></div>
+        
+        {/* Subtle noise texture */}
+        <div className="absolute inset-0 opacity-[0.015] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none mix-blend-overlay"></div>
       </div>
 
       {/* Map Component as Background */}
@@ -1211,7 +1217,7 @@ export default function CustomerDashboard() {
         />
       </div>
 
-      <div className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md shadow-sm">
+      <div className="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-md border-b border-gray-200 shadow-sm transition-colors duration-500">
         <Navbar />
       </div>
         
@@ -1222,10 +1228,10 @@ export default function CustomerDashboard() {
             initial={{ opacity: 0, y: -50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -50, scale: 0.9 }}
-            className="fixed top-24 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3"
+            className="fixed top-24 right-4 z-50 bg-[#13131A] text-emerald-400 px-6 py-4 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-emerald-500/20 flex items-center gap-3 backdrop-blur-md"
           >
-            <CheckCircle className="w-5 h-5" />
-            <span className="font-medium">{profileSuccess}</span>
+            <CheckCircle className="w-5 h-5 text-emerald-500" />
+            <span className="font-semibold text-sm tracking-wide text-white">{profileSuccess}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1247,24 +1253,24 @@ export default function CustomerDashboard() {
             ? (isSheetExpanded ? '90dvh' : '50dvh') 
             : 'calc(100dvh - 64px)' 
         }}
-        transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
-        className={`fixed bottom-0 left-0 w-full z-40 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex flex-col ${
-          activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-3xl' : 'rounded-none'
+        transition={{ type: 'spring', stiffness: 300, damping: 25, mass: 0.8 }}
+        className={`fixed bottom-0 sm:bottom-6 left-0 right-0 mx-auto w-full sm:w-[calc(100%-3rem)] max-w-5xl z-40 bg-white/95 dark:bg-[#0F0F13]/95 backdrop-blur-3xl shadow-[0_-20px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-20px_80px_rgba(0,0,0,0.5)] sm:border border-gray-200 dark:border-white/5 flex flex-col transition-all duration-500 ${
+          activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-[2.5rem] sm:rounded-[2.5rem]' : 'rounded-none sm:rounded-[2.5rem]'
         }`}
       >
         {/* Filler for overscroll to prevent map from peeking through without ruining rounded corners */}
-        <div className="absolute top-full left-0 w-full h-[100vh] bg-white pointer-events-none" />
+        <div className="absolute top-full left-0 w-full h-[100vh] bg-[#F5F5F7] dark:bg-[#0F0F13] pointer-events-none sm:hidden transition-colors duration-500" />
 
         <div className="flex-1 overflow-y-auto pb-8 overscroll-none" id="bottom-sheet-container">
-          <div className={`sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-100 pb-2 ${activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-3xl' : ''}`}>
+          <div className={`sticky top-0 z-30 bg-white/80 dark:bg-[#0F0F13]/80 backdrop-blur-xl border-b border-gray-200 dark:border-white/5 pb-2 transition-colors duration-500 ${activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-[2.5rem] sm:rounded-[2.5rem]' : ''}`}>
           {/* Drag Handle */}
           {activeTab === 'dashboard' && bookingStep > 1 && (
             <div 
-              className="w-full py-3 cursor-grab active:cursor-grabbing flex justify-center touch-none"
+              className="w-full py-4 cursor-grab active:cursor-grabbing flex justify-center touch-none"
               onPointerDown={(e) => dragControls.start(e)}
               onClick={() => setIsSheetExpanded(!isSheetExpanded)}
             >
-              <div className="w-12 h-1.5 bg-gray-300 rounded-full pointer-events-none"></div>
+              <div className="w-12 h-1.5 bg-white/20 rounded-full pointer-events-none"></div>
             </div>
           )}
 
@@ -1272,30 +1278,46 @@ export default function CustomerDashboard() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="flex items-center gap-4">
                 <div>
-                  <h1 className={`text-2xl sm:text-3xl font-bold capitalize text-gray-900 break-words`}>
+                  <h1 className={`text-2xl sm:text-3xl font-bold capitalize text-gray-900 tracking-tight break-words transition-colors duration-500`}>
                     {greetingData.greeting}
                   </h1>
-                  <p className={`text-sm mt-1 text-gray-500`}>
+                  <p className={`text-sm mt-1 text-gray-600 tracking-wide transition-colors duration-500`}>
                     {greetingData.sub}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-4 w-full sm:w-auto">
-                <Tabs 
-                  aria-label="Dashboard Options" 
-                  selectedKey={activeTab} 
-                  onSelectionChange={(key) => setActiveTab(key as any)}
-                  className="rounded-lg shadow-sm border bg-white border-gray-100 p-1"
-                >
-                  <Tabs.List className="flex">
-                    <Tabs.Tab id="dashboard" className="flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors text-center cursor-pointer outline-none data-[selected]:bg-indigo-50 data-[selected]:text-indigo-700 text-gray-500 hover:text-gray-700 hover:bg-gray-50">
-                      Dashboard
-                    </Tabs.Tab>
-                    <Tabs.Tab id="bookings" className="flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors text-center cursor-pointer outline-none data-[selected]:bg-indigo-50 data-[selected]:text-indigo-700 text-gray-500 hover:text-gray-700 hover:bg-gray-50">
-                      My Bookings
-                    </Tabs.Tab>
-                  </Tabs.List>
-                </Tabs>
+                <div className="flex p-1 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] rounded-lg w-full sm:w-auto relative transition-colors duration-500" role="tablist" aria-label="Dashboard Options">
+                  {[{ id: 'dashboard', label: 'Dashboard' }, { id: 'bookings', label: 'My Bookings' }].map((tab) => {
+                    const isSelected = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        role="tab"
+                        aria-selected={isSelected}
+                        onClick={() => setActiveTab(tab.id as 'dashboard' | 'bookings')}
+                        className={`relative flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors z-10 ${
+                          isSelected ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700 dark:hover:text-white/80'
+                        }`}
+                      >
+                        {isSelected && (
+                          <motion.div
+                            layoutId="customerTabs"
+                            className="absolute inset-0 bg-white dark:bg-[#1E1E2A] shadow-[0_1px_2px_rgba(0,0,0,0.1)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.2)] border border-gray-200 dark:border-white/10 rounded-md z-[-1] transition-colors duration-500"
+                            initial={false}
+                            transition={{
+                              type: "spring",
+                              stiffness: 400,
+                              damping: 30,
+                              mass: 0.8
+                            }}
+                          />
+                        )}
+                        <span className="relative z-10">{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
@@ -1307,37 +1329,37 @@ export default function CustomerDashboard() {
           {activeTab === 'profile' ? (
             <div className="max-w-2xl mx-auto space-y-8">
               <LoyaltyCard bookingsCount={bookings.filter(b => b.rideStatus === 'Completed').length}  />
-              <div className={`rounded-2xl shadow-sm border p-6 bg-white border-gray-100`}>
-                <div className={`flex justify-between items-start ${isEditingProfile ? 'mb-6' : ''}`}>
-                  <div className="flex items-center gap-4">
-                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-md bg-indigo-600`}>
+              <div className={`rounded-[2rem] shadow-[0_10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)] border p-8 bg-white/40 dark:bg-black/40 border-gray-200 dark:border-white/5 transition-colors duration-500`}>
+                <div className={`flex justify-between items-start ${isEditingProfile ? 'mb-8' : ''}`}>
+                  <div className="flex items-center gap-5">
+                    <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-white font-bold text-3xl shadow-[0_0_20px_rgba(99,102,241,0.3)] bg-gradient-to-br from-indigo-500 to-indigo-700`}>
                       {profileName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <h3 className={`text-lg font-bold text-gray-900`}>{profileName}</h3>
-                      <p className={`text-sm text-gray-500`}>Customer</p>
+                      <h3 className={`text-2xl font-bold text-gray-900 dark:text-white tracking-tight transition-colors duration-500`}>{profileName}</h3>
+                      <p className={`text-sm text-white/50 tracking-wider uppercase font-semibold mt-1`}>Customer</p>
                     </div>
                   </div>
                   {!isEditingProfile && (
                     <button
                       onClick={() => setIsEditingProfile(true)}
-                      className={`text-xs font-medium px-4 py-1.5 rounded-full transition-colors text-indigo-600 bg-indigo-50 hover:bg-indigo-100`}
+                      className={`text-xs font-semibold uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all text-white border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_15px_rgba(255,255,255,0.05)] transform active:scale-95`}
                     >
-                      Edit
+                      Edit Profile
                     </button>
                   )}
                 </div>
                 
                 {profileError && (
-                  <div className="mb-4 bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-sm">
+                  <div className="mb-6 bg-red-500/10 border border-red-500/20 text-red-400 px-5 py-4 rounded-xl text-sm shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)] leading-relaxed">
                     {profileError}
                   </div>
                 )}
                 
                 {isEditingProfile && (
-                  <form onSubmit={handleUpdateProfile} className="space-y-4 border-t border-gray-100 pt-4">
+                  <form onSubmit={handleUpdateProfile} className="space-y-6 border-t border-white/10 pt-8 mt-4">
                     <div>
-                      <label htmlFor="profileName" className="block text-sm font-medium text-gray-700">Name</label>
+                      <label htmlFor="profileName" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Name</label>
                       <input
                         type="text"
                         id="profileName"
@@ -1350,11 +1372,11 @@ export default function CustomerDashboard() {
                           }
                         }}
                         onFocus={handleInputFocus}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border border-white/5 bg-[#13131A] text-white rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all"
                       />
                     </div>
                     <div>
-                      <label htmlFor="profileEmail" className="block text-sm font-medium text-gray-700">Email</label>
+                      <label htmlFor="profileEmail" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Email</label>
                       <input
                         type="email"
                         id="profileEmail"
@@ -1362,11 +1384,12 @@ export default function CustomerDashboard() {
                         value={profileEmail}
                         onChange={(e) => setProfileEmail(e.target.value)}
                         onFocus={handleInputFocus}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border border-white/5 bg-[#13131A] text-white rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all text-white/50 cursor-not-allowed"
+                        disabled
                       />
                     </div>
                     <div>
-                      <label htmlFor="profilePhone" className="block text-sm font-medium text-gray-700">Phone</label>
+                      <label htmlFor="profilePhone" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Phone</label>
                       <input
                         type="tel"
                         id="profilePhone"
@@ -1378,23 +1401,23 @@ export default function CustomerDashboard() {
                           }
                         }}
                         onFocus={handleInputFocus}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border border-white/5 bg-[#13131A] text-white rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all"
                       />
                     </div>
-                    <div className="flex space-x-3">
-                      <button
-                        type="submit"
-                        disabled={profileLoading}
-                        className="flex-1 flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                      >
-                        {profileLoading ? 'Saving...' : 'Save'}
-                      </button>
+                    <div className="flex space-x-4 pt-4">
                       <button
                         type="button"
                         onClick={() => setIsEditingProfile(false)}
-                        className="flex-1 flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        className="flex-1 flex justify-center py-3 px-6 border border-white/10 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.1)] text-sm font-medium text-white/80 bg-white/5 hover:bg-white/10 hover:text-white transition-all transform active:scale-95"
                       >
                         Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={profileLoading}
+                        className="flex-1 flex justify-center py-3 px-6 border border-indigo-400/30 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none transform active:scale-95 transition-all disabled:opacity-50"
+                      >
+                        {profileLoading ? 'Saving...' : 'Save Changes'}
                       </button>
                     </div>
                   </form>
@@ -1406,12 +1429,12 @@ export default function CustomerDashboard() {
               <div className="flex flex-col gap-8">
                 
                 {/* Book a Ride Form */}
-                <div className={`relative overflow-hidden rounded-2xl shadow-sm border p-6 bg-white border-gray-100`}>
+                <div className={`relative overflow-hidden rounded-[2rem] p-6 sm:p-8 bg-black/40 border border-white/5 shadow-[0_10px_40px_rgba(0,0,0,0.5)]`}>
                 <AnimatePresence>
                   {bookingLoading && <ConciergeLoading  />}
                 </AnimatePresence>
                 <div className="flex items-center justify-between mb-8">
-                  <h3 className={`text-lg font-bold text-gray-900`}>Book a Ride</h3>
+                  <h3 className={`text-xl font-bold text-white tracking-tight`}>Book a Ride</h3>
                   
                   {/* Stepper Indicator */}
                   <div className="flex items-center gap-2">
@@ -1419,18 +1442,18 @@ export default function CustomerDashboard() {
                       <div key={step} className="flex items-center">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
                           bookingStep === step 
-                            ? ('bg-indigo-600 text-white')
+                            ? ('bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]')
                             : bookingStep > step 
-                              ? ('bg-indigo-100 text-indigo-600')
-                              : ('bg-gray-100 text-gray-400')
+                              ? ('bg-white/10 text-indigo-400')
+                              : ('bg-white/5 text-gray-500')
                         }`}>
                           {bookingStep > step ? <CheckCircle className="w-4 h-4" /> : step}
                         </div>
                         {step < 3 && (
                           <div className={`w-8 h-1 mx-1 rounded-full ${
                             bookingStep > step 
-                              ? ('bg-indigo-100')
-                              : ('bg-gray-100')
+                              ? ('bg-indigo-500/50')
+                              : ('bg-white/5')
                           }`}></div>
                         )}
                       </div>
@@ -1442,42 +1465,50 @@ export default function CustomerDashboard() {
                     <motion.form 
                       id="booking-form"
                       key={`form-step-${bookingStep}`}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
                       onSubmit={handleBookRide} 
                       className="space-y-6"
                     >
                       {bookingError && (
-                        <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative text-sm">
+                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl relative text-sm backdrop-blur-md">
                           {bookingError}
                         </div>
                       )}
                       
                       {bookingStep === 1 && (
                         <>
-                          <div className="flex flex-wrap gap-2 mb-6">
+                          <div className="flex flex-wrap gap-2 mb-6 p-1 bg-white/5 rounded-2xl w-fit">
                             {['One-way', 'Round-trip', 'Tour', 'Car Renting', 'Wedding'].map(type => (
                               <button
                                 key={type}
                                 type="button"
                                 onClick={() => setTripType(type)}
-                                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                                className={`relative px-4 py-2 rounded-xl text-sm font-medium transition-colors z-10 ${
                                   tripType === type 
-                                    ? ('bg-indigo-600 text-white') 
-                                    : ('bg-white text-gray-600 border border-gray-200 hover:bg-gray-50')
+                                    ? ('text-white') 
+                                    : ('text-white/50 hover:text-white/80')
                                 }`}
                               >
-                                {type}
+                                {tripType === type && (
+                                  <motion.div
+                                    layoutId="tripType"
+                                    className="absolute inset-0 bg-indigo-500 rounded-xl z-[-1] shadow-[0_0_15px_rgba(99,102,241,0.4)]"
+                                    initial={false}
+                                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                  />
+                                )}
+                                <span className="relative z-10">{type}</span>
                               </button>
                             ))}
                           </div>
 
                       {tripType !== 'Car Renting' && (
-                        <div className="relative flex flex-col gap-4">
-                          <div className="relative">
-                            <label htmlFor="fromLocation" className={`block text-sm font-medium mb-1 text-gray-700`}>From</label>
+                        <div className="relative flex flex-col sm:flex-row gap-4">
+                          <div className="relative flex-1">
+                            <label htmlFor="fromLocation" className={`block text-xs font-semibold mb-1.5 text-white/50 tracking-wider uppercase`}>Pick-up Location</label>
                             <input
                               type="text"
                               id="fromLocation"
@@ -1501,29 +1532,29 @@ export default function CustomerDashboard() {
                                   setShowFromSuggestions(false);
                                 }, 200);
                               }}
-                              className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 pl-3 ${tripType !== 'Tour' ? 'pr-12' : 'pr-3'} focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                              className={`mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 pl-4 ${tripType !== 'Tour' ? 'pr-12' : 'pr-4'} text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm`}
                               placeholder="Source City"
                               autoComplete="off"
                             />
                             {showFromSuggestions && fromSuggestions.length > 0 && (
-                              <ul className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                              <ul className="absolute z-50 mt-2 w-full bg-[#1A1A24]/95 backdrop-blur-xl border border-white/10 shadow-2xl max-h-60 rounded-xl py-2 text-base overflow-auto focus:outline-none sm:text-sm">
                                 {fromSuggestions.map((loc, idx) => (
                                   <li
                                     key={idx}
-                                    className="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50 hover:text-indigo-900"
+                                    className="text-white/80 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-white/10 transition-colors"
                                     onMouseDown={(e) => {
-                                      e.preventDefault(); // Prevent input from losing focus immediately
+                                      e.preventDefault();
                                       setFromLocation(loc.displayName);
                                       setFromLocationData(loc);
                                       setShowFromSuggestions(false);
                                     }}
                                   >
                                     <div className="flex items-center">
-                                      <MapPin className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                      <MapPin className="h-4 w-4 text-indigo-400 mr-2 flex-shrink-0" />
                                       <div className="flex flex-col">
-                                        <span className="font-medium truncate">{loc.primaryText || loc.displayName}</span>
+                                        <span className="font-medium truncate text-white">{loc.primaryText || loc.displayName}</span>
                                         {loc.secondaryText && (
-                                          <span className="text-xs text-gray-500 truncate">{loc.secondaryText}</span>
+                                          <span className="text-xs text-white/40 truncate">{loc.secondaryText}</span>
                                         )}
                                       </div>
                                     </div>
@@ -1535,10 +1566,11 @@ export default function CustomerDashboard() {
                           
                           {tripType !== 'Tour' && (
                             <>
-                              <div className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center">
+                              <div className="absolute left-[calc(50%-1.25rem)] sm:left-1/2 top-[calc(50%+0.5rem)] sm:top-[60%] sm:-translate-x-1/2 -translate-y-1/2 z-10 hidden sm:flex items-center justify-center pointer-events-none">
                                 <button
                                   type="button"
-                                  onClick={() => {
+                                  onClick={(e) => {
+                                    e.preventDefault();
                                     const tempLoc = fromLocation;
                                     const tempData = fromLocationData;
                                     setFromLocation(toLocation);
@@ -1546,14 +1578,14 @@ export default function CustomerDashboard() {
                                     setToLocation(tempLoc);
                                     setToLocationData(tempData);
                                   }}
-                                  className="bg-gray-900 text-green-400 p-2 rounded-full hover:bg-gray-800 transition-colors shadow-md border border-gray-700 flex items-center justify-center"
+                                  className="pointer-events-auto bg-[#1A1A24] text-white p-2 rounded-full hover:bg-white/10 transition-colors shadow-lg border border-white/10 flex items-center justify-center transform active:scale-95"
                                   title="Swap locations"
                                 >
                                   <ArrowUpDown className="h-4 w-4" />
                                 </button>
                               </div>
-                              <div className="relative">
-                                <label htmlFor="toLocation" className="block text-sm font-medium text-gray-700">To</label>
+                              <div className="relative flex-1">
+                                <label htmlFor="toLocation" className="block text-xs font-semibold mb-1.5 text-white/50 tracking-wider uppercase">Drop-off Location</label>
                                 <input
                                   type="text"
                                   id="toLocation"
@@ -1577,29 +1609,29 @@ export default function CustomerDashboard() {
                                       setShowToSuggestions(false);
                                     }, 200);
                                   }}
-                                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 pl-3 pr-12 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 pl-4 pr-4 sm:pr-8 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                                   placeholder="Destination City"
                                   autoComplete="off"
                                 />
                                 {showToSuggestions && toSuggestions.length > 0 && (
-                                  <ul className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                                  <ul className="absolute z-50 mt-2 w-full bg-[#1A1A24]/95 backdrop-blur-xl border border-white/10 shadow-2xl max-h-60 rounded-xl py-2 text-base overflow-auto focus:outline-none sm:text-sm">
                                     {toSuggestions.map((loc, idx) => (
                                       <li
                                         key={idx}
-                                        className="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50 hover:text-indigo-900"
+                                        className="text-white/80 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-white/10 transition-colors"
                                         onMouseDown={(e) => {
-                                          e.preventDefault(); // Prevent input from losing focus immediately
+                                          e.preventDefault();
                                           setToLocation(loc.displayName);
                                           setToLocationData(loc);
                                           setShowToSuggestions(false);
                                         }}
                                       >
                                         <div className="flex items-center">
-                                          <MapPin className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                          <MapPin className="h-4 w-4 text-indigo-400 mr-2 flex-shrink-0" />
                                           <div className="flex flex-col">
-                                            <span className="font-medium truncate">{loc.primaryText || loc.displayName}</span>
+                                            <span className="font-medium truncate text-white">{loc.primaryText || loc.displayName}</span>
                                             {loc.secondaryText && (
-                                              <span className="text-xs text-gray-500 truncate">{loc.secondaryText}</span>
+                                              <span className="text-xs text-white/40 truncate">{loc.secondaryText}</span>
                                             )}
                                           </div>
                                         </div>
@@ -1632,7 +1664,7 @@ export default function CustomerDashboard() {
                           <div key={index} className="flex flex-col gap-1">
                             <div className="flex gap-2 items-end">
                               <div className="flex-grow relative">
-                                <label className="block text-sm font-medium text-gray-700">Destination {index + 1}</label>
+                                <label className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Destination {index + 1}</label>
                                 <input
                                 type="text"
                                 required
@@ -1666,16 +1698,16 @@ export default function CustomerDashboard() {
                                     setActiveDestinationIndex(null);
                                   }, 200);
                                 }}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                                 placeholder={`Destination ${index + 1}`}
                                 autoComplete="off"
                               />
                               {activeDestinationIndex === index && destinationSuggestions[index] && destinationSuggestions[index].length > 0 && (
-                                <ul className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                                <ul className="absolute z-50 mt-2 w-full bg-[#1A1A24]/95 backdrop-blur-xl border border-white/10 shadow-2xl max-h-60 rounded-xl py-2 text-base overflow-auto focus:outline-none sm:text-sm">
                                   {destinationSuggestions[index].map((loc, idx) => (
                                     <li
                                       key={idx}
-                                      className="text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50 hover:text-indigo-900"
+                                      className="text-white/80 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-white/10 transition-colors"
                                       onMouseDown={(e) => {
                                         e.preventDefault(); // Prevent input from losing focus immediately
                                         const newDests = [...destinations];
@@ -1690,11 +1722,11 @@ export default function CustomerDashboard() {
                                       }}
                                     >
                                       <div className="flex items-center">
-                                        <MapPin className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                        <MapPin className="h-4 w-4 text-indigo-400 mr-2 flex-shrink-0" />
                                         <div className="flex flex-col">
-                                          <span className="font-medium truncate">{loc.primaryText || loc.displayName}</span>
+                                          <span className="font-medium truncate text-white">{loc.primaryText || loc.displayName}</span>
                                           {loc.secondaryText && (
-                                            <span className="text-xs text-gray-500 truncate">{loc.secondaryText}</span>
+                                            <span className="text-xs text-white/40 truncate">{loc.secondaryText}</span>
                                           )}
                                         </div>
                                       </div>
@@ -1720,7 +1752,7 @@ export default function CustomerDashboard() {
                                   });
                                   setDestinationSuggestions(newSuggestions);
                                 }}
-                                className="mb-1 px-3 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200"
+                                className="mb-1 px-4 py-3 bg-red-500/10 text-red-400 border border-red-500/30 rounded-xl hover:bg-red-500/20 text-sm font-medium transition-colors"
                               >
                                 Remove
                               </button>
@@ -1734,7 +1766,7 @@ export default function CustomerDashboard() {
                             setDestinations([...destinations, '']);
                             setDestinationData([...destinationData, null]);
                           }}
-                          className="text-sm text-indigo-600 font-medium hover:text-indigo-800"
+                          className="mt-2 text-sm text-indigo-400 font-semibold hover:text-indigo-300 transition-colors"
                         >
                           + Add another destination
                         </button>
@@ -1742,8 +1774,8 @@ export default function CustomerDashboard() {
                     )}
                   </AnimatePresence>
                   
-                  <div>
-                    <label htmlFor="rideDate" className="block text-sm font-medium text-gray-700">
+                  <div className="pt-2">
+                    <label htmlFor="rideDate" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">
                       {tripType === 'Car Renting' ? 'When do you want the vehicle? (Date & Time)' : tripType === 'Round-trip' ? 'Departure Date & Time' : 'Date & Time'}
                     </label>
                     <div className="mt-1 flex flex-wrap gap-3">
@@ -1755,23 +1787,23 @@ export default function CustomerDashboard() {
                         value={rideDate}
                         onChange={(e) => setRideDate(e.target.value)}
                         onFocus={handleInputFocus}
-                        className="block w-full sm:flex-1 min-w-[150px] border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="block w-full sm:flex-1 min-w-[150px] bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm [color-scheme:dark]"
                       />
                       <div className="flex gap-2 items-center flex-1 min-w-[240px]">
                         <select
                           value={rideTimeHour}
                           onChange={(e) => setRideTimeHour(e.target.value)}
-                          className="block w-full flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
+                          className="block w-full flex-1 bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                         >
                           {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
                             <option key={h} value={h.toString().padStart(2, '0')}>{h.toString().padStart(2, '0')}</option>
                           ))}
                         </select>
-                        <span className="flex items-center text-gray-500 font-bold">:</span>
+                        <span className="flex items-center text-white/30 font-bold">:</span>
                         <select
                           value={rideTimeMinute}
                           onChange={(e) => setRideTimeMinute(e.target.value)}
-                          className="block w-full flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
+                          className="block w-full flex-1 bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                         >
                           {['00', '15', '30', '45'].map(m => (
                             <option key={m} value={m}>{m}</option>
@@ -1780,7 +1812,7 @@ export default function CustomerDashboard() {
                         <select
                           value={rideTimeAmPm}
                           onChange={(e) => setRideTimeAmPm(e.target.value)}
-                          className="block w-full flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
+                          className="block w-full flex-1 bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                         >
                           <option value="AM">AM</option>
                           <option value="PM">PM</option>
@@ -1796,10 +1828,10 @@ export default function CustomerDashboard() {
                         initial={{ opacity: 0, y: -10, height: 0 }}
                         animate={{ opacity: 1, y: 0, height: 'auto' }}
                         exit={{ opacity: 0, y: -10, height: 0 }}
-                        transition={{ duration: 0.3 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
                         className="overflow-hidden"
                       >
-                        <label htmlFor="returnDate" className={`block text-sm font-medium mt-4 text-gray-700`}>Return Date & Time</label>
+                        <label htmlFor="returnDate" className="block text-xs font-semibold mt-4 mb-2 text-white/50 tracking-wider uppercase">Return Date & Time</label>
                         <div className="mt-1 flex flex-wrap gap-3">
                           <input
                             type="date"
@@ -1809,23 +1841,23 @@ export default function CustomerDashboard() {
                             value={returnDate}
                             onChange={(e) => setReturnDate(e.target.value)}
                             onFocus={handleInputFocus}
-                            className={`block w-full sm:flex-1 min-w-[150px] border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900`}
+                            className="block w-full sm:flex-1 min-w-[150px] bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm [color-scheme:dark]"
                           />
                           <div className="flex gap-2 items-center flex-1 min-w-[240px]">
                             <select
                               value={returnTimeHour}
                               onChange={(e) => setReturnTimeHour(e.target.value)}
-                              className={`block w-full flex-1 border rounded-md shadow-sm py-2 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900`}
+                              className="block w-full flex-1 bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                             >
                               {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
                                 <option key={h} value={h.toString().padStart(2, '0')}>{h.toString().padStart(2, '0')}</option>
                               ))}
                             </select>
-                            <span className={`flex items-center font-bold text-gray-500`}>:</span>
+                            <span className="flex items-center font-bold text-white/30">:</span>
                             <select
                               value={returnTimeMinute}
                               onChange={(e) => setReturnTimeMinute(e.target.value)}
-                              className={`block w-full flex-1 border rounded-md shadow-sm py-2 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900`}
+                              className="block w-full flex-1 bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                             >
                               {['00', '15', '30', '45'].map(m => (
                                 <option key={m} value={m}>{m}</option>
@@ -1834,7 +1866,7 @@ export default function CustomerDashboard() {
                             <select
                               value={returnTimeAmPm}
                               onChange={(e) => setReturnTimeAmPm(e.target.value)}
-                              className={`block w-full flex-1 border rounded-md shadow-sm py-2 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900`}
+                              className="block w-full flex-1 bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                             >
                               <option value="AM">AM</option>
                               <option value="PM">PM</option>
@@ -1850,12 +1882,12 @@ export default function CustomerDashboard() {
                         initial={{ opacity: 0, y: -10, height: 0 }}
                         animate={{ opacity: 1, y: 0, height: 'auto' }}
                         exit={{ opacity: 0, y: -10, height: 0 }}
-                        transition={{ duration: 0.3 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
                         className="space-y-4 overflow-hidden mt-4"
                       >
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label htmlFor="numberOfDays" className={`block text-sm font-medium text-gray-700`}>Number of Days</label>
+                            <label htmlFor="numberOfDays" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Number of Days</label>
                             <input
                               type="number"
                               id="numberOfDays"
@@ -1865,11 +1897,11 @@ export default function CustomerDashboard() {
                               value={numberOfDays}
                               onChange={(e) => setNumberOfDays(e.target.value === '' ? '' : parseInt(e.target.value))}
                               onFocus={handleInputFocus}
-                              className={`mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900`}
+                              className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                             />
                           </div>
                           <div>
-                            <label htmlFor="numberOfCars" className="block text-sm font-medium text-gray-700">Number of Vehicles</label>
+                            <label htmlFor="numberOfCars" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Number of Vehicles</label>
                             <input
                               type="number"
                               id="numberOfCars"
@@ -1879,7 +1911,7 @@ export default function CustomerDashboard() {
                               value={numberOfCars}
                               onChange={(e) => setNumberOfCars(e.target.value === '' ? '' : parseInt(e.target.value))}
                               onFocus={handleInputFocus}
-                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                              className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                             />
                           </div>
                         </div>
@@ -1893,12 +1925,12 @@ export default function CustomerDashboard() {
                         initial={{ opacity: 0, y: -10, height: 0 }}
                         animate={{ opacity: 1, y: 0, height: 'auto' }}
                         exit={{ opacity: 0, y: -10, height: 0 }}
-                        transition={{ duration: 0.3 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
                         className="space-y-4 overflow-hidden mt-4"
                       >
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label htmlFor="weddingDate" className="block text-sm font-medium text-gray-700">Wedding Date</label>
+                            <label htmlFor="weddingDate" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Wedding Date</label>
                             <input
                               type="date"
                               id="weddingDate"
@@ -1907,11 +1939,11 @@ export default function CustomerDashboard() {
                               value={weddingDate}
                               onChange={(e) => setWeddingDate(e.target.value)}
                               onFocus={handleInputFocus}
-                              className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900"
+                              className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm [color-scheme:dark]"
                             />
                           </div>
                           <div>
-                            <label htmlFor="eventLocation" className="block text-sm font-medium text-gray-700">Event Location</label>
+                            <label htmlFor="eventLocation" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Event Location</label>
                             <input
                               type="text"
                               id="eventLocation"
@@ -1920,13 +1952,13 @@ export default function CustomerDashboard() {
                               onChange={(e) => setEventLocation(e.target.value)}
                               onFocus={handleInputFocus}
                               placeholder="e.g., Grand Hotel, City Center"
-                              className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900"
+                              className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                             />
                           </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label htmlFor="vehiclesRequired" className="block text-sm font-medium text-gray-700">Vehicles Required</label>
+                            <label htmlFor="vehiclesRequired" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Vehicles Required</label>
                             <input
                               type="number"
                               id="vehiclesRequired"
@@ -1936,16 +1968,16 @@ export default function CustomerDashboard() {
                               value={vehiclesRequired}
                               onChange={(e) => setVehiclesRequired(e.target.value)}
                               onFocus={handleInputFocus}
-                              className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900"
+                              className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                             />
                           </div>
                           <div>
-                            <label htmlFor="decorationRequired" className="block text-sm font-medium text-gray-700">Decoration Required?</label>
+                            <label htmlFor="decorationRequired" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Decoration Required?</label>
                             <select
                               id="decorationRequired"
                               value={decorationRequired}
                               onChange={(e) => setDecorationRequired(e.target.value)}
-                              className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900"
+                              className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none"
                             >
                               <option value="No">No</option>
                               <option value="Yes">Yes</option>
@@ -1958,15 +1990,15 @@ export default function CustomerDashboard() {
                   </AnimatePresence>
                   
                   {tripType !== 'Car Renting' && tripType !== 'Wedding' && (
-                    <div>
-                      <label htmlFor="rideType" className="block text-sm font-medium text-gray-700">Ride Type</label>
+                    <div className="pt-2">
+                      <label htmlFor="rideType" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Ride Type</label>
                       <select
                         id="rideType"
                         required
                         value={rideType}
                         onChange={(e) => setRideType(e.target.value)}
                         onFocus={handleInputFocus}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
+                        className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none"
                       >
                         <option value="Intercity">Intercity</option>
                         <option value="Airport Transfer">Airport Transfer</option>
@@ -1976,9 +2008,9 @@ export default function CustomerDashboard() {
                   )}
 
                   {tripType !== 'Car Renting' && (
-                    <div className="space-y-4">
+                    <div className="space-y-4 pt-2">
                       <div>
-                        <label htmlFor="numberOfPeople" className="block text-sm font-medium text-gray-700">Number of People</label>
+                        <label htmlFor="numberOfPeople" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Number of People</label>
                         <input
                           type="number"
                           id="numberOfPeople"
@@ -1988,7 +2020,7 @@ export default function CustomerDashboard() {
                           value={numberOfPeople}
                           onChange={(e) => setNumberOfPeople(e.target.value === '' ? '' : parseInt(e.target.value))}
                           onFocus={handleInputFocus}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                         />
                       </div>
                     </div>
@@ -2000,9 +2032,9 @@ export default function CustomerDashboard() {
                       {bookingStep === 2 && (
                         <div className="space-y-6">
                           {/* Vehicle Selection Step */}
-                          <div className="bg-white">
+                          <div className="">
                             <div className="flex items-center gap-2 mb-4 px-2">
-                              <h4 className={`text-lg font-bold text-gray-900`}>Choose Your Vehicle</h4>
+                              <h4 className="text-xl font-bold text-white tracking-tight">Choose Your Vehicle</h4>
                             </div>
                             
                             <div className="flex flex-col gap-1">
@@ -2028,16 +2060,16 @@ export default function CustomerDashboard() {
                             </div>
                             
                             {AVAILABLE_VEHICLES.find(v => v.name === selectedVehicle)?.capacity! < numberOfPeople && (
-                              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mt-3 mx-2">
-                                <p className="text-sm text-yellow-800 mb-2">
+                              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 mt-4 mx-2">
+                                <p className="text-sm font-medium text-yellow-400 mb-2">
                                   ⚠️ Exceeds vehicle capacity (Max: {AVAILABLE_VEHICLES.find(v => v.name === selectedVehicle)?.capacity}).
                                 </p>
-                                <label className="flex items-center gap-2 text-sm text-yellow-900">
+                                <label className="flex items-center gap-2 text-sm text-yellow-200/80 cursor-pointer pt-1">
                                   <input
                                     type="checkbox"
                                     checked={confirmCapacity}
                                     onChange={(e) => setConfirmCapacity(e.target.checked)}
-                                    className="rounded text-indigo-600 focus:ring-indigo-500"
+                                    className="rounded bg-[#1A1A24] border-white/20 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0 focus:ring-offset-transparent"
                                   />
                                   I confirm I want to proceed with this vehicle
                                 </label>
@@ -2045,28 +2077,28 @@ export default function CustomerDashboard() {
                             )}
 
                             {tripType === 'Tour' && (
-                              <div className="mt-4 mx-2">
-                                <label className={`block text-sm font-medium mb-1 text-gray-700`}>Number of Vehicles</label>
+                              <div className="mt-6 mx-2">
+                                <label className={`block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase`}>Number of Vehicles</label>
                                 <input
                                   type="number"
                                   min="1"
                                   max={AVAILABLE_VEHICLES.find(v => v.name === selectedVehicle)?.quantity || 10}
                                   value={numberOfCars}
                                   onChange={(e) => setNumberOfCars(e.target.value === '' ? '' : parseInt(e.target.value))}
-                                  className={`block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white border-gray-300 text-gray-900`}
+                                  className={`block w-full border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm bg-[#13131A] border-white/5 text-white`}
                                 />
                               </div>
                             )}
 
                             {/* AC Selection */}
                             {tripType !== 'Car Renting' && (
-                              <div className={`mt-6 mx-2 border rounded-2xl p-4 shadow-sm flex items-center gap-4 bg-white border-gray-200`}>
-                                <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                              <div className={`mt-6 mx-2 border rounded-2xl p-4 shadow-sm flex items-center gap-4 bg-[#1A1A24] border-white/5`}>
+                                <div className="w-12 h-12 rounded-xl bg-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.2)] flex items-center justify-center flex-shrink-0">
                                   <Snowflake className="w-6 h-6 text-indigo-400" />
                                 </div>
                                 <div className="flex-1">
-                                  <h4 className={`font-bold text-base text-gray-900`}>Air Conditioning</h4>
-                                  <p className={`text-xs text-gray-500`}>Cooler cabin · Ideal for summer</p>
+                                  <h4 className={`font-bold text-base text-white`}>Air Conditioning</h4>
+                                  <p className={`text-xs text-white/50`}>Cooler cabin · Ideal for summer</p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
                                   <input 
@@ -2075,7 +2107,7 @@ export default function CustomerDashboard() {
                                     checked={isAC}
                                     onChange={(e) => setIsAC(e.target.checked)}
                                   />
-                                  <div className={`w-11 h-6 rounded-full peer peer-focus:outline-none peer-focus:ring-4 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all bg-gray-200 peer-focus:ring-indigo-300 peer-checked:bg-indigo-600`}></div>
+                                  <div className="w-11 h-6 rounded-full peer peer-focus:outline-none peer-focus:ring-2 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-white/10 after:border after:rounded-full after:h-5 after:w-5 after:transition-all bg-white/20 peer-focus:ring-indigo-500/30 peer-checked:bg-indigo-500"></div>
                                 </label>
                               </div>
                             )}
@@ -2086,29 +2118,33 @@ export default function CustomerDashboard() {
                       {bookingStep === 3 && (
                         <div className="space-y-6">
                           {/* Review Step */}
-                          <div className={`rounded-xl p-6 border bg-gray-50 border-gray-200`}>
+                          <div className={`rounded-3xl p-6 sm:p-8 border bg-black/40 border-white/5 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)]`}>
                             {tripType === 'Car Renting' ? (
-                              <h4 className={`text-lg font-bold mb-4 text-gray-900`}>Review Your Rental Car for {user?.name}</h4>
+                              <h4 className={`text-xl font-bold mb-6 text-white tracking-tight`}>Review Your Rental Car for {user?.name}</h4>
                             ) : (
-                              <h4 className={`text-lg font-bold mb-4 text-gray-900`}>Review Your Trip</h4>
+                              <h4 className={`text-xl font-bold mb-6 text-white tracking-tight`}>Review Your Trip</h4>
                             )}
-                            <div className="space-y-4">
-                              <div className="flex items-start gap-3">
-                                <MapPin className={`w-5 h-5 mt-0.5 text-indigo-600`} />
+                            <div className="space-y-6">
+                              <div className="flex items-start gap-4">
+                                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-indigo-500/20 border border-indigo-500/30">
+                                  <MapPin className={`w-5 h-5 text-indigo-400`} />
+                                </div>
                                 <div>
-                                  <p className={`text-sm text-gray-500`}>{tripType === 'Car Renting' ? 'Booking Type' : 'Route'}</p>
-                                  <p className={`font-medium text-gray-900`}>
+                                  <p className={`text-xs text-white/50 uppercase tracking-wider font-semibold mb-1`}>{tripType === 'Car Renting' ? 'Booking Type' : 'Route'}</p>
+                                  <p className={`text-base font-medium text-white`}>
                                     {tripType === 'Car Renting' ? 'Car Rental' : 
                                      tripType === 'Tour' ? `${fromLocation} → ${destinations.join(' → ')}` :
                                      `${fromLocation} → ${toLocation}`}
                                   </p>
                                 </div>
                               </div>
-                              <div className="flex items-start gap-3">
-                                <Calendar className={`w-5 h-5 mt-0.5 text-indigo-600`} />
+                              <div className="flex items-start gap-4">
+                                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-fuchsia-500/20 border border-fuchsia-500/30">
+                                  <Calendar className={`w-5 h-5 text-fuchsia-400`} />
+                                </div>
                                 <div>
-                                  <p className={`text-sm text-gray-500`}>Date & Time</p>
-                                  <p className={`font-medium text-gray-900`}>
+                                  <p className={`text-xs text-white/50 uppercase tracking-wider font-semibold mb-1`}>Date & Time</p>
+                                  <p className={`text-base font-medium text-white`}>
                                     {rideDate && !isNaN(parseRideDate(rideDate).getTime()) 
                                       ? `${safeFormatDate(rideDate, 'MMM d, yyyy')} at ${rideTimeHour}:${rideTimeMinute} ${rideTimeAmPm}`
                                       : (tripType === 'Wedding' && weddingDate && !isNaN(parseRideDate(weddingDate).getTime()) 
@@ -2117,11 +2153,13 @@ export default function CustomerDashboard() {
                                   </p>
                                 </div>
                               </div>
-                              <div className="flex items-start gap-3">
-                                <Car className={`w-5 h-5 mt-0.5 text-indigo-600`} />
+                              <div className="flex items-start gap-4">
+                                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-500/20 border border-blue-500/30">
+                                  <Car className={`w-5 h-5 text-blue-400`} />
+                                </div>
                                 <div>
-                                  <p className={`text-sm text-gray-500`}>Vehicle</p>
-                                  <p className={`font-medium text-gray-900`}>
+                                  <p className={`text-xs text-white/50 uppercase tracking-wider font-semibold mb-1`}>Vehicle</p>
+                                  <p className={`text-base font-medium text-white`}>
                                     {selectedVehicle.replace(/ \(\d+ Seater\)/, '')} {isAC ? '(AC)' : '(Non-AC)'}
                                   </p>
                                 </div>
@@ -2132,7 +2170,7 @@ export default function CustomerDashboard() {
                       )}
 
                       {/* Wizard Navigation */}
-                      <div className="flex justify-between pt-6 border-t border-gray-200/20">
+                      <div className="flex justify-between pt-6 border-t border-white/10 mt-8">
                         {bookingStep > 1 ? (
                           <button
                             type="button"
@@ -2140,8 +2178,8 @@ export default function CustomerDashboard() {
                               setBookingStep(bookingStep - 1);
                               if (bookingStep === 2) setIsSheetExpanded(false);
                             }}
-                            className={`flex items-center px-4 py-2 text-sm font-medium rounded-xl transition-colors ${
-                              'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+                            className={`flex items-center px-4 py-2 text-sm font-medium rounded-xl transition-all ${
+                              'text-white/70 hover:text-white hover:bg-white/10 active:scale-95'
                             }`}
                           >
                             <ChevronLeft className="w-4 h-4 mr-1" /> Back
@@ -2152,10 +2190,10 @@ export default function CustomerDashboard() {
                           <button
                             type="submit"
                             disabled={isNextDisabled}
-                            className={`flex items-center px-6 py-2.5 text-sm font-medium rounded-xl text-white transition-all ${
+                            className={`flex items-center px-8 py-3 text-sm font-medium rounded-2xl text-white transition-all transform active:scale-95 ${
                               isNextDisabled 
-                                ? 'bg-gray-400 cursor-not-allowed' 
-                                : 'bg-indigo-600 hover:bg-indigo-700 shadow-sm'
+                                ? 'bg-white/5 text-white/30 cursor-not-allowed border border-white/5' 
+                                : 'bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_30px_rgba(99,102,241,0.3)] border border-indigo-400/30'
                             }`}
                           >
                             Next <ChevronRight className="w-4 h-4 ml-1" />
@@ -2187,42 +2225,44 @@ export default function CustomerDashboard() {
 
               {/* Dynamic Receipt Component */}
               {bookingStep === 3 && (
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-indigo-600" />
+                <div className="bg-black/40 border border-white/5 backdrop-blur-xl rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] p-6 sm:p-8">
+                  <h3 className="text-xl font-bold text-white tracking-tight mb-6 flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30">
+                      <CreditCard className="h-5 w-5 text-indigo-400" />
+                    </div>
                     Trip Summary
                   </h3>
                   <div className="space-y-4">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Trip Type</span>
-                      <span className="font-medium text-gray-900">{tripType}</span>
+                      <span className="text-white/50">Trip Type</span>
+                      <span className="font-medium text-white">{tripType}</span>
                     </div>
                     {tripType !== 'Car Renting' && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Total Distance</span>
-                        <span className="font-medium text-gray-900">{estimatedKM} km</span>
+                        <span className="text-white/50">Total Distance</span>
+                        <span className="font-medium text-white">{estimatedKM} km</span>
                       </div>
                     )}
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Vehicle</span>
-                      <span className="font-medium text-gray-900">{selectedVehicle.replace(/ \(\d+ Seater\)/, '')}</span>
+                      <span className="text-white/50">Vehicle</span>
+                      <span className="font-medium text-white">{selectedVehicle.replace(/ \(\d+ Seater\)/, '')}</span>
                     </div>
                     {tripType === 'Round-trip' && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Halt Charges</span>
-                        <span className="font-medium text-gray-900">₹{calculateHaltCharge()}</span>
+                        <span className="text-white/50">Halt Charges</span>
+                        <span className="font-medium text-white">₹{calculateHaltCharge()}</span>
                       </div>
                     )}
-                    <div className="border-t border-gray-100 pt-4 mt-4">
+                    <div className="border-t border-white/10 pt-6 mt-6">
                       <div className="flex justify-between items-center">
-                        <span className="text-base font-bold text-gray-900">Total Estimated Fare</span>
-                        <span className="text-2xl font-extrabold text-indigo-600">₹{
+                        <span className="text-base font-bold text-white">Total Estimated Fare</span>
+                        <span className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-fuchsia-400">₹{
                           tripType === 'Car Renting' 
                             ? (Number(numberOfDays) || 1) * 2000 * (Number(numberOfCars) || 1)
                             : (estimatedPrice || (estimatedKM * (selectedVehicle === 'Swift Dzire' ? 13 : selectedVehicle === 'Ertiga' ? 14 : 28) * (tripType === 'Wedding' ? (parseInt(vehiclesRequired) || 1) : (tripType === 'Tour' ? (Number(numberOfCars) || 1) : 1)))) + (tripType === 'Round-trip' ? calculateHaltCharge() : 0)
                         }</span>
                       </div>
-                      <p className="text-xs text-gray-400 mt-2 text-right">*Final fare may vary based on actual distance and tolls.</p>
+                      <p className="text-xs text-white/30 mt-2 text-right">*Final fare may vary based on actual distance and tolls.</p>
                     </div>
                   </div>
                 </div>
@@ -2231,16 +2271,16 @@ export default function CustomerDashboard() {
           </div>
           ) : (
             <div className="max-w-5xl mx-auto">
-              <div className="flex justify-between items-center mb-2">
+              <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
-                  <h3 className="text-xl font-bold text-gray-900">My Bookings</h3>
+                  <h3 className="text-2xl font-bold text-white tracking-tight">My Bookings</h3>
                   <button 
                     onClick={() => {
                       setLoading(true);
                       fetchBookings(true);
                     }}
                     disabled={loading}
-                    className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors disabled:opacity-50"
+                    className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-xl transition-all disabled:opacity-50"
                     title="Refresh bookings"
                   >
                     <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -2248,51 +2288,70 @@ export default function CustomerDashboard() {
                 </div>
               </div>
               
-              <div className="space-y-4">
+              {fetchError && (
+                <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center gap-3">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-semibold">Connection Error</p>
+                    <p className="text-sm opacity-80">{fetchError}. Please try refreshing the page or checking your internet connection.</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setLoading(true);
+                      fetchBookings(true);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-xs font-medium transition-colors"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              <div className="space-y-6">
                 {loading ? (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {[1, 2, 3].map(i => (
-                      <div key={i} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 animate-pulse">
+                      <div key={i} className="bg-black/40 border border-white/5 backdrop-blur-xl rounded-3xl p-6 animate-pulse">
                         <div className="flex justify-between items-center mb-4">
-                          <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+                          <div className="h-6 bg-white/10 rounded-lg w-1/3"></div>
                           <div className="flex gap-2">
-                            <div className="h-6 bg-gray-200 rounded-full w-20"></div>
-                            <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+                            <div className="h-6 bg-white/10 rounded-full w-20"></div>
+                            <div className="h-6 bg-white/10 rounded-full w-20"></div>
                           </div>
                         </div>
                         <div className="flex gap-4">
-                          <div className="h-4 bg-gray-200 rounded w-24"></div>
-                          <div className="h-4 bg-gray-200 rounded w-24"></div>
-                          <div className="h-4 bg-gray-200 rounded w-16"></div>
+                          <div className="h-4 bg-white/10 rounded-lg w-24"></div>
+                          <div className="h-4 bg-white/10 rounded-lg w-24"></div>
+                          <div className="h-4 bg-white/10 rounded-lg w-16"></div>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : bookings.length === 0 ? (
-                  <div className={`rounded-2xl shadow-sm border p-12 text-center bg-white border-gray-100`}>
-                    <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 bg-indigo-50`}>
-                      <Car className={`w-10 h-10 text-indigo-300`} />
+                  <div className={`rounded-3xl p-12 text-center bg-black/40 border border-white/5 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)]`}>
+                    <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 bg-indigo-500/10 border border-indigo-500/20`}>
+                      <Car className={`w-12 h-12 text-indigo-400`} />
                     </div>
-                    <h3 className={`text-lg font-bold mb-2 text-gray-900`}>No bookings yet</h3>
-                    <p className={`mb-6 max-w-sm mx-auto text-gray-500`}>You haven't made any bookings yet. Book your first ride to get started!</p>
+                    <h3 className={`text-xl font-bold mb-2 text-white tracking-tight`}>No bookings yet</h3>
+                    <p className={`mb-8 max-w-sm mx-auto text-white/50 leading-relaxed`}>You haven't made any bookings yet. Book your premium ride to get started.</p>
                     <button 
                       onClick={() => setActiveTab('dashboard')}
-                      className={`inline-flex items-center justify-center px-6 py-2.5 border border-transparent text-sm font-medium rounded-xl text-white shadow-sm transition-colors bg-indigo-600 hover:bg-indigo-700`}
+                      className={`inline-flex items-center justify-center px-8 py-3 text-sm font-medium rounded-2xl text-white shadow-[0_0_30px_rgba(99,102,241,0.3)] transition-all bg-indigo-600 hover:bg-indigo-500 transform active:scale-95 border border-indigo-400/30`}
                     >
                       Book a Ride
                     </button>
                   </div>
                 ) : (
-                  <div className={`relative border-l-2 ml-4 pl-8 space-y-8 border-indigo-100`}>
+                  <div className={`relative border-l-2 ml-4 pl-8 space-y-8 border-white/10`}>
                     {bookings.map((booking, index) => (
-                      <div key={booking.id} className="relative">
+                      <div key={booking.id} className="relative group">
                         {/* Timeline Node */}
-                        <div className={`absolute -left-[41px] top-6 w-5 h-5 rounded-full border-4 shadow-sm bg-indigo-500 border-white`}></div>
+                        <div className={`absolute -left-[41px] top-6 w-5 h-5 rounded-full border-4 bg-indigo-500 border-[#060608] shadow-[0_0_15px_rgba(99,102,241,0.5)] transition-transform group-hover:scale-125`}></div>
                         
-                        <div className={`rounded-2xl shadow-sm border overflow-hidden transition-colors bg-white border-gray-100 hover:border-indigo-100`}>
+                        <div className={`rounded-3xl overflow-hidden transition-all bg-black/40 border border-white/5 hover:border-white/20 hover:bg-white/5 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)]`}>
                           {/* Always visible header */}
                           <div 
-                            className={`p-6 cursor-pointer transition-colors hover:bg-gray-50`}
+                            className={`p-6 cursor-pointer`}
                             onClick={() => setExpandedBookingId(expandedBookingId === booking.id ? null : booking.id)}
                           >
                             <AbstractMiniMap 
@@ -2301,7 +2360,7 @@ export default function CustomerDashboard() {
                                
                             />
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2 sm:gap-4">
-                              <h4 className={`text-lg font-bold break-words w-full sm:w-auto text-gray-900`}>
+                              <h4 className={`text-lg font-bold break-words w-full sm:w-auto text-white tracking-tight`}>
                                 {booking.tripType === 'Car Renting'
                                   ? `Car Rental: ${booking.numberOfDays} days, ${booking.numberOfCars} cars`
                                   : booking.tripType === 'Tour' 
@@ -2309,10 +2368,10 @@ export default function CustomerDashboard() {
                                   : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
                               </h4>
                               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.rideStatus, booking.refundStatus)}`}>
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium border border-white/10 ${booking.rideStatus === 'Cancelled' ? 'bg-red-500/10 text-red-400' : 'bg-white/10 text-white'}`}>
                                   {booking.rideStatus === 'Cancelled' && booking.refundStatus === 'Processed' ? 'Refunded' : booking.rideStatus}
                                 </span>
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPaymentColor(booking.paymentStatus)}`}>
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium border border-white/10 ${booking.paymentStatus === 'Paid' ? 'bg-green-500/10 text-green-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
                                   {booking.paymentStatus}
                                 </span>
                                 {expandedBookingId === booking.id ? (
@@ -2322,16 +2381,16 @@ export default function CustomerDashboard() {
                                 )}
                               </div>
                             </div>
-                            <div className={`flex flex-wrap gap-4 text-sm text-gray-500`}>
+                            <div className={`flex flex-wrap gap-4 text-sm text-white/50`}>
                               <div className="flex items-center gap-1.5">
-                                <Calendar className={`w-4 h-4 text-indigo-500`} />
+                                <Calendar className={`w-4 h-4 text-indigo-400`} />
                                 {safeFormatDate(booking.rideDate, 'MMM d, yyyy')}
                               </div>
                               <div className="flex items-center gap-1.5">
-                                <Clock className={`w-4 h-4 text-red-500`} />
+                                <Clock className={`w-4 h-4 text-fuchsia-400`} />
                                 {safeFormatDate(booking.rideDate, 'h:mm a')}
                               </div>
-                              <div className={`flex items-center gap-1.5 font-medium text-gray-900`}>
+                              <div className={`flex items-center gap-1.5 font-medium text-white`}>
                                 ₹{parseFloat(booking.fareAmount).toFixed(2)}
                               </div>
                             </div>
@@ -2344,46 +2403,46 @@ export default function CustomerDashboard() {
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: 'auto', opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className={`border-t border-gray-100 bg-gray-50`}
+                                transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+                                className={`border-t border-white/10 bg-white/5`}
                               >
                                 <div className="p-6">
-                                  <div className={`flex flex-wrap gap-4 text-sm mb-6 text-gray-500`}>
+                                  <div className={`flex flex-wrap gap-4 text-sm mb-6 text-white/60`}>
                                     <div className="flex items-center gap-1.5">
-                                      <Car className="w-4 h-4 text-blue-400" />
+                                      <Car className="w-4 h-4 text-indigo-400" />
                                       {booking.suggestedVehicle || 'Sedan'} {booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
                                     </div>
                                   {booking.tripType !== 'Car Renting' && (
                                     <div className="flex items-center gap-1.5">
-                                      <Users className="w-4 h-4 text-purple-400" />
+                                      <Users className="w-4 h-4 text-fuchsia-400" />
                                       {booking.numberOfPeople} Passenger{booking.numberOfPeople > 1 ? 's' : ''}
                                     </div>
                                   )}
                                   {booking.tripType === 'Tour' && (
                                     <div className="flex items-center gap-1.5">
-                                      <Car className="w-4 h-4 text-green-400" />
+                                      <Car className="w-4 h-4 text-emerald-400" />
                                       {booking.numberOfCars} Vehicle{booking.numberOfCars > 1 ? 's' : ''}
                                     </div>
                                   )}
                                   </div>
                                   
                                   {booking.tripType === 'Wedding' && booking.weddingDetails && (
-                                    <div className={`mb-6 p-4 rounded-lg border shadow-sm bg-white border-pink-100`}>
-                                      <h5 className={`text-sm font-bold mb-3 flex items-center gap-2 text-pink-800`}>
+                                    <div className={`mb-6 p-4 rounded-2xl border shadow-sm bg-[#1A1A24] border-fuchsia-500/20`}>
+                                      <h5 className={`text-sm font-bold mb-3 flex items-center gap-2 text-fuchsia-400`}>
                                         <span className="text-lg">💍</span> Wedding Details
                                       </h5>
                                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                                         <div>
-                                          <span className={`block text-xs uppercase tracking-wider mb-1 text-gray-500`}>Event Location</span>
-                                          <span className={`font-medium text-gray-900`}>{booking.weddingDetails.eventLocation}</span>
+                                          <span className={`block text-xs uppercase tracking-wider mb-1 text-white/40`}>Event Location</span>
+                                          <span className={`font-medium text-white`}>{booking.weddingDetails.eventLocation}</span>
                                         </div>
                                         <div>
-                                          <span className={`block text-xs uppercase tracking-wider mb-1 text-gray-500`}>Vehicles Required</span>
-                                          <span className={`font-medium text-gray-900`}>{booking.weddingDetails.vehiclesRequired}</span>
+                                          <span className={`block text-xs uppercase tracking-wider mb-1 text-white/40`}>Vehicles Required</span>
+                                          <span className={`font-medium text-white`}>{booking.weddingDetails.vehiclesRequired}</span>
                                         </div>
                                         <div>
-                                          <span className={`block text-xs uppercase tracking-wider mb-1 text-gray-500`}>Decoration</span>
-                                          <span className={`font-medium text-gray-900`}>{booking.weddingDetails.decorationRequired}</span>
+                                          <span className={`block text-xs uppercase tracking-wider mb-1 text-white/40`}>Decoration</span>
+                                          <span className={`font-medium text-white`}>{booking.weddingDetails.decorationRequired}</span>
                                         </div>
                                       </div>
                                     </div>
@@ -2393,27 +2452,27 @@ export default function CustomerDashboard() {
                                   {booking.assignments && booking.assignments.length > 0 ? (
                                     <div className="mb-6 space-y-4">
                                       {booking.assignments.map((assignment: any, idx: number) => (
-                                        <div key={idx} className={`p-4 rounded-lg border shadow-sm bg-white border-indigo-100`}>
-                                          <h5 className={`text-sm font-semibold mb-2 text-indigo-900`}>
+                                        <div key={idx} className={`p-4 rounded-2xl border shadow-sm bg-[#1A1A24] border-indigo-500/20`}>
+                                          <h5 className={`text-sm font-semibold mb-2 text-indigo-400`}>
                                             {booking.assignments.length > 1 ? `Vehicle ${idx + 1} Details` : 'Driver & Vehicle Details'}
                                           </h5>
                                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             {assignment.driverDetails && (
                                               <>
                                                 <div>
-                                                  <p className={`text-xs uppercase tracking-wider text-indigo-700`}>Driver Name</p>
-                                                  <p className={`text-sm font-medium text-indigo-900`}>{assignment.driverDetails.name}</p>
+                                                  <p className={`text-xs uppercase tracking-wider text-white/40`}>Driver Name</p>
+                                                  <p className={`text-sm font-medium text-white`}>{assignment.driverDetails.name}</p>
                                                 </div>
                                                 <div>
-                                                  <p className={`text-xs uppercase tracking-wider text-indigo-700`}>Phone Number</p>
-                                                  <p className={`text-sm font-medium text-indigo-900`}>{assignment.driverDetails.phone}</p>
+                                                  <p className={`text-xs uppercase tracking-wider text-white/40`}>Phone Number</p>
+                                                  <p className={`text-sm font-medium text-white`}>{assignment.driverDetails.phone}</p>
                                                 </div>
                                               </>
                                             )}
                                             {assignment.vehicleDetails && (
                                               <div className="sm:col-span-2">
-                                                <p className={`text-xs uppercase tracking-wider text-indigo-700`}>Vehicle Assigned</p>
-                                                <p className={`text-sm font-medium text-indigo-900`}>{assignment.vehicleDetails.name} ({assignment.vehicleDetails.number})</p>
+                                                <p className={`text-xs uppercase tracking-wider text-white/40`}>Vehicle Assigned</p>
+                                                <p className={`text-sm font-medium text-white`}>{assignment.vehicleDetails.name} ({assignment.vehicleDetails.number})</p>
                                               </div>
                                             )}
                                           </div>
@@ -2421,28 +2480,28 @@ export default function CustomerDashboard() {
                                       ))}
                                     </div>
                                   ) : booking.driverDetails ? (
-                                    <div className={`mb-6 p-4 rounded-lg border shadow-sm bg-white border-indigo-100`}>
-                                      <h5 className={`text-sm font-semibold mb-2 text-indigo-900`}>Driver & Vehicle Details</h5>
+                                    <div className={`mb-6 p-4 rounded-2xl border shadow-sm bg-[#1A1A24] border-indigo-500/20`}>
+                                      <h5 className={`text-sm font-semibold mb-2 text-indigo-400`}>Driver & Vehicle Details</h5>
                                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                          <p className={`text-xs uppercase tracking-wider text-indigo-700`}>Driver Name</p>
-                                          <p className={`text-sm font-medium text-indigo-900`}>{booking.driverDetails.name}</p>
+                                          <p className={`text-xs uppercase tracking-wider text-white/40`}>Driver Name</p>
+                                          <p className={`text-sm font-medium text-white`}>{booking.driverDetails.name}</p>
                                         </div>
                                         <div>
-                                          <p className={`text-xs uppercase tracking-wider text-indigo-700`}>Phone Number</p>
-                                          <p className={`text-sm font-medium text-indigo-900`}>{booking.driverDetails.phone}</p>
+                                          <p className={`text-xs uppercase tracking-wider text-white/40`}>Phone Number</p>
+                                          <p className={`text-sm font-medium text-white`}>{booking.driverDetails.phone}</p>
                                         </div>
                                         {booking.vehicleDetails && (
                                           <div className="sm:col-span-2">
-                                            <p className={`text-xs uppercase tracking-wider text-indigo-700`}>Vehicle Assigned</p>
-                                            <p className={`text-sm font-medium text-indigo-900`}>{booking.vehicleDetails.name} ({booking.vehicleDetails.number})</p>
+                                            <p className={`text-xs uppercase tracking-wider text-white/40`}>Vehicle Assigned</p>
+                                            <p className={`text-sm font-medium text-white`}>{booking.vehicleDetails.name} ({booking.vehicleDetails.number})</p>
                                           </div>
                                         )}
                                       </div>
                                     </div>
                                   ) : booking.visibilityMessage ? (
-                                    <div className={`mb-6 p-4 rounded-lg border shadow-sm bg-blue-50 border-blue-100`}>
-                                      <p className={`text-sm flex items-center gap-2 text-blue-700`}>
+                                    <div className={`mb-6 p-4 rounded-2xl border shadow-sm bg-blue-500/10 border-blue-500/20`}>
+                                      <p className={`text-sm flex items-center gap-2 text-blue-400`}>
                                         <Info className="w-5 h-5 flex-shrink-0" />
                                         {booking.visibilityMessage}
                                       </p>
@@ -2450,16 +2509,16 @@ export default function CustomerDashboard() {
                                   ) : null}
   
                                   {booking.rideStatus === 'Cancelled' && (
-                                    <div className={`mb-6 p-4 rounded-lg border shadow-sm bg-red-50 border-red-100`}>
-                                      <h5 className={`text-sm font-semibold mb-2 text-red-900`}>Refund Details</h5>
+                                    <div className={`mb-6 p-4 rounded-2xl border shadow-sm bg-red-500/10 border-red-500/20`}>
+                                      <h5 className={`text-sm font-semibold mb-2 text-red-400`}>Refund Details</h5>
                                       <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                          <p className={`text-xs uppercase tracking-wider text-red-700`}>Status</p>
-                                          <p className={`text-sm font-medium text-red-900`}>{booking.refundStatus || 'No Refund'}</p>
+                                          <p className={`text-xs uppercase tracking-wider text-white/40`}>Status</p>
+                                          <p className={`text-sm font-medium text-white`}>{booking.refundStatus || 'No Refund'}</p>
                                         </div>
                                         <div>
-                                          <p className={`text-xs uppercase tracking-wider text-red-700`}>Amount</p>
-                                          <p className={`text-sm font-medium text-red-900`}>₹{booking.refundAmount?.toFixed(2) || '0.00'}</p>
+                                          <p className={`text-xs uppercase tracking-wider text-white/40`}>Amount</p>
+                                          <p className={`text-sm font-medium text-white`}>₹{booking.refundAmount?.toFixed(2) || '0.00'}</p>
                                         </div>
                                       </div>
                                     </div>
@@ -2467,15 +2526,15 @@ export default function CustomerDashboard() {
   
                                   <div className="flex justify-between items-end">
                                     <div>
-                                      <p className={`text-xs font-medium uppercase tracking-wider mb-1 text-gray-400`}>Booking ID</p>
-                                      <p className={`text-sm font-medium text-gray-900`}>#{booking.id}</p>
+                                      <p className={`text-xs font-semibold uppercase tracking-wider mb-1 text-white/40`}>Booking ID</p>
+                                      <p className={`text-sm font-medium text-white`}>#{booking.id}</p>
                                     </div>
                                     <div className="flex flex-col items-end gap-2">
-                                      <div className="flex gap-2">
+                                      <div className="flex gap-3">
                                         {booking.rideStatus === 'Completed' && (
                                           <button
                                             onClick={() => setRebookModal({ isOpen: true, booking })}
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-indigo-100 text-indigo-700 hover:bg-indigo-200`}
+                                            className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 border border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.1)]`}
                                           >
                                             Rebook Ride
                                           </button>
@@ -2486,14 +2545,14 @@ export default function CustomerDashboard() {
                                               const refundInfo = calculateRefund(booking.rideDate, parseFloat(booking.fareAmount || '0'), booking.numberOfDays);
                                               setCancelModal({ isOpen: true, booking, refundInfo });
                                             }}
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-red-100 text-red-600 hover:bg-red-200`}
+                                            className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.1)]`}
                                           >
                                             Cancel Ride
                                           </button>
                                         )}
                                       </div>
                                       {cancelMessage && cancelMessage.id === booking.id && (
-                                        <p className={`text-xs max-w-[200px] text-right ${cancelMessage.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>
+                                        <p className={`text-xs max-w-[200px] text-right ${cancelMessage.type === 'error' ? 'text-red-400' : 'text-emerald-400'}`}>
                                           {cancelMessage.text}
                                         </p>
                                       )}
@@ -2519,20 +2578,20 @@ export default function CustomerDashboard() {
     {/* Cancel Modal */}
       <AnimatePresence>
         {cancelModal.isOpen && cancelModal.booking && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#060608]/80 backdrop-blur-md">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
-              className={`rounded-2xl shadow-xl max-w-md w-full overflow-hidden bg-white`}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.3, type: "spring", bounce: 0.4 }}
+              className={`rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] max-w-md w-full overflow-hidden bg-[#13131A] border border-white/10`}
             >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className={`text-xl font-bold text-gray-900`}>Cancel Ride</h3>
+              <div className="p-6 sm:p-8">
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className={`text-2xl font-bold text-white tracking-tight`}>Cancel Ride</h3>
                   <button 
                     onClick={() => setCancelModal({ isOpen: false, booking: null, refundInfo: null })}
-                    className={`hover:text-gray-500 transition-colors text-gray-400`}
+                    className={`hover:text-white transition-colors text-white/50 p-2 rounded-xl hover:bg-white/5`}
                   >
                     <span className="sr-only">Close</span>
                     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2541,34 +2600,34 @@ export default function CustomerDashboard() {
                   </button>
                 </div>
                 
-                <div className={`mb-6 p-4 rounded-xl border bg-gray-50 border-gray-100`}>
-                  <p className={`text-sm mb-2 text-gray-600`}>
-                    <span className={`font-medium text-gray-900`}>Route:</span> {cancelModal.booking.tripType === 'Car Renting' ? `Car Rental: ${cancelModal.booking.numberOfDays} days, ${cancelModal.booking.numberOfCars} cars` : cancelModal.booking.tripType === 'Tour' ? `${cancelModal.booking.fromLocation} \u2192 ${Array.isArray(cancelModal.booking.destinations) ? cancelModal.booking.destinations.join(', ') : cancelModal.booking.destinations}` : `${cancelModal.booking.fromLocation} \u2192 ${cancelModal.booking.toLocation}`}
+                <div className={`mb-6 p-5 rounded-2xl border bg-black/50 border-white/5 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]`}>
+                  <p className={`text-sm mb-3 text-white/70`}>
+                    <span className={`font-semibold text-white/40 uppercase tracking-wider text-xs mr-2`}>Route:</span> {cancelModal.booking.tripType === 'Car Renting' ? `Car Rental: ${cancelModal.booking.numberOfDays} days, ${cancelModal.booking.numberOfCars} cars` : cancelModal.booking.tripType === 'Tour' ? `${cancelModal.booking.fromLocation} \u2192 ${Array.isArray(cancelModal.booking.destinations) ? cancelModal.booking.destinations.join(', ') : cancelModal.booking.destinations}` : `${cancelModal.booking.fromLocation} \u2192 ${cancelModal.booking.toLocation}`}
                   </p>
-                  <p className={`text-sm mb-2 text-gray-600`}>
-                    <span className={`font-medium text-gray-900`}>Departure:</span> {cancelModal.booking.rideDate}
+                  <p className={`text-sm mb-3 text-white/70`}>
+                    <span className={`font-semibold text-white/40 uppercase tracking-wider text-xs mr-2`}>Departure:</span> {cancelModal.booking.rideDate}
                   </p>
-                  <p className={`text-sm text-gray-600`}>
-                    <span className={`font-medium text-gray-900`}>Fare:</span> ₹{cancelModal.booking.fareAmount}
+                  <p className={`text-sm text-white/70`}>
+                    <span className={`font-semibold text-white/40 uppercase tracking-wider text-xs mr-2`}>Fare:</span> ₹{cancelModal.booking.fareAmount}
                   </p>
                 </div>
 
                 {cancelModal.refundInfo && (
-                  <div className={`mb-6 p-4 rounded-xl border ${cancelModal.refundInfo.refundPercent > 0 ? ('bg-green-50 border-green-100 text-green-800') : ('bg-red-50 border-red-100 text-red-800')}`}>
-                    <h4 className="font-semibold mb-1">Cancellation Policy</h4>
-                    <p className="text-sm mb-2">{cancelModal.refundInfo.message}</p>
-                    <div className="flex justify-between items-center font-bold">
+                  <div className={`mb-8 p-5 rounded-2xl border ${cancelModal.refundInfo.refundPercent > 0 ? ('bg-emerald-500/10 border-emerald-500/20 text-emerald-100') : ('bg-red-500/10 border-red-500/20 text-red-100')}`}>
+                    <h4 className={`font-bold mb-2 ${cancelModal.refundInfo.refundPercent > 0 ? 'text-emerald-400' : 'text-red-400'}`}>Cancellation Policy</h4>
+                    <p className="text-sm mb-4 leading-relaxed opacity-90">{cancelModal.refundInfo.message}</p>
+                    <div className="flex justify-between items-center font-bold text-lg pt-4 border-t border-white/10">
                       <span>Estimated Refund:</span>
                       <span>₹{cancelModal.refundInfo.refundAmount.toFixed(2)}</span>
                     </div>
                   </div>
                 )}
 
-                <div className="flex gap-3 justify-end">
+                <div className="flex gap-4 justify-end">
                   <button
                     type="button"
                     onClick={() => setCancelModal({ isOpen: false, booking: null, refundInfo: null })}
-                    className={`px-4 py-2 text-sm font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors text-gray-700 bg-white border border-gray-300 hover:bg-gray-50`}
+                    className={`px-6 py-3 text-sm font-medium rounded-xl transition-all text-white/70 hover:text-white bg-white/5 border border-white/10 hover:bg-white/10`}
                   >
                     Keep Ride
                   </button>
@@ -2580,7 +2639,7 @@ export default function CustomerDashboard() {
                         setCancelModal({ isOpen: false, booking: null, refundInfo: null });
                       }
                     }}
-                    className={`px-4 py-2 text-sm font-medium text-white border border-transparent rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors bg-red-600 hover:bg-red-700`}
+                    className={`px-6 py-3 text-sm font-medium text-white border border-red-500/30 rounded-xl transition-all bg-red-600 hover:bg-red-500 shadow-[0_0_20px_rgba(220,38,38,0.4)]`}
                   >
                     Confirm Cancellation
                   </button>
@@ -2594,20 +2653,20 @@ export default function CustomerDashboard() {
       {/* Rebook Modal */}
       <AnimatePresence>
         {rebookModal.isOpen && rebookModal.booking && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#060608]/80 backdrop-blur-md">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
-              className={`rounded-2xl shadow-xl max-w-md w-full overflow-hidden bg-white`}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.3, type: "spring", bounce: 0.4 }}
+              className={`rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] max-w-md w-full overflow-hidden bg-[#13131A] border border-white/10`}
             >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className={`text-xl font-bold text-gray-900`}>Rebook Ride</h3>
+              <div className="p-6 sm:p-8">
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className={`text-2xl font-bold text-white tracking-tight`}>Rebook Ride</h3>
                   <button 
                     onClick={() => setRebookModal({ isOpen: false, booking: null })}
-                    className={`hover:text-gray-500 transition-colors text-gray-400`}
+                    className={`hover:text-white transition-colors text-white/50 p-2 rounded-xl hover:bg-white/5`}
                   >
                     <span className="sr-only">Close</span>
                     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2616,24 +2675,24 @@ export default function CustomerDashboard() {
                   </button>
                 </div>
                 
-                <div className={`mb-6 p-4 rounded-xl border bg-gray-50 border-gray-100`}>
-                  <p className={`text-sm mb-2 text-gray-600`}>
-                    <span className={`font-medium text-gray-900`}>Route:</span> {rebookModal.booking.tripType === 'Car Renting' ? `Car Rental: ${rebookModal.booking.numberOfDays} days, ${rebookModal.booking.numberOfCars} cars` : rebookModal.booking.tripType === 'Tour' ? `${rebookModal.booking.fromLocation} \u2192 ${Array.isArray(rebookModal.booking.destinations) ? rebookModal.booking.destinations.join(', ') : rebookModal.booking.destinations}` : `${rebookModal.booking.fromLocation} \u2192 ${rebookModal.booking.toLocation}`}
+                <div className={`mb-6 p-5 rounded-2xl border bg-black/50 border-white/5 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]`}>
+                  <p className={`text-sm mb-3 text-white/70`}>
+                    <span className={`font-semibold text-white/40 uppercase tracking-wider text-xs mr-2`}>Route:</span> {rebookModal.booking.tripType === 'Car Renting' ? `Car Rental: ${rebookModal.booking.numberOfDays} days, ${rebookModal.booking.numberOfCars} cars` : rebookModal.booking.tripType === 'Tour' ? `${rebookModal.booking.fromLocation} \u2192 ${Array.isArray(rebookModal.booking.destinations) ? rebookModal.booking.destinations.join(', ') : rebookModal.booking.destinations}` : `${rebookModal.booking.fromLocation} \u2192 ${rebookModal.booking.toLocation}`}
                   </p>
-                  <p className={`text-sm text-gray-600`}>
-                    <span className={`font-medium text-gray-900`}>Vehicle:</span> {rebookModal.booking.suggestedVehicle} {rebookModal.booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
+                  <p className={`text-sm text-white/70`}>
+                    <span className={`font-semibold text-white/40 uppercase tracking-wider text-xs mr-2`}>Vehicle:</span> {rebookModal.booking.suggestedVehicle} {rebookModal.booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
                   </p>
                 </div>
 
-                <form onSubmit={handleRebookSubmit} className="space-y-4">
+                <form onSubmit={handleRebookSubmit} className="space-y-6">
                   {rebookError && (
-                    <div className={`p-3 text-sm rounded-lg border bg-red-50 text-red-700 border-red-100`}>
+                    <div className={`p-4 text-sm rounded-xl border bg-red-500/10 text-red-400 border-red-500/20`}>
                       {rebookError}
                     </div>
                   )}
                   
                   <div>
-                    <label className={`block text-sm font-medium mb-1 text-gray-700`}>Select New Date</label>
+                    <label className={`block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase`}>Select New Date</label>
                     <input
                       type="date"
                       required
@@ -2641,27 +2700,27 @@ export default function CustomerDashboard() {
                       value={rebookDate}
                       onChange={(e) => setRebookDate(e.target.value)}
                       onFocus={handleInputFocus}
-                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white border-gray-300 text-gray-900`}
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-[#13131A] shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] border-white/5 text-white`}
                     />
                   </div>
                   
                   <div>
-                    <label className={`block text-sm font-medium mb-1 text-gray-700`}>Select New Time</label>
+                    <label className={`block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase`}>Select New Time</label>
                     <div className="flex gap-2 items-center">
                       <select
                         value={rebookTimeHour}
                         onChange={(e) => setRebookTimeHour(e.target.value)}
-                        className={`block w-full flex-1 border rounded-xl shadow-sm py-2.5 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors bg-white border-gray-300 text-gray-900`}
+                        className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-[#13131A] border-white/5 text-white appearance-none`}
                       >
                         {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
                           <option key={h} value={h.toString().padStart(2, '0')}>{h.toString().padStart(2, '0')}</option>
                         ))}
                       </select>
-                      <span className={`flex items-center font-bold text-gray-500`}>:</span>
+                      <span className={`flex items-center font-bold text-white/30`}>:</span>
                       <select
                         value={rebookTimeMinute}
                         onChange={(e) => setRebookTimeMinute(e.target.value)}
-                        className={`block w-full flex-1 border rounded-xl shadow-sm py-2.5 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors bg-white border-gray-300 text-gray-900`}
+                        className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-[#13131A] border-white/5 text-white appearance-none`}
                       >
                         {['00', '15', '30', '45'].map(m => (
                           <option key={m} value={m}>{m}</option>
@@ -2670,7 +2729,7 @@ export default function CustomerDashboard() {
                       <select
                         value={rebookTimeAmPm}
                         onChange={(e) => setRebookTimeAmPm(e.target.value)}
-                        className={`block w-full flex-1 border rounded-xl shadow-sm py-2.5 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors bg-white border-gray-300 text-gray-900`}
+                        className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-[#13131A] border-white/5 text-white appearance-none`}
                       >
                         <option value="AM">AM</option>
                         <option value="PM">PM</option>
@@ -2678,18 +2737,18 @@ export default function CustomerDashboard() {
                     </div>
                   </div>
                   
-                  <div className="pt-4 flex gap-3">
+                  <div className="pt-6 flex gap-4">
                     <button
                       type="button"
                       onClick={() => setRebookModal({ isOpen: false, booking: null })}
-                      className={`flex-1 px-4 py-2.5 border rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors border-gray-300 text-gray-700 bg-white hover:bg-gray-50`}
+                      className={`flex-1 px-6 py-3 border rounded-xl text-sm font-medium transition-all border-white/10 text-white/70 bg-white/5 hover:bg-white/10 hover:text-white`}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={rebookLoading || !rebookDate}
-                      className={`flex-1 px-4 py-2.5 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center transition-colors bg-indigo-600 hover:bg-indigo-700`}
+                      className={`flex-1 px-6 py-3 border border-indigo-400/30 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center transition-all bg-indigo-600 hover:bg-indigo-500`}
                     >
                       {rebookLoading ? (
                         <RefreshCw className="w-5 h-5 animate-spin" />
@@ -2708,39 +2767,44 @@ export default function CustomerDashboard() {
       {/* Booking Success Modal */}
       <AnimatePresence>
         {bookingSuccessData && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#060608]/80 backdrop-blur-md">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
-              className={`rounded-2xl shadow-xl max-w-md w-full overflow-hidden bg-white max-h-[90dvh] flex flex-col`}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.4, type: "spring", bounce: 0.5 }}
+              className={`rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] max-w-md w-full overflow-hidden bg-[#13131A] border border-white/10 max-h-[90dvh] flex flex-col`}
             >
-              <div className="p-6 text-center overflow-y-auto flex-1 relative">
-                <div className="relative mx-auto w-24 h-24 mb-6 flex items-center justify-center">
+              <div className="p-8 text-center overflow-y-auto flex-1 relative">
+                <div className="relative mx-auto w-28 h-28 mb-8 flex items-center justify-center">
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                    className={`relative z-10 w-20 h-20 rounded-full flex items-center justify-center bg-green-500 shadow-lg`}
+                    className={`relative z-10 w-24 h-24 rounded-full flex items-center justify-center bg-emerald-500 shadow-[0_0_40px_rgba(16,185,129,0.4)] border border-emerald-400/50`}
                   >
                     <motion.div
                       initial={{ pathLength: 0 }}
                       animate={{ pathLength: 1 }}
                       transition={{ duration: 0.5, delay: 0.2 }}
                     >
-                      <CheckCircle className="w-10 h-10 text-white" />
+                      <CheckCircle className="w-12 h-12 text-white" />
                     </motion.div>
                   </motion.div>
+                  <motion.div 
+                    animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className={`absolute inset-0 rounded-full blur-2xl bg-emerald-500/30`}
+                  />
                 </div>
                 
-                <h2 className={`text-2xl font-bold mb-6 text-gray-900`}>Booking Confirmed</h2>
+                <h2 className={`text-3xl font-bold mb-8 text-white tracking-tight`}>Booking Confirmed</h2>
 
-                <div className={`rounded-xl p-4 text-left border mb-6 bg-gray-50 border-gray-100`}>
-                  <div className="space-y-3 text-sm">
+                <div className={`rounded-2xl p-5 text-left border mb-8 bg-black/50 border-white/5 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]`}>
+                  <div className="space-y-4 text-sm">
                     <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-4">
-                      <span className={'text-gray-500 whitespace-nowrap'}>Route</span>
-                      <span className={`font-medium text-left sm:text-right text-gray-900 break-words`}>
+                      <span className={'text-white/50 uppercase tracking-wider text-xs font-semibold whitespace-nowrap'}>Route</span>
+                      <span className={`font-medium text-left sm:text-right text-white break-words`}>
                         {bookingSuccessData.tripType === 'Car Renting'
                           ? `Car Rental: ${bookingSuccessData.numberOfDays} days, ${bookingSuccessData.numberOfCars} cars`
                           : bookingSuccessData.tripType === 'Tour' 
@@ -2748,35 +2812,35 @@ export default function CustomerDashboard() {
                           : `${bookingSuccessData.fromLocation} \u2192 ${bookingSuccessData.toLocation}`}
                       </span>
                     </div>
-                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-4">
-                      <span className={'text-gray-500 whitespace-nowrap'}>Departure</span>
-                      <span className={`font-medium text-left sm:text-right text-gray-900`}>
+                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-4 pt-4 border-t border-white/10">
+                      <span className={'text-white/50 uppercase tracking-wider text-xs font-semibold whitespace-nowrap'}>Departure</span>
+                      <span className={`font-medium text-left sm:text-right text-white`}>
                         {safeFormatDate(bookingSuccessData.rideDate, 'dd/MM/yyyy hh:mm a')}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-3 mb-8">
-                  <div className={`p-3 rounded-lg text-sm border flex items-start gap-2 text-left bg-indigo-50 text-indigo-700 border-indigo-100`}>
-                    <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                    <p>We will contact you shortly.</p>
+                <div className="space-y-4 mb-4">
+                  <div className={`p-4 rounded-xl text-sm border flex items-start gap-3 text-left bg-indigo-500/10 text-indigo-100 border-indigo-500/20`}>
+                    <Info className="w-5 h-5 flex-shrink-0 mt-0.5 text-indigo-400" />
+                    <p className="opacity-90">We will contact you shortly.</p>
                   </div>
-                  <div className={`p-3 rounded-lg text-sm border flex items-start gap-2 text-left bg-blue-50 text-blue-700 border-blue-100`}>
-                    <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                    <p>You will receive an SMS with driver and vehicle information once assigned.</p>
+                  <div className={`p-4 rounded-xl text-sm border flex items-start gap-3 text-left bg-blue-500/10 text-blue-100 border-blue-500/20`}>
+                    <Info className="w-5 h-5 flex-shrink-0 mt-0.5 text-blue-400" />
+                    <p className="opacity-90">You will receive an SMS with driver and vehicle information once assigned.</p>
                   </div>
                 </div>
               </div>
-              <div className="p-6 pt-0 bg-white border-t border-gray-100">
-                <div className="flex flex-col sm:flex-row gap-3 w-full mt-4">
+              <div className="p-6 pt-0 border-t border-white/10 bg-[#13131A]">
+                <div className="flex flex-col sm:flex-row gap-4 w-full mt-6">
                   <button
                     onClick={() => {
                       setActiveTab('bookings');
                       setBookingSuccessData(null);
                       setBookingStep(1);
                     }}
-                    className={`flex-1 justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition-colors bg-indigo-600 hover:bg-indigo-700`}
+                    className={`flex-1 justify-center py-3 px-6 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] text-sm font-medium text-white transition-all bg-indigo-600 hover:bg-indigo-500 border border-indigo-400/30 transform active:scale-95`}
                   >
                     Go to My Bookings
                   </button>
@@ -2786,7 +2850,7 @@ export default function CustomerDashboard() {
                       setBookingStep(1);
                       setIsSheetExpanded(false);
                     }}
-                    className={`flex-1 justify-center py-2.5 px-4 border rounded-md shadow-sm text-sm font-medium transition-colors border-indigo-600 text-indigo-600 bg-white hover:bg-indigo-50`}
+                    className={`flex-1 justify-center py-3 px-6 rounded-xl text-sm font-medium transition-all border text-white/80 bg-white/5 hover:bg-white/10 hover:text-white border-white/10 transform active:scale-95`}
                   >
                     Book Another
                   </button>

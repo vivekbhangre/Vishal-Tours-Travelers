@@ -148,10 +148,10 @@ export default function InteractiveMap({ fromLocation, toLocation, destinations 
     };
   }, [points]);
 
-  const tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+  const tileUrl = 'https://{s}.basemaps.cartocdn.com/voyager/{z}/{x}/{y}{r}.png';
 
   return (
-    <div className="h-full w-full z-0">
+    <div className={`h-full w-full z-0 transition-[filter] duration-500 ${theme === 'dark' ? 'invert hue-rotate-180 brightness-[0.85] contrast-[1.2] grayscale-[0.2]' : 'brightness-[1.02] contrast-[1.05] saturate-[1.1]'}`}>
       <MapContainer center={[20.5937, 78.9629]} zoom={5} style={{ height: '100%', width: '100%' }} attributionControl={false}>
         <TileLayer
           url={tileUrl}
@@ -178,12 +178,12 @@ export default function InteractiveMap({ fromLocation, toLocation, destinations 
         {routePath.length > 1 && (
           <>
             {/* Background solid line */}
-            <Polyline positions={routePath} color="#4f46e5" weight={5} opacity={0.3} />
+            <Polyline positions={routePath} color={theme === 'dark' ? '#000000' : '#4f46e5'} weight={theme === 'dark' ? 6 : 5} opacity={theme === 'dark' ? 0.5 : 0.3} />
             {/* Foreground animated dashed line */}
             <Polyline 
               positions={routePath} 
-              color="#4f46e5" 
-              weight={5} 
+              color={theme === 'dark' ? '#000000' : '#4f46e5'} 
+              weight={theme === 'dark' ? 6 : 5} 
               opacity={0.9} 
               className="animated-route-path"
             />

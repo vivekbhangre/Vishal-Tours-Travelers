@@ -41,34 +41,36 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col transition-colors duration-300">
-      <Navbar />
+    <div className="min-h-screen bg-[#F5F5F7] dark:bg-[#060608] flex flex-col transition-colors duration-500 relative">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50/50 via-[#F5F5F7] to-[#F5F5F7] dark:from-indigo-900/10 dark:via-[#060608] dark:to-[#060608] z-0 pointer-events-none transition-colors duration-500"></div>
+      
+      <div className="absolute inset-x-0 top-0 bottom-0 z-0 pointer-events-none overflow-hidden opacity-100 dark:opacity-40 transition-opacity duration-500 mix-blend-normal">
+        <GenuineIndiaMap />
+      </div>
+
+      <div className="relative z-10 w-full flex flex-col flex-grow">
+        <Navbar />
       
       {/* Main Content Wrapper to push footer to bottom if content is short */}
       <div className="flex-grow">
         {/* Hero Section */}
-        <div className="relative w-full min-h-[calc(100dvh-64px)] flex items-center justify-center lg:justify-start overflow-hidden bg-gray-900">
-          {/* Background */}
-          <div className="absolute inset-0 z-0 pointer-events-none">
-            <GenuineIndiaMap />
-          </div>
-
+        <div className="relative w-full min-h-[calc(100dvh-64px)] flex items-center justify-center lg:justify-start overflow-hidden">
           {/* Text Content */}
           <div className="relative z-20 w-full px-4 sm:px-6 lg:px-24 xl:px-32 flex justify-center lg:justify-start pt-8 lg:pt-0">
             <motion.div 
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="w-full max-w-2xl rounded-3xl p-8 sm:p-12 text-center lg:text-left shadow-2xl relative overflow-hidden bg-white/10 backdrop-blur-sm border border-white/20"
+              className="w-full max-w-2xl rounded-3xl p-8 sm:p-12 text-center lg:text-left shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] dark:shadow-2xl relative overflow-hidden bg-white/40 backdrop-blur-md border border-white/40 transition-colors duration-500"
             >
               {/* Subtle noise overlay for premium glass feel */}
               <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
               
-              <h1 className="relative z-10 text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl drop-shadow-sm leading-tight">
+              <h1 className="relative z-10 text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl drop-shadow-[0_0_15px_rgba(0,0,0,0.05)] dark:drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] leading-tight transition-colors duration-500">
                 <span className="block mb-2">Your Journey,</span>
                 <span className="block text-indigo-600">Our Priority</span>
               </h1>
-              <p className="relative z-10 mt-6 text-base text-gray-700 sm:text-lg md:text-xl drop-shadow-sm leading-relaxed font-light">
+              <p className="relative z-10 mt-6 text-base text-gray-600 sm:text-lg md:text-xl drop-shadow-[0_0_10px_rgba(255,255,255,0.5)] dark:drop-shadow-[0_0_10px_rgba(0,0,0,0.5)] leading-relaxed font-light transition-colors duration-500">
                 Experience the best touring and traveling services with Vishal Tour & Travelers. We offer comfortable, safe, and reliable rides for all your needs.
               </p>
               <div className="relative z-10 mt-10 sm:flex sm:justify-center lg:justify-start gap-4">
@@ -82,7 +84,7 @@ export default function Home() {
                 {!user && (
                   <Link
                     to="/login"
-                    className="mt-4 sm:mt-0 w-full sm:w-auto flex items-center justify-center px-8 py-3.5 text-base font-medium rounded-xl text-gray-900 bg-white/50 transition-all duration-300 hover:bg-white/80 hover:shadow-lg transform hover:-translate-y-1 border border-gray-200"
+                    className="mt-4 sm:mt-0 w-full sm:w-auto flex items-center justify-center px-8 py-3.5 text-base font-medium rounded-xl text-gray-900 bg-white/30 transition-all duration-300 hover:bg-white/50 shadow-[0_0_15px_rgba(0,0,0,0.02)] dark:shadow-[0_0_15px_rgba(255,255,255,0.02)] hover:shadow-[0_0_25px_rgba(0,0,0,0.05)] dark:hover:shadow-[0_0_25px_rgba(255,255,255,0.05)] transform hover:-translate-y-1 border border-white/50 backdrop-blur-md"
                   >
                     Login
                   </Link>
@@ -90,25 +92,15 @@ export default function Home() {
               </div>
             </motion.div>
           </div>
-
-          {/* Smooth Blend/Blur into next section */}
-          <div 
-            className="absolute bottom-0 left-0 right-0 h-48 z-20 pointer-events-none bg-gradient-to-t from-gray-50 to-transparent"
-            style={{
-              backdropFilter: 'blur(8px)',
-              WebkitMaskImage: 'linear-gradient(to top, black 10%, transparent 100%)',
-              maskImage: 'linear-gradient(to top, black 10%, transparent 100%)'
-            }}
-          ></div>
         </div>
 
         {/* Features Section - Bento Grid */}
-        <div className="py-24 bg-gray-50 transition-colors duration-300">
+        <div className="py-24 bg-transparent transition-colors duration-500 relative z-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <ScrollReveal>
               <div className="text-center max-w-3xl mx-auto mb-16">
                 <h2 className="text-sm text-indigo-600 font-bold tracking-widest uppercase mb-3">Why Choose Us</h2>
-                <p className="text-4xl leading-tight font-extrabold text-gray-900 sm:text-5xl">
+                <p className="text-4xl leading-tight font-extrabold text-gray-900 sm:text-5xl transition-colors duration-500">
                   A better way to travel
                 </p>
               </div>
@@ -119,15 +111,15 @@ export default function Home() {
               <ScrollReveal delay={0.1} className="md:col-span-2">
                 <motion.div 
                   whileHover={{ y: -5 }}
-                  className="h-full bg-white rounded-3xl p-8 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all duration-300"
+                  className="h-full bg-white/10 dark:bg-white/5 backdrop-blur-md rounded-3xl p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] border border-white/20 relative overflow-hidden group transition-all duration-500"
                 >
-                  <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-indigo-50 rounded-full blur-3xl group-hover:bg-indigo-100 transition-colors duration-500"></div>
+                  <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-indigo-50 rounded-full blur-3xl group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors duration-500"></div>
                   <div className="relative z-10">
-                    <div className="h-14 w-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-6 border border-indigo-100">
+                    <div className="h-14 w-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-6 border border-indigo-100 transition-colors duration-500">
                       <MapPin className="h-7 w-7" />
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-3">Anywhere, Anytime</h3>
-                    <p className="text-gray-600 text-lg leading-relaxed max-w-md">
+                    <h3 className="text-2xl font-bold text-gray-900 mb-3 transition-colors duration-500">Anywhere, Anytime</h3>
+                    <p className="text-gray-600 text-lg leading-relaxed max-w-md transition-colors duration-500">
                       We cover a wide range of locations. Just tell us where you want to go, and we'll get you there safely and comfortably.
                     </p>
                   </div>
@@ -138,15 +130,15 @@ export default function Home() {
               <ScrollReveal delay={0.2}>
                 <motion.div 
                   whileHover={{ y: -5 }}
-                  className="h-full bg-white rounded-3xl p-8 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all duration-300"
+                  className="h-full bg-white/10 dark:bg-white/5 backdrop-blur-md rounded-3xl p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] border border-white/20 relative overflow-hidden group transition-all duration-500"
                 >
-                  <div className="absolute bottom-0 right-0 w-24 h-24 bg-green-50 rounded-full blur-2xl group-hover:bg-green-100 transition-colors duration-500"></div>
+                  <div className="absolute bottom-0 right-0 w-24 h-24 bg-green-50 rounded-full blur-2xl group-hover:bg-green-100 dark:group-hover:bg-green-900/40 transition-colors duration-500"></div>
                   <div className="relative z-10">
-                    <div className="h-12 w-12 rounded-xl bg-green-100 text-green-600 flex items-center justify-center mb-6 border border-green-200">
+                    <div className="h-12 w-12 rounded-xl bg-green-100 text-green-600 flex items-center justify-center mb-6 border border-green-200 transition-colors duration-500">
                       <Calendar className="h-6 w-6" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Easy Booking</h3>
-                    <p className="text-gray-600">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 transition-colors duration-500">Easy Booking</h3>
+                    <p className="text-gray-600 transition-colors duration-500">
                       Our simple booking process ensures you can reserve your ride in just a few clicks.
                     </p>
                   </div>
@@ -157,15 +149,15 @@ export default function Home() {
               <ScrollReveal delay={0.3}>
                 <motion.div 
                   whileHover={{ y: -5 }}
-                  className="h-full bg-white rounded-3xl p-8 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all duration-300"
+                  className="h-full bg-white/10 dark:bg-white/5 backdrop-blur-md rounded-3xl p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] border border-white/20 relative overflow-hidden group transition-all duration-500"
                 >
-                  <div className="absolute top-0 left-0 w-24 h-24 bg-red-50 rounded-full blur-2xl group-hover:bg-red-100 transition-colors duration-500"></div>
+                  <div className="absolute top-0 left-0 w-24 h-24 bg-red-50 rounded-full blur-2xl group-hover:bg-red-100 dark:group-hover:bg-red-900/40 transition-colors duration-500"></div>
                   <div className="relative z-10">
-                    <div className="h-12 w-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center mb-6 border border-red-200">
+                    <div className="h-12 w-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center mb-6 border border-red-200 transition-colors duration-500">
                       <ShieldCheck className="h-6 w-6" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Safe & Secure</h3>
-                    <p className="text-gray-600">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 transition-colors duration-500">Safe & Secure</h3>
+                    <p className="text-gray-600 transition-colors duration-500">
                       Your safety is our top priority. All our drivers are verified and vehicles are regularly inspected.
                     </p>
                   </div>
@@ -176,15 +168,15 @@ export default function Home() {
               <ScrollReveal delay={0.4} className="md:col-span-2">
                 <motion.div 
                   whileHover={{ y: -5 }}
-                  className="h-full bg-white rounded-3xl p-8 shadow-sm border border-gray-100 relative overflow-hidden group flex flex-col md:flex-row items-start md:items-center gap-6 hover:shadow-md transition-all duration-300"
+                  className="h-full bg-white/10 dark:bg-white/5 backdrop-blur-md rounded-3xl p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] border border-white/20 transition-all duration-500 group flex flex-col md:flex-row items-start md:items-center gap-6"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <div className="h-16 w-16 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-indigo-200">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-50/30 dark:via-indigo-900/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="h-16 w-16 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20">
                     <CreditCard className="h-8 w-8" />
                   </div>
                   <div className="relative z-10">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">Transparent Pricing</h3>
-                    <p className="text-gray-600 text-lg">
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2 transition-colors duration-500">Transparent Pricing</h3>
+                    <p className="text-gray-600 text-lg transition-colors duration-500">
                       No hidden fees. You know exactly what you'll pay before you book your ride. We believe in fair and honest pricing for all our customers.
                     </p>
                   </div>
@@ -195,14 +187,14 @@ export default function Home() {
         </div>
 
         {/* Popular Intercity Routes Section */}
-        <div className="py-16 sm:py-24 bg-white transition-colors duration-300">
+        <div className="py-16 sm:py-24 bg-transparent transition-colors duration-500 relative z-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Header */}
             <ScrollReveal>
               <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
                 <div className="max-w-2xl">
                   <h2 className="text-sm text-indigo-600 font-bold tracking-widest uppercase mb-3">Top Destinations</h2>
-                  <p className="text-3xl leading-tight font-extrabold text-gray-900 sm:text-4xl">
+                  <p className="text-3xl leading-tight font-extrabold text-gray-900 sm:text-4xl transition-colors duration-500">
                     Popular Intercity Routes
                   </p>
                 </div>
@@ -319,57 +311,57 @@ export default function Home() {
       </div>
 
       {/* Footer Section */}
-      <footer className="bg-white text-gray-900 py-16 border-t border-gray-200 transition-colors duration-300">
+      <footer className="bg-white/40 backdrop-blur-lg text-gray-900 py-16 border-t border-white/40 transition-colors duration-500 relative z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
               {/* About */}
               <div>
                 <h3 className="text-2xl font-bold mb-6 font-heading">Vishal Tour & Travelers</h3>
-                <p className="text-gray-600 text-sm leading-relaxed max-w-sm">
+                <p className="text-gray-600 text-sm leading-relaxed max-w-sm transition-colors duration-500">
                   Providing reliable, comfortable, and safe travel experiences. Your journey is our priority. Book with us today for a seamless ride.
                 </p>
               </div>
 
               {/* Contact Info */}
               <div>
-                <h3 className="text-lg font-semibold mb-6 text-gray-800">Contact Us</h3>
+                <h3 className="text-lg font-semibold mb-6 text-gray-800 transition-colors duration-500">Contact Us</h3>
                 <ul className="space-y-4">
                   <li className="flex items-start group">
-                    <div className="p-2 bg-gray-50 rounded-lg mr-4 group-hover:bg-indigo-50 transition-colors border border-transparent">
+                    <div className="p-2 bg-gray-50 rounded-lg mr-4 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 transition-colors border border-transparent">
                       <MapPin className="h-5 w-5 text-indigo-600" />
                     </div>
-                    <span className="text-gray-600 text-sm mt-1">123 Main Street, City Center<br />State, Country 12345</span>
+                    <span className="text-gray-600 text-sm mt-1 transition-colors duration-500">123 Main Street, City Center<br />State, Country 12345</span>
                   </li>
                   <li className="flex items-start group">
-                    <div className="p-2 bg-gray-50 rounded-lg mr-4 group-hover:bg-indigo-50 transition-colors border border-transparent">
+                    <div className="p-2 bg-gray-50 rounded-lg mr-4 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 transition-colors border border-transparent">
                       <Phone className="h-5 w-5 text-indigo-600" />
                     </div>
-                    <span className="text-gray-600 text-sm mt-1">
+                    <span className="text-gray-600 text-sm mt-1 transition-colors duration-500">
                       +91 6266440222<br />
                       +91 9589681877
                     </span>
                   </li>
                   <li className="flex items-center group">
-                    <div className="p-2 bg-gray-50 rounded-lg mr-4 group-hover:bg-indigo-50 transition-colors border border-transparent">
+                    <div className="p-2 bg-gray-50 rounded-lg mr-4 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 transition-colors border border-transparent">
                       <Mail className="h-5 w-5 text-indigo-600" />
                     </div>
-                    <span className="text-gray-600 text-sm">info@vishaltravels.com</span>
+                    <span className="text-gray-600 text-sm transition-colors duration-500">info@vishaltravels.com</span>
                   </li>
                 </ul>
               </div>
 
               {/* Social Media */}
               <div>
-                <h3 className="text-lg font-semibold mb-6 text-gray-800">Follow Us</h3>
-                <p className="text-gray-600 text-sm mb-6">
+                <h3 className="text-lg font-semibold mb-6 text-gray-800 transition-colors duration-500">Follow Us</h3>
+                <p className="text-gray-600 text-sm mb-6 transition-colors duration-500">
                   Stay updated with our latest offers and travel stories.
                 </p>
                 <a 
                   href="https://www.instagram.com/ertiga__love__8952_seoni?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="inline-flex items-center px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-xl text-gray-700 hover:text-pink-600 transition-all duration-300 border border-gray-200 hover:border-pink-500/30"
+                  className="inline-flex items-center px-4 py-2 bg-gray-50 hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl text-gray-700 hover:text-pink-600 dark:hover:text-pink-400 transition-all duration-300 border border-gray-200 hover:border-pink-500/30 dark:hover:border-pink-500/30 backdrop-blur-sm"
                 >
                   <Instagram className="h-5 w-5 mr-3" />
                   <span className="text-sm font-medium">@ertiga__love__8952_seoni</span>
@@ -377,18 +369,19 @@ export default function Home() {
               </div>
             </div>
             
-            <div className="border-t border-gray-200 mt-16 pt-8 flex flex-col md:flex-row items-center justify-between">
-              <p className="text-gray-500 text-sm">
+            <div className="border-t border-gray-200 mt-16 pt-8 flex flex-col md:flex-row items-center justify-between transition-colors duration-500">
+              <p className="text-gray-500 text-sm transition-colors duration-500">
                 &copy; {new Date().getFullYear()} Vishal Tour & Travelers. All rights reserved.
               </p>
               <div className="mt-4 md:mt-0 flex space-x-6">
-                <Link to="/privacy" className="text-gray-500 hover:text-gray-700 text-sm transition-colors">Privacy Policy</Link>
-                <Link to="/terms" className="text-gray-500 hover:text-gray-700 text-sm transition-colors">Terms of Service</Link>
+                <Link to="/privacy" className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm transition-colors">Privacy Policy</Link>
+                <Link to="/terms" className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm transition-colors">Terms of Service</Link>
               </div>
             </div>
           </ScrollReveal>
         </div>
       </footer>
+      </div>
     </div>
   );
 }
