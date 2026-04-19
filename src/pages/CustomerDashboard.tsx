@@ -406,7 +406,7 @@ export default function CustomerDashboard() {
       socket.off('booking:updated');
       socket.off('booking:created');
     };
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
     if (profileSuccess) {
