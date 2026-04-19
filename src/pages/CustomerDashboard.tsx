@@ -5,7 +5,7 @@ import { api, socket } from '../lib/api';
 import { validateEmail, validateName, validatePhone, parseRideDate, safeFormatDate } from '../lib/validation';
 import { format } from 'date-fns';
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useDragControls } from 'motion/react';
-import { CheckCircle, Calendar, Clock, Car, Users, MapPin, Grid, RefreshCw, Info, ChevronDown, ChevronUp, CreditCard, ChevronRight, ChevronLeft, Moon, Sun, Crown, Star, Shield, Radar, Snowflake, ArrowUpDown, AlertCircle } from 'lucide-react';
+import { CheckCircle, Calendar, Clock, Car, Users, MapPin, Grid, RefreshCw, Info, ChevronDown, ChevronUp, CreditCard, ChevronRight, ChevronLeft, Moon, Sun, Crown, Star, Shield, Radar, Snowflake, ArrowUpDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import debounce from 'lodash.debounce';
 import InteractiveMap from '../components/InteractiveMap';
@@ -313,7 +313,6 @@ export default function CustomerDashboard() {
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
-  const [fetchError, setFetchError] = useState<string | null>(null);
   const [cancelMessage, setCancelMessage] = useState<{id: string, text: string, type: 'success' | 'error'} | null>(null);
   const [cancelModal, setCancelModal] = useState<{ isOpen: boolean, booking: any | null, refundInfo: any | null }>({ isOpen: false, booking: null, refundInfo: null });
 
@@ -587,14 +586,12 @@ export default function CustomerDashboard() {
 
   const fetchBookings = async (forceRefresh: boolean = false) => {
     try {
-      setFetchError(null);
       if (user) {
         const data = await api.getBookings(user.id, false, forceRefresh);
         setBookings(data);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to fetch bookings:', error);
-      setFetchError(error.message || 'Failed to fetch bookings');
     } finally {
       setLoading(false);
     }
@@ -608,9 +605,8 @@ export default function CustomerDashboard() {
         setProfileEmail(data.email);
         setProfilePhone(data.phone || '');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to fetch profile:', error);
-      // We don't necessarily want to block the dashboard for a profile fetch failure
     }
   };
 
@@ -1254,7 +1250,7 @@ export default function CustomerDashboard() {
             : 'calc(100dvh - 64px)' 
         }}
         transition={{ type: 'spring', stiffness: 300, damping: 25, mass: 0.8 }}
-        className={`fixed bottom-0 sm:bottom-6 left-0 right-0 mx-auto w-full sm:w-[calc(100%-3rem)] max-w-5xl z-40 bg-white/95 dark:bg-[#0F0F13]/95 backdrop-blur-3xl shadow-[0_-20px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-20px_80px_rgba(0,0,0,0.5)] sm:border border-gray-200 dark:border-white/5 flex flex-col transition-all duration-500 ${
+        className={`fixed bottom-0 sm:bottom-6 left-0 right-0 mx-auto w-full sm:w-[calc(100%-3rem)] max-w-5xl z-40 bg-white/90 backdrop-blur-3xl shadow-[0_-20px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-20px_80px_rgba(0,0,0,0.5)] sm:border border-gray-200 flex flex-col transition-colors duration-500 ${
           activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-[2.5rem] sm:rounded-[2.5rem]' : 'rounded-none sm:rounded-[2.5rem]'
         }`}
       >
@@ -1262,7 +1258,7 @@ export default function CustomerDashboard() {
         <div className="absolute top-full left-0 w-full h-[100vh] bg-[#F5F5F7] dark:bg-[#0F0F13] pointer-events-none sm:hidden transition-colors duration-500" />
 
         <div className="flex-1 overflow-y-auto pb-8 overscroll-none" id="bottom-sheet-container">
-          <div className={`sticky top-0 z-30 bg-white/80 dark:bg-[#0F0F13]/80 backdrop-blur-xl border-b border-gray-200 dark:border-white/5 pb-2 transition-colors duration-500 ${activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-[2.5rem] sm:rounded-[2.5rem]' : ''}`}>
+          <div className={`sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-200 pb-2 transition-colors duration-500 ${activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-[2.5rem] sm:rounded-[2.5rem]' : ''}`}>
           {/* Drag Handle */}
           {activeTab === 'dashboard' && bookingStep > 1 && (
             <div 
@@ -1287,7 +1283,7 @@ export default function CustomerDashboard() {
                 </div>
               </div>
               <div className="flex items-center gap-4 w-full sm:w-auto">
-                <div className="flex p-1 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] rounded-lg w-full sm:w-auto relative transition-colors duration-500" role="tablist" aria-label="Dashboard Options">
+                <div className="flex p-1 bg-gray-100 border border-gray-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] rounded-lg w-full sm:w-auto relative transition-colors duration-500" role="tablist" aria-label="Dashboard Options">
                   {[{ id: 'dashboard', label: 'Dashboard' }, { id: 'bookings', label: 'My Bookings' }].map((tab) => {
                     const isSelected = activeTab === tab.id;
                     return (
@@ -1303,7 +1299,7 @@ export default function CustomerDashboard() {
                         {isSelected && (
                           <motion.div
                             layoutId="customerTabs"
-                            className="absolute inset-0 bg-white dark:bg-[#1E1E2A] shadow-[0_1px_2px_rgba(0,0,0,0.1)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.2)] border border-gray-200 dark:border-white/10 rounded-md z-[-1] transition-colors duration-500"
+                            className="absolute inset-0 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.2)] border border-gray-200 rounded-md z-[-1] transition-colors duration-500"
                             initial={false}
                             transition={{
                               type: "spring",
@@ -1329,14 +1325,14 @@ export default function CustomerDashboard() {
           {activeTab === 'profile' ? (
             <div className="max-w-2xl mx-auto space-y-8">
               <LoyaltyCard bookingsCount={bookings.filter(b => b.rideStatus === 'Completed').length}  />
-              <div className={`rounded-[2rem] shadow-[0_10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)] border p-8 bg-white/40 dark:bg-black/40 border-gray-200 dark:border-white/5 transition-colors duration-500`}>
+              <div className={`rounded-[2rem] shadow-[0_10px_40px_rgba(0,0,0,0.5)] border p-8 bg-black/40 border-white/5`}>
                 <div className={`flex justify-between items-start ${isEditingProfile ? 'mb-8' : ''}`}>
                   <div className="flex items-center gap-5">
                     <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-white font-bold text-3xl shadow-[0_0_20px_rgba(99,102,241,0.3)] bg-gradient-to-br from-indigo-500 to-indigo-700`}>
                       {profileName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <h3 className={`text-2xl font-bold text-gray-900 dark:text-white tracking-tight transition-colors duration-500`}>{profileName}</h3>
+                      <h3 className={`text-2xl font-bold text-white tracking-tight`}>{profileName}</h3>
                       <p className={`text-sm text-white/50 tracking-wider uppercase font-semibold mt-1`}>Customer</p>
                     </div>
                   </div>
@@ -2288,25 +2284,6 @@ export default function CustomerDashboard() {
                 </div>
               </div>
               
-              {fetchError && (
-                <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center gap-3">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="font-semibold">Connection Error</p>
-                    <p className="text-sm opacity-80">{fetchError}. Please try refreshing the page or checking your internet connection.</p>
-                  </div>
-                  <button 
-                    onClick={() => {
-                      setLoading(true);
-                      fetchBookings(true);
-                    }}
-                    className="px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-xs font-medium transition-colors"
-                  >
-                    Retry
-                  </button>
-                </div>
-              )}
-
               <div className="space-y-6">
                 {loading ? (
                   <div className="space-y-6">

@@ -94,21 +94,18 @@ export default function ForgotPassword() {
       className="min-h-[100dvh] relative flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300 overflow-y-auto"
     >
       {/* Background Image */}
-      <div className="fixed inset-0 z-0 bg-gray-900">
+      <div className="fixed inset-0 z-0 bg-[#F5F5F7] dark:bg-[#060608] transition-colors duration-500">
         <GenuineIndiaMap />
       </div>
 
       <div className="relative z-20 w-full max-w-md mx-auto">
         <div 
-          className="rounded-[24px] p-6 sm:p-12 shadow-2xl w-full"
-          style={{
-            background: 'rgba(255, 255, 255, 0.12)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.25)'
-          }}
+          className="rounded-[24px] p-6 sm:p-12 shadow-2xl w-full bg-white/20 backdrop-blur-3xl border border-gray-200 transition-colors duration-500 relative overflow-hidden"
         >
-          <div className="flex justify-center mb-6">
+          {/* Subtle noise for premium dark mode */}
+          <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none mix-blend-overlay"></div>
+          
+          <div className="relative z-10 flex justify-center mb-6">
             <Link to="/" className="hover:opacity-80 transition-opacity bg-white/50 p-3 rounded-full border border-gray-200">
               <Map className="h-10 w-10 text-indigo-600" />
             </Link>

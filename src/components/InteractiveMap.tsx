@@ -151,7 +151,7 @@ export default function InteractiveMap({ fromLocation, toLocation, destinations 
   const tileUrl = 'https://{s}.basemaps.cartocdn.com/voyager/{z}/{x}/{y}{r}.png';
 
   return (
-    <div className={`h-full w-full z-0 transition-[filter] duration-500 ${theme === 'dark' ? 'invert hue-rotate-180 brightness-[0.85] contrast-[1.2] grayscale-[0.2]' : 'brightness-[1.02] contrast-[1.05] saturate-[1.1]'}`}>
+    <div className={`h-full w-full z-0 transition-all duration-500 ${theme === 'dark' ? 'invert hue-rotate-180 brightness-[0.85] contrast-[1.2] grayscale-[0.2]' : ''}`}>
       <MapContainer center={[20.5937, 78.9629]} zoom={5} style={{ height: '100%', width: '100%' }} attributionControl={false}>
         <TileLayer
           url={tileUrl}

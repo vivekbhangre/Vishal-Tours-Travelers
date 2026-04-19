@@ -149,7 +149,10 @@ export default function GenuineIndiaMap() {
   return (
     <div className="absolute inset-0 flex justify-center items-center overflow-hidden pointer-events-none">
       {/* Wrapper forcing map aspect ratio to match India's coordinates, guaranteeing Gilgit and Sri Lanka align with page top/bottom */}
-      <div className="relative h-full min-w-full flex-shrink-0" style={{ aspectRatio: '28.5 / 29.2' }}>
+      <div 
+        className={`relative h-full min-w-full flex-shrink-0 transition-all duration-500 ${theme === 'dark' ? 'invert hue-rotate-180 brightness-[0.85] contrast-[1.2] grayscale-[0.2]' : 'contrast-[1.1] saturate-[1.2]'}`} 
+        style={{ aspectRatio: '28.5 / 29.2' }}
+      >
         {/* Map Container */}
         <MapContainer
           bounds={INDIA_BOUNDS}
@@ -159,7 +162,7 @@ export default function GenuineIndiaMap() {
           dragging={false}
           touchZoom={false}
           attributionControl={false}
-          className={`absolute inset-0 w-full h-full rounded-none transition-[filter] duration-500 ${theme === 'dark' ? 'invert hue-rotate-180 brightness-[0.85] contrast-[1.2] grayscale-[0.2]' : 'brightness-[1.02] contrast-[1.05] saturate-[1.1]'}`}
+          className="absolute inset-0 w-full h-full rounded-none"
         >
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"

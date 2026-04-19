@@ -7,7 +7,7 @@ import { LogOut, User as UserIcon, Map, Menu, X } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
-  const { resetTheme } = useTheme();
+  const { setTheme } = useTheme();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -27,7 +27,7 @@ export default function Navbar() {
 
   const handleLogout = () => {
     logout();
-    resetTheme();
+    setTheme('light');
     navigate('/');
     setIsMobileMenuOpen(false);
   };

@@ -83,7 +83,7 @@ export default function Login() {
 
       <div className="relative z-20 w-full max-w-md mx-auto">
         <div 
-          className="rounded-[24px] p-6 sm:p-12 shadow-2xl w-full bg-white/70 backdrop-blur-3xl border border-gray-200 transition-colors duration-500 relative overflow-hidden"
+          className="rounded-[24px] p-6 sm:p-12 shadow-2xl w-full bg-white/20 backdrop-blur-3xl border border-gray-200 transition-colors duration-500 relative overflow-hidden"
         >
           {/* Subtle noise for premium dark mode */}
           <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none mix-blend-overlay"></div>
