@@ -148,11 +148,11 @@ export default function InteractiveMap({ fromLocation, toLocation, destinations 
     };
   }, [points]);
 
-  const tileUrl = 'https://{s}.basemaps.cartocdn.com/voyager/{z}/{x}/{y}{r}.png';
+  const tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
   return (
-    <div className={`h-full w-full z-0 transition-all duration-500 ${theme === 'dark' ? 'invert hue-rotate-180 brightness-[0.85] contrast-[1.2] grayscale-[0.2]' : ''}`}>
-      <MapContainer center={[20.5937, 78.9629]} zoom={5} style={{ height: '100%', width: '100%' }} attributionControl={false}>
+    <div className={`h-full w-full z-0 transition-all duration-500 ${theme === 'dark' ? 'invert hue-rotate-180 brightness-[0.85] contrast-[1.2] grayscale-[0.2]' : 'contrast-[1.1] saturate-[1.2]'}`}>
+      <MapContainer center={[20.5937, 78.9629]} zoom={5} style={{ height: '100%', width: '100%' }} attributionControl={false} zoomControl={false}>
         <TileLayer
           url={tileUrl}
         />

@@ -136,6 +136,7 @@
   /* Leaflet Map Fixes */
   .leaflet-container {
     @apply rounded-xl z-0;
+    background: transparent !important;
   }
   .leaflet-marker-icon,
   .leaflet-marker-shadow {

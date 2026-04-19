@@ -101,9 +101,9 @@ const LoyaltyCard = ({ bookingsCount }: { bookingsCount: number,  }) => {
   const progress = tier === 'Silver' ? (bookingsCount / 3) * 100 : tier === 'Gold' ? ((bookingsCount - 3) / 3) * 100 : 100;
   
   const getTierStyles = () => {
-    if (tier === 'Black') return 'from-gray-900 via-gray-800 to-black border-gray-700 text-white shadow-[0_0_30px_rgba(0,0,0,0.8)] border border-white/5';
-    if (tier === 'Gold') return 'from-amber-700 via-yellow-600 to-amber-800 border-yellow-500/50 text-white shadow-[0_0_30px_rgba(217,119,6,0.3)] border';
-    return 'from-slate-700 via-slate-600 to-slate-800 border-slate-500/30 text-white shadow-[0_0_30px_rgba(71,85,105,0.3)] border';
+    if (tier === 'Black') return 'from-gray-900 via-gray-800 to-black border-gray-700 text-gray-900 shadow-[0_0_30px_rgba(0,0,0,0.8)] border border-gray-200 border-opacity-50';
+    if (tier === 'Gold') return 'from-amber-700 via-yellow-600 to-amber-800 border-yellow-500/50 text-gray-900 shadow-[0_0_30px_rgba(217,119,6,0.3)] border';
+    return 'from-slate-700 via-slate-600 to-slate-800 border-slate-500/30 text-gray-900 shadow-[0_0_30px_rgba(71,85,105,0.3)] border';
   };
 
   const Icon = tier === 'Black' ? Crown : tier === 'Gold' ? Star : Shield;
@@ -158,21 +158,21 @@ const VehicleShowroomCard = ({ vehicle, isSelected, isUnavailable,  onClick }: a
           ? 'bg-indigo-500/10 border border-indigo-500/30 shadow-[0_0_20px_rgba(99,102,241,0.15)]'
           : isUnavailable 
             ? 'opacity-40 cursor-not-allowed bg-transparent border border-transparent'
-            : 'bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10'
+            : 'bg-white/5 border border-gray-200 border-opacity-50 hover:bg-white/10 hover:border-gray-200 border-opacity-50'
       }`}
     >
       {/* Car Icon Box */}
       <div className="w-12 h-10 flex items-center justify-center flex-shrink-0">
-        <Car className={`w-8 h-8 ${isSelected ? 'text-indigo-400' : 'text-white/50'}`} />
+        <Car className={`w-8 h-8 ${isSelected ? 'text-indigo-400' : 'text-gray-900/50'}`} />
       </div>
 
       {/* Details */}
       <div className="flex-1">
         <div className="flex items-center gap-2">
-          <h4 className={`font-semibold text-base ${isSelected ? 'text-white' : 'text-white/80'}`}>
+          <h4 className={`font-semibold text-base ${isSelected ? 'text-gray-900' : 'text-gray-900/80'}`}>
             {vehicle.name.replace(/ \(\d+ Seater\)/, '')}
           </h4>
-          <div className="flex items-center text-xs text-white/40 gap-1 bg-[#0A0A0C] px-2 py-0.5 rounded-full border border-white/5">
+          <div className="flex items-center text-xs text-gray-900/40 gap-1 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200 border-opacity-50">
             <Users className="w-3 h-3" /> {vehicle.capacity}
           </div>
         </div>
@@ -218,8 +218,8 @@ const ConciergeLoading = () => (
         className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 z-20"
       />
     </div>
-    <h3 className={`text-xl font-bold mb-2 text-white tracking-tight`}>Curating your route...</h3>
-    <p className={`text-sm text-white/50`}>Preparing your premium vehicle</p>
+    <h3 className={`text-xl font-bold mb-2 text-gray-900 tracking-tight`}>Curating your route...</h3>
+    <p className={`text-sm text-gray-900/50`}>Preparing your premium vehicle</p>
   </motion.div>
 );
 
@@ -1204,7 +1204,7 @@ export default function CustomerDashboard() {
       </div>
 
       {/* Map Component as Background */}
-      <div className="fixed inset-0 z-0 w-full h-full pt-16">
+      <div className="fixed inset-0 z-0 w-full h-full pt-16 opacity-100 dark:opacity-100 transition-opacity duration-1000 mix-blend-multiply dark:mix-blend-normal">
         <InteractiveMap 
           fromLocation={fromLocationData || (showFromSuggestions && fromSuggestions.length > 0 ? fromSuggestions[0] : null)} 
           toLocation={toLocationData || (showToSuggestions && toSuggestions.length > 0 ? toSuggestions[0] : null)} 
@@ -1224,10 +1224,10 @@ export default function CustomerDashboard() {
             initial={{ opacity: 0, y: -50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -50, scale: 0.9 }}
-            className="fixed top-24 right-4 z-50 bg-[#13131A] text-emerald-400 px-6 py-4 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-emerald-500/20 flex items-center gap-3 backdrop-blur-md"
+            className="fixed top-24 right-4 z-50 bg-white text-emerald-400 px-6 py-4 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-emerald-500/20 flex items-center gap-3 backdrop-blur-md"
           >
             <CheckCircle className="w-5 h-5 text-emerald-500" />
-            <span className="font-semibold text-sm tracking-wide text-white">{profileSuccess}</span>
+            <span className="font-semibold text-sm tracking-wide text-gray-900">{profileSuccess}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1250,7 +1250,7 @@ export default function CustomerDashboard() {
             : 'calc(100dvh - 64px)' 
         }}
         transition={{ type: 'spring', stiffness: 300, damping: 25, mass: 0.8 }}
-        className={`fixed bottom-0 sm:bottom-6 left-0 right-0 mx-auto w-full sm:w-[calc(100%-3rem)] max-w-5xl z-40 bg-white/90 backdrop-blur-3xl shadow-[0_-20px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-20px_80px_rgba(0,0,0,0.5)] sm:border border-gray-200 flex flex-col transition-colors duration-500 ${
+        className={`fixed bottom-0 sm:bottom-6 left-0 right-0 mx-auto w-full sm:w-[calc(100%-3rem)] max-w-5xl z-40 bg-white/70 dark:bg-[#060608]/70 backdrop-blur-md shadow-2xl sm:border border-gray-200 dark:border-white/10 flex flex-col transition-colors duration-500 ${
           activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-[2.5rem] sm:rounded-[2.5rem]' : 'rounded-none sm:rounded-[2.5rem]'
         }`}
       >
@@ -1293,7 +1293,7 @@ export default function CustomerDashboard() {
                         aria-selected={isSelected}
                         onClick={() => setActiveTab(tab.id as 'dashboard' | 'bookings')}
                         className={`relative flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors z-10 ${
-                          isSelected ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700 dark:hover:text-white/80'
+                          isSelected ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-900/80'
                         }`}
                       >
                         {isSelected && (
@@ -1325,21 +1325,21 @@ export default function CustomerDashboard() {
           {activeTab === 'profile' ? (
             <div className="max-w-2xl mx-auto space-y-8">
               <LoyaltyCard bookingsCount={bookings.filter(b => b.rideStatus === 'Completed').length}  />
-              <div className={`rounded-[2rem] shadow-[0_10px_40px_rgba(0,0,0,0.5)] border p-8 bg-black/40 border-white/5`}>
+              <div className={`rounded-[2rem] shadow-[0_10px_40px_rgba(0,0,0,0.5)] border p-8 bg-black/40 border-gray-200 border-opacity-50`}>
                 <div className={`flex justify-between items-start ${isEditingProfile ? 'mb-8' : ''}`}>
                   <div className="flex items-center gap-5">
-                    <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-white font-bold text-3xl shadow-[0_0_20px_rgba(99,102,241,0.3)] bg-gradient-to-br from-indigo-500 to-indigo-700`}>
+                    <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-gray-900 font-bold text-3xl shadow-[0_0_20px_rgba(99,102,241,0.3)] bg-gradient-to-br from-indigo-500 to-indigo-700`}>
                       {profileName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <h3 className={`text-2xl font-bold text-white tracking-tight`}>{profileName}</h3>
-                      <p className={`text-sm text-white/50 tracking-wider uppercase font-semibold mt-1`}>Customer</p>
+                      <h3 className={`text-2xl font-bold text-gray-900 tracking-tight`}>{profileName}</h3>
+                      <p className={`text-sm text-gray-900/50 tracking-wider uppercase font-semibold mt-1`}>Customer</p>
                     </div>
                   </div>
                   {!isEditingProfile && (
                     <button
                       onClick={() => setIsEditingProfile(true)}
-                      className={`text-xs font-semibold uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all text-white border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_15px_rgba(255,255,255,0.05)] transform active:scale-95`}
+                      className={`text-xs font-semibold uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all text-gray-900 border border-gray-200 border-opacity-50 bg-white/5 hover:bg-white/10 hover:border-gray-200 shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_15px_rgba(255,255,255,0.05)] transform active:scale-95`}
                     >
                       Edit Profile
                     </button>
@@ -1353,9 +1353,9 @@ export default function CustomerDashboard() {
                 )}
                 
                 {isEditingProfile && (
-                  <form onSubmit={handleUpdateProfile} className="space-y-6 border-t border-white/10 pt-8 mt-4">
+                  <form onSubmit={handleUpdateProfile} className="space-y-6 border-t border-gray-200 border-opacity-50 pt-8 mt-4">
                     <div>
-                      <label htmlFor="profileName" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Name</label>
+                      <label htmlFor="profileName" className="block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase">Name</label>
                       <input
                         type="text"
                         id="profileName"
@@ -1368,11 +1368,11 @@ export default function CustomerDashboard() {
                           }
                         }}
                         onFocus={handleInputFocus}
-                        className="mt-1 block w-full border border-white/5 bg-[#13131A] text-white rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all"
+                        className="mt-1 block w-full border border-gray-200 border-opacity-50 bg-white text-gray-900 rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all"
                       />
                     </div>
                     <div>
-                      <label htmlFor="profileEmail" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Email</label>
+                      <label htmlFor="profileEmail" className="block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase">Email</label>
                       <input
                         type="email"
                         id="profileEmail"
@@ -1380,12 +1380,12 @@ export default function CustomerDashboard() {
                         value={profileEmail}
                         onChange={(e) => setProfileEmail(e.target.value)}
                         onFocus={handleInputFocus}
-                        className="mt-1 block w-full border border-white/5 bg-[#13131A] text-white rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all text-white/50 cursor-not-allowed"
+                        className="mt-1 block w-full border border-gray-200 border-opacity-50 bg-white text-gray-900 rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all text-gray-900/50 cursor-not-allowed"
                         disabled
                       />
                     </div>
                     <div>
-                      <label htmlFor="profilePhone" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Phone</label>
+                      <label htmlFor="profilePhone" className="block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase">Phone</label>
                       <input
                         type="tel"
                         id="profilePhone"
@@ -1397,21 +1397,21 @@ export default function CustomerDashboard() {
                           }
                         }}
                         onFocus={handleInputFocus}
-                        className="mt-1 block w-full border border-white/5 bg-[#13131A] text-white rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all"
+                        className="mt-1 block w-full border border-gray-200 border-opacity-50 bg-white text-gray-900 rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all"
                       />
                     </div>
                     <div className="flex space-x-4 pt-4">
                       <button
                         type="button"
                         onClick={() => setIsEditingProfile(false)}
-                        className="flex-1 flex justify-center py-3 px-6 border border-white/10 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.1)] text-sm font-medium text-white/80 bg-white/5 hover:bg-white/10 hover:text-white transition-all transform active:scale-95"
+                        className="flex-1 flex justify-center py-3 px-6 border border-gray-200 border-opacity-50 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.1)] text-sm font-medium text-gray-900/80 bg-white/5 hover:bg-white/10 hover:text-gray-900 transition-all transform active:scale-95"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={profileLoading}
-                        className="flex-1 flex justify-center py-3 px-6 border border-indigo-400/30 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none transform active:scale-95 transition-all disabled:opacity-50"
+                        className="flex-1 flex justify-center py-3 px-6 border border-indigo-400/30 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] text-sm font-medium text-gray-900 bg-indigo-600 hover:bg-indigo-500 focus:outline-none transform active:scale-95 transition-all disabled:opacity-50"
                       >
                         {profileLoading ? 'Saving...' : 'Save Changes'}
                       </button>
@@ -1425,12 +1425,12 @@ export default function CustomerDashboard() {
               <div className="flex flex-col gap-8">
                 
                 {/* Book a Ride Form */}
-                <div className={`relative overflow-hidden rounded-[2rem] p-6 sm:p-8 bg-black/40 border border-white/5 shadow-[0_10px_40px_rgba(0,0,0,0.5)]`}>
+                <div className={`relative overflow-hidden rounded-[2rem] p-6 sm:p-8 bg-black/40 border border-gray-200 border-opacity-50 shadow-[0_10px_40px_rgba(0,0,0,0.5)]`}>
                 <AnimatePresence>
                   {bookingLoading && <ConciergeLoading  />}
                 </AnimatePresence>
                 <div className="flex items-center justify-between mb-8">
-                  <h3 className={`text-xl font-bold text-white tracking-tight`}>Book a Ride</h3>
+                  <h3 className={`text-xl font-bold text-gray-900 tracking-tight`}>Book a Ride</h3>
                   
                   {/* Stepper Indicator */}
                   <div className="flex items-center gap-2">
@@ -1438,7 +1438,7 @@ export default function CustomerDashboard() {
                       <div key={step} className="flex items-center">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
                           bookingStep === step 
-                            ? ('bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]')
+                            ? ('bg-indigo-500 text-gray-900 shadow-[0_0_15px_rgba(99,102,241,0.5)]')
                             : bookingStep > step 
                               ? ('bg-white/10 text-indigo-400')
                               : ('bg-white/5 text-gray-500')
@@ -1484,8 +1484,8 @@ export default function CustomerDashboard() {
                                 onClick={() => setTripType(type)}
                                 className={`relative px-4 py-2 rounded-xl text-sm font-medium transition-colors z-10 ${
                                   tripType === type 
-                                    ? ('text-white') 
-                                    : ('text-white/50 hover:text-white/80')
+                                    ? ('text-gray-900') 
+                                    : ('text-gray-900/50 hover:text-gray-900/80')
                                 }`}
                               >
                                 {tripType === type && (
@@ -1504,7 +1504,7 @@ export default function CustomerDashboard() {
                       {tripType !== 'Car Renting' && (
                         <div className="relative flex flex-col sm:flex-row gap-4">
                           <div className="relative flex-1">
-                            <label htmlFor="fromLocation" className={`block text-xs font-semibold mb-1.5 text-white/50 tracking-wider uppercase`}>Pick-up Location</label>
+                            <label htmlFor="fromLocation" className={`block text-xs font-semibold mb-1.5 text-gray-900/50 tracking-wider uppercase`}>Pick-up Location</label>
                             <input
                               type="text"
                               id="fromLocation"
@@ -1528,16 +1528,16 @@ export default function CustomerDashboard() {
                                   setShowFromSuggestions(false);
                                 }, 200);
                               }}
-                              className={`mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 pl-4 ${tripType !== 'Tour' ? 'pr-12' : 'pr-4'} text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm`}
+                              className={`mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 pl-4 ${tripType !== 'Tour' ? 'pr-12' : 'pr-4'} text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm`}
                               placeholder="Source City"
                               autoComplete="off"
                             />
                             {showFromSuggestions && fromSuggestions.length > 0 && (
-                              <ul className="absolute z-50 mt-2 w-full bg-[#1A1A24]/95 backdrop-blur-xl border border-white/10 shadow-2xl max-h-60 rounded-xl py-2 text-base overflow-auto focus:outline-none sm:text-sm">
+                              <ul className="absolute z-50 mt-2 w-full bg-gray-50/95 backdrop-blur-xl border border-gray-200 border-opacity-50 shadow-2xl max-h-60 rounded-xl py-2 text-base overflow-auto focus:outline-none sm:text-sm">
                                 {fromSuggestions.map((loc, idx) => (
                                   <li
                                     key={idx}
-                                    className="text-white/80 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-white/10 transition-colors"
+                                    className="text-gray-900/80 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-white/10 transition-colors"
                                     onMouseDown={(e) => {
                                       e.preventDefault();
                                       setFromLocation(loc.displayName);
@@ -1548,9 +1548,9 @@ export default function CustomerDashboard() {
                                     <div className="flex items-center">
                                       <MapPin className="h-4 w-4 text-indigo-400 mr-2 flex-shrink-0" />
                                       <div className="flex flex-col">
-                                        <span className="font-medium truncate text-white">{loc.primaryText || loc.displayName}</span>
+                                        <span className="font-medium truncate text-gray-900">{loc.primaryText || loc.displayName}</span>
                                         {loc.secondaryText && (
-                                          <span className="text-xs text-white/40 truncate">{loc.secondaryText}</span>
+                                          <span className="text-xs text-gray-900/40 truncate">{loc.secondaryText}</span>
                                         )}
                                       </div>
                                     </div>
@@ -1574,14 +1574,14 @@ export default function CustomerDashboard() {
                                     setToLocation(tempLoc);
                                     setToLocationData(tempData);
                                   }}
-                                  className="pointer-events-auto bg-[#1A1A24] text-white p-2 rounded-full hover:bg-white/10 transition-colors shadow-lg border border-white/10 flex items-center justify-center transform active:scale-95"
+                                  className="pointer-events-auto bg-gray-50 text-gray-900 p-2 rounded-full hover:bg-white/10 transition-colors shadow-lg border border-gray-200 border-opacity-50 flex items-center justify-center transform active:scale-95"
                                   title="Swap locations"
                                 >
                                   <ArrowUpDown className="h-4 w-4" />
                                 </button>
                               </div>
                               <div className="relative flex-1">
-                                <label htmlFor="toLocation" className="block text-xs font-semibold mb-1.5 text-white/50 tracking-wider uppercase">Drop-off Location</label>
+                                <label htmlFor="toLocation" className="block text-xs font-semibold mb-1.5 text-gray-900/50 tracking-wider uppercase">Drop-off Location</label>
                                 <input
                                   type="text"
                                   id="toLocation"
@@ -1605,16 +1605,16 @@ export default function CustomerDashboard() {
                                       setShowToSuggestions(false);
                                     }, 200);
                                   }}
-                                  className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 pl-4 pr-4 sm:pr-8 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
+                                  className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 pl-4 pr-4 sm:pr-8 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                                   placeholder="Destination City"
                                   autoComplete="off"
                                 />
                                 {showToSuggestions && toSuggestions.length > 0 && (
-                                  <ul className="absolute z-50 mt-2 w-full bg-[#1A1A24]/95 backdrop-blur-xl border border-white/10 shadow-2xl max-h-60 rounded-xl py-2 text-base overflow-auto focus:outline-none sm:text-sm">
+                                  <ul className="absolute z-50 mt-2 w-full bg-gray-50/95 backdrop-blur-xl border border-gray-200 border-opacity-50 shadow-2xl max-h-60 rounded-xl py-2 text-base overflow-auto focus:outline-none sm:text-sm">
                                     {toSuggestions.map((loc, idx) => (
                                       <li
                                         key={idx}
-                                        className="text-white/80 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-white/10 transition-colors"
+                                        className="text-gray-900/80 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-white/10 transition-colors"
                                         onMouseDown={(e) => {
                                           e.preventDefault();
                                           setToLocation(loc.displayName);
@@ -1625,9 +1625,9 @@ export default function CustomerDashboard() {
                                         <div className="flex items-center">
                                           <MapPin className="h-4 w-4 text-indigo-400 mr-2 flex-shrink-0" />
                                           <div className="flex flex-col">
-                                            <span className="font-medium truncate text-white">{loc.primaryText || loc.displayName}</span>
+                                            <span className="font-medium truncate text-gray-900">{loc.primaryText || loc.displayName}</span>
                                             {loc.secondaryText && (
-                                              <span className="text-xs text-white/40 truncate">{loc.secondaryText}</span>
+                                              <span className="text-xs text-gray-900/40 truncate">{loc.secondaryText}</span>
                                             )}
                                           </div>
                                         </div>
@@ -1660,7 +1660,7 @@ export default function CustomerDashboard() {
                           <div key={index} className="flex flex-col gap-1">
                             <div className="flex gap-2 items-end">
                               <div className="flex-grow relative">
-                                <label className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Destination {index + 1}</label>
+                                <label className="block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase">Destination {index + 1}</label>
                                 <input
                                 type="text"
                                 required
@@ -1694,16 +1694,16 @@ export default function CustomerDashboard() {
                                     setActiveDestinationIndex(null);
                                   }, 200);
                                 }}
-                                className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
+                                className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                                 placeholder={`Destination ${index + 1}`}
                                 autoComplete="off"
                               />
                               {activeDestinationIndex === index && destinationSuggestions[index] && destinationSuggestions[index].length > 0 && (
-                                <ul className="absolute z-50 mt-2 w-full bg-[#1A1A24]/95 backdrop-blur-xl border border-white/10 shadow-2xl max-h-60 rounded-xl py-2 text-base overflow-auto focus:outline-none sm:text-sm">
+                                <ul className="absolute z-50 mt-2 w-full bg-gray-50/95 backdrop-blur-xl border border-gray-200 border-opacity-50 shadow-2xl max-h-60 rounded-xl py-2 text-base overflow-auto focus:outline-none sm:text-sm">
                                   {destinationSuggestions[index].map((loc, idx) => (
                                     <li
                                       key={idx}
-                                      className="text-white/80 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-white/10 transition-colors"
+                                      className="text-gray-900/80 cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-white/10 transition-colors"
                                       onMouseDown={(e) => {
                                         e.preventDefault(); // Prevent input from losing focus immediately
                                         const newDests = [...destinations];
@@ -1720,9 +1720,9 @@ export default function CustomerDashboard() {
                                       <div className="flex items-center">
                                         <MapPin className="h-4 w-4 text-indigo-400 mr-2 flex-shrink-0" />
                                         <div className="flex flex-col">
-                                          <span className="font-medium truncate text-white">{loc.primaryText || loc.displayName}</span>
+                                          <span className="font-medium truncate text-gray-900">{loc.primaryText || loc.displayName}</span>
                                           {loc.secondaryText && (
-                                            <span className="text-xs text-white/40 truncate">{loc.secondaryText}</span>
+                                            <span className="text-xs text-gray-900/40 truncate">{loc.secondaryText}</span>
                                           )}
                                         </div>
                                       </div>
@@ -1771,7 +1771,7 @@ export default function CustomerDashboard() {
                   </AnimatePresence>
                   
                   <div className="pt-2">
-                    <label htmlFor="rideDate" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">
+                    <label htmlFor="rideDate" className="block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase">
                       {tripType === 'Car Renting' ? 'When do you want the vehicle? (Date & Time)' : tripType === 'Round-trip' ? 'Departure Date & Time' : 'Date & Time'}
                     </label>
                     <div className="mt-1 flex flex-wrap gap-3">
@@ -1783,23 +1783,23 @@ export default function CustomerDashboard() {
                         value={rideDate}
                         onChange={(e) => setRideDate(e.target.value)}
                         onFocus={handleInputFocus}
-                        className="block w-full sm:flex-1 min-w-[150px] bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm [color-scheme:dark]"
+                        className="block w-full sm:flex-1 min-w-[150px] bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm [color-scheme:dark]"
                       />
                       <div className="flex gap-2 items-center flex-1 min-w-[240px]">
                         <select
                           value={rideTimeHour}
                           onChange={(e) => setRideTimeHour(e.target.value)}
-                          className="block w-full flex-1 bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
+                          className="block w-full flex-1 bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                         >
                           {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
                             <option key={h} value={h.toString().padStart(2, '0')}>{h.toString().padStart(2, '0')}</option>
                           ))}
                         </select>
-                        <span className="flex items-center text-white/30 font-bold">:</span>
+                        <span className="flex items-center text-gray-900/30 font-bold">:</span>
                         <select
                           value={rideTimeMinute}
                           onChange={(e) => setRideTimeMinute(e.target.value)}
-                          className="block w-full flex-1 bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
+                          className="block w-full flex-1 bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                         >
                           {['00', '15', '30', '45'].map(m => (
                             <option key={m} value={m}>{m}</option>
@@ -1808,7 +1808,7 @@ export default function CustomerDashboard() {
                         <select
                           value={rideTimeAmPm}
                           onChange={(e) => setRideTimeAmPm(e.target.value)}
-                          className="block w-full flex-1 bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
+                          className="block w-full flex-1 bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                         >
                           <option value="AM">AM</option>
                           <option value="PM">PM</option>
@@ -1827,7 +1827,7 @@ export default function CustomerDashboard() {
                         transition={{ type: "spring", stiffness: 400, damping: 30 }}
                         className="overflow-hidden"
                       >
-                        <label htmlFor="returnDate" className="block text-xs font-semibold mt-4 mb-2 text-white/50 tracking-wider uppercase">Return Date & Time</label>
+                        <label htmlFor="returnDate" className="block text-xs font-semibold mt-4 mb-2 text-gray-900/50 tracking-wider uppercase">Return Date & Time</label>
                         <div className="mt-1 flex flex-wrap gap-3">
                           <input
                             type="date"
@@ -1837,23 +1837,23 @@ export default function CustomerDashboard() {
                             value={returnDate}
                             onChange={(e) => setReturnDate(e.target.value)}
                             onFocus={handleInputFocus}
-                            className="block w-full sm:flex-1 min-w-[150px] bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm [color-scheme:dark]"
+                            className="block w-full sm:flex-1 min-w-[150px] bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm [color-scheme:dark]"
                           />
                           <div className="flex gap-2 items-center flex-1 min-w-[240px]">
                             <select
                               value={returnTimeHour}
                               onChange={(e) => setReturnTimeHour(e.target.value)}
-                              className="block w-full flex-1 bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
+                              className="block w-full flex-1 bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                             >
                               {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
                                 <option key={h} value={h.toString().padStart(2, '0')}>{h.toString().padStart(2, '0')}</option>
                               ))}
                             </select>
-                            <span className="flex items-center font-bold text-white/30">:</span>
+                            <span className="flex items-center font-bold text-gray-900/30">:</span>
                             <select
                               value={returnTimeMinute}
                               onChange={(e) => setReturnTimeMinute(e.target.value)}
-                              className="block w-full flex-1 bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
+                              className="block w-full flex-1 bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                             >
                               {['00', '15', '30', '45'].map(m => (
                                 <option key={m} value={m}>{m}</option>
@@ -1862,7 +1862,7 @@ export default function CustomerDashboard() {
                             <select
                               value={returnTimeAmPm}
                               onChange={(e) => setReturnTimeAmPm(e.target.value)}
-                              className="block w-full flex-1 bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
+                              className="block w-full flex-1 bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                             >
                               <option value="AM">AM</option>
                               <option value="PM">PM</option>
@@ -1883,7 +1883,7 @@ export default function CustomerDashboard() {
                       >
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label htmlFor="numberOfDays" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Number of Days</label>
+                            <label htmlFor="numberOfDays" className="block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase">Number of Days</label>
                             <input
                               type="number"
                               id="numberOfDays"
@@ -1893,11 +1893,11 @@ export default function CustomerDashboard() {
                               value={numberOfDays}
                               onChange={(e) => setNumberOfDays(e.target.value === '' ? '' : parseInt(e.target.value))}
                               onFocus={handleInputFocus}
-                              className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
+                              className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                             />
                           </div>
                           <div>
-                            <label htmlFor="numberOfCars" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Number of Vehicles</label>
+                            <label htmlFor="numberOfCars" className="block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase">Number of Vehicles</label>
                             <input
                               type="number"
                               id="numberOfCars"
@@ -1907,7 +1907,7 @@ export default function CustomerDashboard() {
                               value={numberOfCars}
                               onChange={(e) => setNumberOfCars(e.target.value === '' ? '' : parseInt(e.target.value))}
                               onFocus={handleInputFocus}
-                              className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
+                              className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                             />
                           </div>
                         </div>
@@ -1926,7 +1926,7 @@ export default function CustomerDashboard() {
                       >
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label htmlFor="weddingDate" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Wedding Date</label>
+                            <label htmlFor="weddingDate" className="block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase">Wedding Date</label>
                             <input
                               type="date"
                               id="weddingDate"
@@ -1935,11 +1935,11 @@ export default function CustomerDashboard() {
                               value={weddingDate}
                               onChange={(e) => setWeddingDate(e.target.value)}
                               onFocus={handleInputFocus}
-                              className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm [color-scheme:dark]"
+                              className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm [color-scheme:dark]"
                             />
                           </div>
                           <div>
-                            <label htmlFor="eventLocation" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Event Location</label>
+                            <label htmlFor="eventLocation" className="block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase">Event Location</label>
                             <input
                               type="text"
                               id="eventLocation"
@@ -1948,13 +1948,13 @@ export default function CustomerDashboard() {
                               onChange={(e) => setEventLocation(e.target.value)}
                               onFocus={handleInputFocus}
                               placeholder="e.g., Grand Hotel, City Center"
-                              className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
+                              className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                             />
                           </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label htmlFor="vehiclesRequired" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Vehicles Required</label>
+                            <label htmlFor="vehiclesRequired" className="block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase">Vehicles Required</label>
                             <input
                               type="number"
                               id="vehiclesRequired"
@@ -1964,16 +1964,16 @@ export default function CustomerDashboard() {
                               value={vehiclesRequired}
                               onChange={(e) => setVehiclesRequired(e.target.value)}
                               onFocus={handleInputFocus}
-                              className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
+                              className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                             />
                           </div>
                           <div>
-                            <label htmlFor="decorationRequired" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Decoration Required?</label>
+                            <label htmlFor="decorationRequired" className="block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase">Decoration Required?</label>
                             <select
                               id="decorationRequired"
                               value={decorationRequired}
                               onChange={(e) => setDecorationRequired(e.target.value)}
-                              className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none"
+                              className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none"
                             >
                               <option value="No">No</option>
                               <option value="Yes">Yes</option>
@@ -1987,14 +1987,14 @@ export default function CustomerDashboard() {
                   
                   {tripType !== 'Car Renting' && tripType !== 'Wedding' && (
                     <div className="pt-2">
-                      <label htmlFor="rideType" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Ride Type</label>
+                      <label htmlFor="rideType" className="block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase">Ride Type</label>
                       <select
                         id="rideType"
                         required
                         value={rideType}
                         onChange={(e) => setRideType(e.target.value)}
                         onFocus={handleInputFocus}
-                        className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none"
+                        className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none"
                       >
                         <option value="Intercity">Intercity</option>
                         <option value="Airport Transfer">Airport Transfer</option>
@@ -2006,7 +2006,7 @@ export default function CustomerDashboard() {
                   {tripType !== 'Car Renting' && (
                     <div className="space-y-4 pt-2">
                       <div>
-                        <label htmlFor="numberOfPeople" className="block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase">Number of People</label>
+                        <label htmlFor="numberOfPeople" className="block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase">Number of People</label>
                         <input
                           type="number"
                           id="numberOfPeople"
@@ -2016,7 +2016,7 @@ export default function CustomerDashboard() {
                           value={numberOfPeople}
                           onChange={(e) => setNumberOfPeople(e.target.value === '' ? '' : parseInt(e.target.value))}
                           onFocus={handleInputFocus}
-                          className="mt-1 block w-full bg-[#13131A] border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
+                          className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                         />
                       </div>
                     </div>
@@ -2030,7 +2030,7 @@ export default function CustomerDashboard() {
                           {/* Vehicle Selection Step */}
                           <div className="">
                             <div className="flex items-center gap-2 mb-4 px-2">
-                              <h4 className="text-xl font-bold text-white tracking-tight">Choose Your Vehicle</h4>
+                              <h4 className="text-xl font-bold text-gray-900 tracking-tight">Choose Your Vehicle</h4>
                             </div>
                             
                             <div className="flex flex-col gap-1">
@@ -2065,7 +2065,7 @@ export default function CustomerDashboard() {
                                     type="checkbox"
                                     checked={confirmCapacity}
                                     onChange={(e) => setConfirmCapacity(e.target.checked)}
-                                    className="rounded bg-[#1A1A24] border-white/20 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0 focus:ring-offset-transparent"
+                                    className="rounded bg-gray-50 border-gray-200 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0 focus:ring-offset-transparent"
                                   />
                                   I confirm I want to proceed with this vehicle
                                 </label>
@@ -2074,27 +2074,27 @@ export default function CustomerDashboard() {
 
                             {tripType === 'Tour' && (
                               <div className="mt-6 mx-2">
-                                <label className={`block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase`}>Number of Vehicles</label>
+                                <label className={`block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase`}>Number of Vehicles</label>
                                 <input
                                   type="number"
                                   min="1"
                                   max={AVAILABLE_VEHICLES.find(v => v.name === selectedVehicle)?.quantity || 10}
                                   value={numberOfCars}
                                   onChange={(e) => setNumberOfCars(e.target.value === '' ? '' : parseInt(e.target.value))}
-                                  className={`block w-full border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm bg-[#13131A] border-white/5 text-white`}
+                                  className={`block w-full border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm bg-white border-gray-200 border-opacity-50 text-gray-900`}
                                 />
                               </div>
                             )}
 
                             {/* AC Selection */}
                             {tripType !== 'Car Renting' && (
-                              <div className={`mt-6 mx-2 border rounded-2xl p-4 shadow-sm flex items-center gap-4 bg-[#1A1A24] border-white/5`}>
+                              <div className={`mt-6 mx-2 border rounded-2xl p-4 shadow-sm flex items-center gap-4 bg-gray-50 border-gray-200 border-opacity-50`}>
                                 <div className="w-12 h-12 rounded-xl bg-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.2)] flex items-center justify-center flex-shrink-0">
                                   <Snowflake className="w-6 h-6 text-indigo-400" />
                                 </div>
                                 <div className="flex-1">
-                                  <h4 className={`font-bold text-base text-white`}>Air Conditioning</h4>
-                                  <p className={`text-xs text-white/50`}>Cooler cabin · Ideal for summer</p>
+                                  <h4 className={`font-bold text-base text-gray-900`}>Air Conditioning</h4>
+                                  <p className={`text-xs text-gray-900/50`}>Cooler cabin · Ideal for summer</p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
                                   <input 
@@ -2103,7 +2103,7 @@ export default function CustomerDashboard() {
                                     checked={isAC}
                                     onChange={(e) => setIsAC(e.target.checked)}
                                   />
-                                  <div className="w-11 h-6 rounded-full peer peer-focus:outline-none peer-focus:ring-2 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-white/10 after:border after:rounded-full after:h-5 after:w-5 after:transition-all bg-white/20 peer-focus:ring-indigo-500/30 peer-checked:bg-indigo-500"></div>
+                                  <div className="w-11 h-6 rounded-full peer peer-focus:outline-none peer-focus:ring-2 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-200 border-opacity-50 after:border after:rounded-full after:h-5 after:w-5 after:transition-all bg-white/20 peer-focus:ring-indigo-500/30 peer-checked:bg-indigo-500"></div>
                                 </label>
                               </div>
                             )}
@@ -2114,11 +2114,11 @@ export default function CustomerDashboard() {
                       {bookingStep === 3 && (
                         <div className="space-y-6">
                           {/* Review Step */}
-                          <div className={`rounded-3xl p-6 sm:p-8 border bg-black/40 border-white/5 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)]`}>
+                          <div className={`rounded-3xl p-6 sm:p-8 border bg-black/40 border-gray-200 border-opacity-50 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)]`}>
                             {tripType === 'Car Renting' ? (
-                              <h4 className={`text-xl font-bold mb-6 text-white tracking-tight`}>Review Your Rental Car for {user?.name}</h4>
+                              <h4 className={`text-xl font-bold mb-6 text-gray-900 tracking-tight`}>Review Your Rental Car for {user?.name}</h4>
                             ) : (
-                              <h4 className={`text-xl font-bold mb-6 text-white tracking-tight`}>Review Your Trip</h4>
+                              <h4 className={`text-xl font-bold mb-6 text-gray-900 tracking-tight`}>Review Your Trip</h4>
                             )}
                             <div className="space-y-6">
                               <div className="flex items-start gap-4">
@@ -2126,8 +2126,8 @@ export default function CustomerDashboard() {
                                   <MapPin className={`w-5 h-5 text-indigo-400`} />
                                 </div>
                                 <div>
-                                  <p className={`text-xs text-white/50 uppercase tracking-wider font-semibold mb-1`}>{tripType === 'Car Renting' ? 'Booking Type' : 'Route'}</p>
-                                  <p className={`text-base font-medium text-white`}>
+                                  <p className={`text-xs text-gray-900/50 uppercase tracking-wider font-semibold mb-1`}>{tripType === 'Car Renting' ? 'Booking Type' : 'Route'}</p>
+                                  <p className={`text-base font-medium text-gray-900`}>
                                     {tripType === 'Car Renting' ? 'Car Rental' : 
                                      tripType === 'Tour' ? `${fromLocation} → ${destinations.join(' → ')}` :
                                      `${fromLocation} → ${toLocation}`}
@@ -2139,8 +2139,8 @@ export default function CustomerDashboard() {
                                   <Calendar className={`w-5 h-5 text-fuchsia-400`} />
                                 </div>
                                 <div>
-                                  <p className={`text-xs text-white/50 uppercase tracking-wider font-semibold mb-1`}>Date & Time</p>
-                                  <p className={`text-base font-medium text-white`}>
+                                  <p className={`text-xs text-gray-900/50 uppercase tracking-wider font-semibold mb-1`}>Date & Time</p>
+                                  <p className={`text-base font-medium text-gray-900`}>
                                     {rideDate && !isNaN(parseRideDate(rideDate).getTime()) 
                                       ? `${safeFormatDate(rideDate, 'MMM d, yyyy')} at ${rideTimeHour}:${rideTimeMinute} ${rideTimeAmPm}`
                                       : (tripType === 'Wedding' && weddingDate && !isNaN(parseRideDate(weddingDate).getTime()) 
@@ -2154,8 +2154,8 @@ export default function CustomerDashboard() {
                                   <Car className={`w-5 h-5 text-blue-400`} />
                                 </div>
                                 <div>
-                                  <p className={`text-xs text-white/50 uppercase tracking-wider font-semibold mb-1`}>Vehicle</p>
-                                  <p className={`text-base font-medium text-white`}>
+                                  <p className={`text-xs text-gray-900/50 uppercase tracking-wider font-semibold mb-1`}>Vehicle</p>
+                                  <p className={`text-base font-medium text-gray-900`}>
                                     {selectedVehicle.replace(/ \(\d+ Seater\)/, '')} {isAC ? '(AC)' : '(Non-AC)'}
                                   </p>
                                 </div>
@@ -2166,7 +2166,7 @@ export default function CustomerDashboard() {
                       )}
 
                       {/* Wizard Navigation */}
-                      <div className="flex justify-between pt-6 border-t border-white/10 mt-8">
+                      <div className="flex justify-between pt-6 border-t border-gray-200 border-opacity-50 mt-8">
                         {bookingStep > 1 ? (
                           <button
                             type="button"
@@ -2175,7 +2175,7 @@ export default function CustomerDashboard() {
                               if (bookingStep === 2) setIsSheetExpanded(false);
                             }}
                             className={`flex items-center px-4 py-2 text-sm font-medium rounded-xl transition-all ${
-                              'text-white/70 hover:text-white hover:bg-white/10 active:scale-95'
+                              'text-gray-900/70 hover:text-gray-900 hover:bg-white/10 active:scale-95'
                             }`}
                           >
                             <ChevronLeft className="w-4 h-4 mr-1" /> Back
@@ -2186,9 +2186,9 @@ export default function CustomerDashboard() {
                           <button
                             type="submit"
                             disabled={isNextDisabled}
-                            className={`flex items-center px-8 py-3 text-sm font-medium rounded-2xl text-white transition-all transform active:scale-95 ${
+                            className={`flex items-center px-8 py-3 text-sm font-medium rounded-2xl text-gray-900 transition-all transform active:scale-95 ${
                               isNextDisabled 
-                                ? 'bg-white/5 text-white/30 cursor-not-allowed border border-white/5' 
+                                ? 'bg-white/5 text-gray-900/30 cursor-not-allowed border border-gray-200 border-opacity-50' 
                                 : 'bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_30px_rgba(99,102,241,0.3)] border border-indigo-400/30'
                             }`}
                           >
@@ -2221,8 +2221,8 @@ export default function CustomerDashboard() {
 
               {/* Dynamic Receipt Component */}
               {bookingStep === 3 && (
-                <div className="bg-black/40 border border-white/5 backdrop-blur-xl rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] p-6 sm:p-8">
-                  <h3 className="text-xl font-bold text-white tracking-tight mb-6 flex items-center gap-3">
+                <div className="bg-black/40 border border-gray-200 border-opacity-50 backdrop-blur-xl rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] p-6 sm:p-8">
+                  <h3 className="text-xl font-bold text-gray-900 tracking-tight mb-6 flex items-center gap-3">
                     <div className="p-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30">
                       <CreditCard className="h-5 w-5 text-indigo-400" />
                     </div>
@@ -2230,35 +2230,35 @@ export default function CustomerDashboard() {
                   </h3>
                   <div className="space-y-4">
                     <div className="flex justify-between text-sm">
-                      <span className="text-white/50">Trip Type</span>
-                      <span className="font-medium text-white">{tripType}</span>
+                      <span className="text-gray-900/50">Trip Type</span>
+                      <span className="font-medium text-gray-900">{tripType}</span>
                     </div>
                     {tripType !== 'Car Renting' && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-white/50">Total Distance</span>
-                        <span className="font-medium text-white">{estimatedKM} km</span>
+                        <span className="text-gray-900/50">Total Distance</span>
+                        <span className="font-medium text-gray-900">{estimatedKM} km</span>
                       </div>
                     )}
                     <div className="flex justify-between text-sm">
-                      <span className="text-white/50">Vehicle</span>
-                      <span className="font-medium text-white">{selectedVehicle.replace(/ \(\d+ Seater\)/, '')}</span>
+                      <span className="text-gray-900/50">Vehicle</span>
+                      <span className="font-medium text-gray-900">{selectedVehicle.replace(/ \(\d+ Seater\)/, '')}</span>
                     </div>
                     {tripType === 'Round-trip' && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-white/50">Halt Charges</span>
-                        <span className="font-medium text-white">₹{calculateHaltCharge()}</span>
+                        <span className="text-gray-900/50">Halt Charges</span>
+                        <span className="font-medium text-gray-900">₹{calculateHaltCharge()}</span>
                       </div>
                     )}
-                    <div className="border-t border-white/10 pt-6 mt-6">
+                    <div className="border-t border-gray-200 border-opacity-50 pt-6 mt-6">
                       <div className="flex justify-between items-center">
-                        <span className="text-base font-bold text-white">Total Estimated Fare</span>
+                        <span className="text-base font-bold text-gray-900">Total Estimated Fare</span>
                         <span className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-fuchsia-400">₹{
                           tripType === 'Car Renting' 
                             ? (Number(numberOfDays) || 1) * 2000 * (Number(numberOfCars) || 1)
                             : (estimatedPrice || (estimatedKM * (selectedVehicle === 'Swift Dzire' ? 13 : selectedVehicle === 'Ertiga' ? 14 : 28) * (tripType === 'Wedding' ? (parseInt(vehiclesRequired) || 1) : (tripType === 'Tour' ? (Number(numberOfCars) || 1) : 1)))) + (tripType === 'Round-trip' ? calculateHaltCharge() : 0)
                         }</span>
                       </div>
-                      <p className="text-xs text-white/30 mt-2 text-right">*Final fare may vary based on actual distance and tolls.</p>
+                      <p className="text-xs text-gray-900/30 mt-2 text-right">*Final fare may vary based on actual distance and tolls.</p>
                     </div>
                   </div>
                 </div>
@@ -2269,14 +2269,14 @@ export default function CustomerDashboard() {
             <div className="max-w-5xl mx-auto">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
-                  <h3 className="text-2xl font-bold text-white tracking-tight">My Bookings</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 tracking-tight">My Bookings</h3>
                   <button 
                     onClick={() => {
                       setLoading(true);
                       fetchBookings(true);
                     }}
                     disabled={loading}
-                    className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-xl transition-all disabled:opacity-50"
+                    className="p-2 text-gray-900/50 hover:text-gray-900 hover:bg-white/10 rounded-xl transition-all disabled:opacity-50"
                     title="Refresh bookings"
                   >
                     <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -2288,7 +2288,7 @@ export default function CustomerDashboard() {
                 {loading ? (
                   <div className="space-y-6">
                     {[1, 2, 3].map(i => (
-                      <div key={i} className="bg-black/40 border border-white/5 backdrop-blur-xl rounded-3xl p-6 animate-pulse">
+                      <div key={i} className="bg-black/40 border border-gray-200 border-opacity-50 backdrop-blur-xl rounded-3xl p-6 animate-pulse">
                         <div className="flex justify-between items-center mb-4">
                           <div className="h-6 bg-white/10 rounded-lg w-1/3"></div>
                           <div className="flex gap-2">
@@ -2305,27 +2305,27 @@ export default function CustomerDashboard() {
                     ))}
                   </div>
                 ) : bookings.length === 0 ? (
-                  <div className={`rounded-3xl p-12 text-center bg-black/40 border border-white/5 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)]`}>
+                  <div className={`rounded-3xl p-12 text-center bg-black/40 border border-gray-200 border-opacity-50 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)]`}>
                     <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 bg-indigo-500/10 border border-indigo-500/20`}>
                       <Car className={`w-12 h-12 text-indigo-400`} />
                     </div>
-                    <h3 className={`text-xl font-bold mb-2 text-white tracking-tight`}>No bookings yet</h3>
-                    <p className={`mb-8 max-w-sm mx-auto text-white/50 leading-relaxed`}>You haven't made any bookings yet. Book your premium ride to get started.</p>
+                    <h3 className={`text-xl font-bold mb-2 text-gray-900 tracking-tight`}>No bookings yet</h3>
+                    <p className={`mb-8 max-w-sm mx-auto text-gray-900/50 leading-relaxed`}>You haven't made any bookings yet. Book your premium ride to get started.</p>
                     <button 
                       onClick={() => setActiveTab('dashboard')}
-                      className={`inline-flex items-center justify-center px-8 py-3 text-sm font-medium rounded-2xl text-white shadow-[0_0_30px_rgba(99,102,241,0.3)] transition-all bg-indigo-600 hover:bg-indigo-500 transform active:scale-95 border border-indigo-400/30`}
+                      className={`inline-flex items-center justify-center px-8 py-3 text-sm font-medium rounded-2xl text-gray-900 shadow-[0_0_30px_rgba(99,102,241,0.3)] transition-all bg-indigo-600 hover:bg-indigo-500 transform active:scale-95 border border-indigo-400/30`}
                     >
                       Book a Ride
                     </button>
                   </div>
                 ) : (
-                  <div className={`relative border-l-2 ml-4 pl-8 space-y-8 border-white/10`}>
+                  <div className={`relative border-l-2 ml-4 pl-8 space-y-8 border-gray-200 border-opacity-50`}>
                     {bookings.map((booking, index) => (
                       <div key={booking.id} className="relative group">
                         {/* Timeline Node */}
                         <div className={`absolute -left-[41px] top-6 w-5 h-5 rounded-full border-4 bg-indigo-500 border-[#060608] shadow-[0_0_15px_rgba(99,102,241,0.5)] transition-transform group-hover:scale-125`}></div>
                         
-                        <div className={`rounded-3xl overflow-hidden transition-all bg-black/40 border border-white/5 hover:border-white/20 hover:bg-white/5 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)]`}>
+                        <div className={`rounded-3xl overflow-hidden transition-all bg-black/40 border border-gray-200 border-opacity-50 hover:border-gray-200 hover:bg-white/5 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)]`}>
                           {/* Always visible header */}
                           <div 
                             className={`p-6 cursor-pointer`}
@@ -2337,7 +2337,7 @@ export default function CustomerDashboard() {
                                
                             />
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2 sm:gap-4">
-                              <h4 className={`text-lg font-bold break-words w-full sm:w-auto text-white tracking-tight`}>
+                              <h4 className={`text-lg font-bold break-words w-full sm:w-auto text-gray-900 tracking-tight`}>
                                 {booking.tripType === 'Car Renting'
                                   ? `Car Rental: ${booking.numberOfDays} days, ${booking.numberOfCars} cars`
                                   : booking.tripType === 'Tour' 
@@ -2345,10 +2345,10 @@ export default function CustomerDashboard() {
                                   : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
                               </h4>
                               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium border border-white/10 ${booking.rideStatus === 'Cancelled' ? 'bg-red-500/10 text-red-400' : 'bg-white/10 text-white'}`}>
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium border border-gray-200 border-opacity-50 ${booking.rideStatus === 'Cancelled' ? 'bg-red-500/10 text-red-400' : 'bg-white/10 text-gray-900'}`}>
                                   {booking.rideStatus === 'Cancelled' && booking.refundStatus === 'Processed' ? 'Refunded' : booking.rideStatus}
                                 </span>
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium border border-white/10 ${booking.paymentStatus === 'Paid' ? 'bg-green-500/10 text-green-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium border border-gray-200 border-opacity-50 ${booking.paymentStatus === 'Paid' ? 'bg-green-500/10 text-green-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
                                   {booking.paymentStatus}
                                 </span>
                                 {expandedBookingId === booking.id ? (
@@ -2358,7 +2358,7 @@ export default function CustomerDashboard() {
                                 )}
                               </div>
                             </div>
-                            <div className={`flex flex-wrap gap-4 text-sm text-white/50`}>
+                            <div className={`flex flex-wrap gap-4 text-sm text-gray-900/50`}>
                               <div className="flex items-center gap-1.5">
                                 <Calendar className={`w-4 h-4 text-indigo-400`} />
                                 {safeFormatDate(booking.rideDate, 'MMM d, yyyy')}
@@ -2367,7 +2367,7 @@ export default function CustomerDashboard() {
                                 <Clock className={`w-4 h-4 text-fuchsia-400`} />
                                 {safeFormatDate(booking.rideDate, 'h:mm a')}
                               </div>
-                              <div className={`flex items-center gap-1.5 font-medium text-white`}>
+                              <div className={`flex items-center gap-1.5 font-medium text-gray-900`}>
                                 ₹{parseFloat(booking.fareAmount).toFixed(2)}
                               </div>
                             </div>
@@ -2381,10 +2381,10 @@ export default function CustomerDashboard() {
                                 animate={{ height: 'auto', opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
                                 transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-                                className={`border-t border-white/10 bg-white/5`}
+                                className={`border-t border-gray-200 border-opacity-50 bg-white/5`}
                               >
                                 <div className="p-6">
-                                  <div className={`flex flex-wrap gap-4 text-sm mb-6 text-white/60`}>
+                                  <div className={`flex flex-wrap gap-4 text-sm mb-6 text-gray-900/60`}>
                                     <div className="flex items-center gap-1.5">
                                       <Car className="w-4 h-4 text-indigo-400" />
                                       {booking.suggestedVehicle || 'Sedan'} {booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
@@ -2404,22 +2404,22 @@ export default function CustomerDashboard() {
                                   </div>
                                   
                                   {booking.tripType === 'Wedding' && booking.weddingDetails && (
-                                    <div className={`mb-6 p-4 rounded-2xl border shadow-sm bg-[#1A1A24] border-fuchsia-500/20`}>
+                                    <div className={`mb-6 p-4 rounded-2xl border shadow-sm bg-gray-50 border-fuchsia-500/20`}>
                                       <h5 className={`text-sm font-bold mb-3 flex items-center gap-2 text-fuchsia-400`}>
                                         <span className="text-lg">💍</span> Wedding Details
                                       </h5>
                                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                                         <div>
-                                          <span className={`block text-xs uppercase tracking-wider mb-1 text-white/40`}>Event Location</span>
-                                          <span className={`font-medium text-white`}>{booking.weddingDetails.eventLocation}</span>
+                                          <span className={`block text-xs uppercase tracking-wider mb-1 text-gray-900/40`}>Event Location</span>
+                                          <span className={`font-medium text-gray-900`}>{booking.weddingDetails.eventLocation}</span>
                                         </div>
                                         <div>
-                                          <span className={`block text-xs uppercase tracking-wider mb-1 text-white/40`}>Vehicles Required</span>
-                                          <span className={`font-medium text-white`}>{booking.weddingDetails.vehiclesRequired}</span>
+                                          <span className={`block text-xs uppercase tracking-wider mb-1 text-gray-900/40`}>Vehicles Required</span>
+                                          <span className={`font-medium text-gray-900`}>{booking.weddingDetails.vehiclesRequired}</span>
                                         </div>
                                         <div>
-                                          <span className={`block text-xs uppercase tracking-wider mb-1 text-white/40`}>Decoration</span>
-                                          <span className={`font-medium text-white`}>{booking.weddingDetails.decorationRequired}</span>
+                                          <span className={`block text-xs uppercase tracking-wider mb-1 text-gray-900/40`}>Decoration</span>
+                                          <span className={`font-medium text-gray-900`}>{booking.weddingDetails.decorationRequired}</span>
                                         </div>
                                       </div>
                                     </div>
@@ -2429,7 +2429,7 @@ export default function CustomerDashboard() {
                                   {booking.assignments && booking.assignments.length > 0 ? (
                                     <div className="mb-6 space-y-4">
                                       {booking.assignments.map((assignment: any, idx: number) => (
-                                        <div key={idx} className={`p-4 rounded-2xl border shadow-sm bg-[#1A1A24] border-indigo-500/20`}>
+                                        <div key={idx} className={`p-4 rounded-2xl border shadow-sm bg-gray-50 border-indigo-500/20`}>
                                           <h5 className={`text-sm font-semibold mb-2 text-indigo-400`}>
                                             {booking.assignments.length > 1 ? `Vehicle ${idx + 1} Details` : 'Driver & Vehicle Details'}
                                           </h5>
@@ -2437,19 +2437,19 @@ export default function CustomerDashboard() {
                                             {assignment.driverDetails && (
                                               <>
                                                 <div>
-                                                  <p className={`text-xs uppercase tracking-wider text-white/40`}>Driver Name</p>
-                                                  <p className={`text-sm font-medium text-white`}>{assignment.driverDetails.name}</p>
+                                                  <p className={`text-xs uppercase tracking-wider text-gray-900/40`}>Driver Name</p>
+                                                  <p className={`text-sm font-medium text-gray-900`}>{assignment.driverDetails.name}</p>
                                                 </div>
                                                 <div>
-                                                  <p className={`text-xs uppercase tracking-wider text-white/40`}>Phone Number</p>
-                                                  <p className={`text-sm font-medium text-white`}>{assignment.driverDetails.phone}</p>
+                                                  <p className={`text-xs uppercase tracking-wider text-gray-900/40`}>Phone Number</p>
+                                                  <p className={`text-sm font-medium text-gray-900`}>{assignment.driverDetails.phone}</p>
                                                 </div>
                                               </>
                                             )}
                                             {assignment.vehicleDetails && (
                                               <div className="sm:col-span-2">
-                                                <p className={`text-xs uppercase tracking-wider text-white/40`}>Vehicle Assigned</p>
-                                                <p className={`text-sm font-medium text-white`}>{assignment.vehicleDetails.name} ({assignment.vehicleDetails.number})</p>
+                                                <p className={`text-xs uppercase tracking-wider text-gray-900/40`}>Vehicle Assigned</p>
+                                                <p className={`text-sm font-medium text-gray-900`}>{assignment.vehicleDetails.name} ({assignment.vehicleDetails.number})</p>
                                               </div>
                                             )}
                                           </div>
@@ -2457,21 +2457,21 @@ export default function CustomerDashboard() {
                                       ))}
                                     </div>
                                   ) : booking.driverDetails ? (
-                                    <div className={`mb-6 p-4 rounded-2xl border shadow-sm bg-[#1A1A24] border-indigo-500/20`}>
+                                    <div className={`mb-6 p-4 rounded-2xl border shadow-sm bg-gray-50 border-indigo-500/20`}>
                                       <h5 className={`text-sm font-semibold mb-2 text-indigo-400`}>Driver & Vehicle Details</h5>
                                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                          <p className={`text-xs uppercase tracking-wider text-white/40`}>Driver Name</p>
-                                          <p className={`text-sm font-medium text-white`}>{booking.driverDetails.name}</p>
+                                          <p className={`text-xs uppercase tracking-wider text-gray-900/40`}>Driver Name</p>
+                                          <p className={`text-sm font-medium text-gray-900`}>{booking.driverDetails.name}</p>
                                         </div>
                                         <div>
-                                          <p className={`text-xs uppercase tracking-wider text-white/40`}>Phone Number</p>
-                                          <p className={`text-sm font-medium text-white`}>{booking.driverDetails.phone}</p>
+                                          <p className={`text-xs uppercase tracking-wider text-gray-900/40`}>Phone Number</p>
+                                          <p className={`text-sm font-medium text-gray-900`}>{booking.driverDetails.phone}</p>
                                         </div>
                                         {booking.vehicleDetails && (
                                           <div className="sm:col-span-2">
-                                            <p className={`text-xs uppercase tracking-wider text-white/40`}>Vehicle Assigned</p>
-                                            <p className={`text-sm font-medium text-white`}>{booking.vehicleDetails.name} ({booking.vehicleDetails.number})</p>
+                                            <p className={`text-xs uppercase tracking-wider text-gray-900/40`}>Vehicle Assigned</p>
+                                            <p className={`text-sm font-medium text-gray-900`}>{booking.vehicleDetails.name} ({booking.vehicleDetails.number})</p>
                                           </div>
                                         )}
                                       </div>
@@ -2490,12 +2490,12 @@ export default function CustomerDashboard() {
                                       <h5 className={`text-sm font-semibold mb-2 text-red-400`}>Refund Details</h5>
                                       <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                          <p className={`text-xs uppercase tracking-wider text-white/40`}>Status</p>
-                                          <p className={`text-sm font-medium text-white`}>{booking.refundStatus || 'No Refund'}</p>
+                                          <p className={`text-xs uppercase tracking-wider text-gray-900/40`}>Status</p>
+                                          <p className={`text-sm font-medium text-gray-900`}>{booking.refundStatus || 'No Refund'}</p>
                                         </div>
                                         <div>
-                                          <p className={`text-xs uppercase tracking-wider text-white/40`}>Amount</p>
-                                          <p className={`text-sm font-medium text-white`}>₹{booking.refundAmount?.toFixed(2) || '0.00'}</p>
+                                          <p className={`text-xs uppercase tracking-wider text-gray-900/40`}>Amount</p>
+                                          <p className={`text-sm font-medium text-gray-900`}>₹{booking.refundAmount?.toFixed(2) || '0.00'}</p>
                                         </div>
                                       </div>
                                     </div>
@@ -2503,8 +2503,8 @@ export default function CustomerDashboard() {
   
                                   <div className="flex justify-between items-end">
                                     <div>
-                                      <p className={`text-xs font-semibold uppercase tracking-wider mb-1 text-white/40`}>Booking ID</p>
-                                      <p className={`text-sm font-medium text-white`}>#{booking.id}</p>
+                                      <p className={`text-xs font-semibold uppercase tracking-wider mb-1 text-gray-900/40`}>Booking ID</p>
+                                      <p className={`text-sm font-medium text-gray-900`}>#{booking.id}</p>
                                     </div>
                                     <div className="flex flex-col items-end gap-2">
                                       <div className="flex gap-3">
@@ -2561,14 +2561,14 @@ export default function CustomerDashboard() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.3, type: "spring", bounce: 0.4 }}
-              className={`rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] max-w-md w-full overflow-hidden bg-[#13131A] border border-white/10`}
+              className={`rounded-3xl shadow-2xl max-w-md w-full overflow-hidden bg-white border border-gray-200 border-opacity-50`}
             >
               <div className="p-6 sm:p-8">
                 <div className="flex items-center justify-between mb-8">
-                  <h3 className={`text-2xl font-bold text-white tracking-tight`}>Cancel Ride</h3>
+                  <h3 className={`text-2xl font-bold text-gray-900 tracking-tight`}>Cancel Ride</h3>
                   <button 
                     onClick={() => setCancelModal({ isOpen: false, booking: null, refundInfo: null })}
-                    className={`hover:text-white transition-colors text-white/50 p-2 rounded-xl hover:bg-white/5`}
+                    className={`hover:text-gray-900 transition-colors text-gray-900/50 p-2 rounded-xl hover:bg-white/5`}
                   >
                     <span className="sr-only">Close</span>
                     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2577,15 +2577,15 @@ export default function CustomerDashboard() {
                   </button>
                 </div>
                 
-                <div className={`mb-6 p-5 rounded-2xl border bg-black/50 border-white/5 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]`}>
-                  <p className={`text-sm mb-3 text-white/70`}>
-                    <span className={`font-semibold text-white/40 uppercase tracking-wider text-xs mr-2`}>Route:</span> {cancelModal.booking.tripType === 'Car Renting' ? `Car Rental: ${cancelModal.booking.numberOfDays} days, ${cancelModal.booking.numberOfCars} cars` : cancelModal.booking.tripType === 'Tour' ? `${cancelModal.booking.fromLocation} \u2192 ${Array.isArray(cancelModal.booking.destinations) ? cancelModal.booking.destinations.join(', ') : cancelModal.booking.destinations}` : `${cancelModal.booking.fromLocation} \u2192 ${cancelModal.booking.toLocation}`}
+                <div className={`mb-6 p-5 rounded-2xl border bg-black/50 border-gray-200 border-opacity-50 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]`}>
+                  <p className={`text-sm mb-3 text-gray-900/70`}>
+                    <span className={`font-semibold text-gray-900/40 uppercase tracking-wider text-xs mr-2`}>Route:</span> {cancelModal.booking.tripType === 'Car Renting' ? `Car Rental: ${cancelModal.booking.numberOfDays} days, ${cancelModal.booking.numberOfCars} cars` : cancelModal.booking.tripType === 'Tour' ? `${cancelModal.booking.fromLocation} \u2192 ${Array.isArray(cancelModal.booking.destinations) ? cancelModal.booking.destinations.join(', ') : cancelModal.booking.destinations}` : `${cancelModal.booking.fromLocation} \u2192 ${cancelModal.booking.toLocation}`}
                   </p>
-                  <p className={`text-sm mb-3 text-white/70`}>
-                    <span className={`font-semibold text-white/40 uppercase tracking-wider text-xs mr-2`}>Departure:</span> {cancelModal.booking.rideDate}
+                  <p className={`text-sm mb-3 text-gray-900/70`}>
+                    <span className={`font-semibold text-gray-900/40 uppercase tracking-wider text-xs mr-2`}>Departure:</span> {cancelModal.booking.rideDate}
                   </p>
-                  <p className={`text-sm text-white/70`}>
-                    <span className={`font-semibold text-white/40 uppercase tracking-wider text-xs mr-2`}>Fare:</span> ₹{cancelModal.booking.fareAmount}
+                  <p className={`text-sm text-gray-900/70`}>
+                    <span className={`font-semibold text-gray-900/40 uppercase tracking-wider text-xs mr-2`}>Fare:</span> ₹{cancelModal.booking.fareAmount}
                   </p>
                 </div>
 
@@ -2593,7 +2593,7 @@ export default function CustomerDashboard() {
                   <div className={`mb-8 p-5 rounded-2xl border ${cancelModal.refundInfo.refundPercent > 0 ? ('bg-emerald-500/10 border-emerald-500/20 text-emerald-100') : ('bg-red-500/10 border-red-500/20 text-red-100')}`}>
                     <h4 className={`font-bold mb-2 ${cancelModal.refundInfo.refundPercent > 0 ? 'text-emerald-400' : 'text-red-400'}`}>Cancellation Policy</h4>
                     <p className="text-sm mb-4 leading-relaxed opacity-90">{cancelModal.refundInfo.message}</p>
-                    <div className="flex justify-between items-center font-bold text-lg pt-4 border-t border-white/10">
+                    <div className="flex justify-between items-center font-bold text-lg pt-4 border-t border-gray-200 border-opacity-50">
                       <span>Estimated Refund:</span>
                       <span>₹{cancelModal.refundInfo.refundAmount.toFixed(2)}</span>
                     </div>
@@ -2604,7 +2604,7 @@ export default function CustomerDashboard() {
                   <button
                     type="button"
                     onClick={() => setCancelModal({ isOpen: false, booking: null, refundInfo: null })}
-                    className={`px-6 py-3 text-sm font-medium rounded-xl transition-all text-white/70 hover:text-white bg-white/5 border border-white/10 hover:bg-white/10`}
+                    className={`px-6 py-3 text-sm font-medium rounded-xl transition-all text-gray-900/70 hover:text-gray-900 bg-white/5 border border-gray-200 border-opacity-50 hover:bg-white/10`}
                   >
                     Keep Ride
                   </button>
@@ -2616,7 +2616,7 @@ export default function CustomerDashboard() {
                         setCancelModal({ isOpen: false, booking: null, refundInfo: null });
                       }
                     }}
-                    className={`px-6 py-3 text-sm font-medium text-white border border-red-500/30 rounded-xl transition-all bg-red-600 hover:bg-red-500 shadow-[0_0_20px_rgba(220,38,38,0.4)]`}
+                    className={`px-6 py-3 text-sm font-medium text-gray-900 border border-red-500/30 rounded-xl transition-all bg-red-600 hover:bg-red-500 shadow-[0_0_20px_rgba(220,38,38,0.4)]`}
                   >
                     Confirm Cancellation
                   </button>
@@ -2636,14 +2636,14 @@ export default function CustomerDashboard() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.3, type: "spring", bounce: 0.4 }}
-              className={`rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] max-w-md w-full overflow-hidden bg-[#13131A] border border-white/10`}
+              className={`rounded-3xl shadow-2xl max-w-md w-full overflow-hidden bg-white border border-gray-200 border-opacity-50`}
             >
               <div className="p-6 sm:p-8">
                 <div className="flex items-center justify-between mb-8">
-                  <h3 className={`text-2xl font-bold text-white tracking-tight`}>Rebook Ride</h3>
+                  <h3 className={`text-2xl font-bold text-gray-900 tracking-tight`}>Rebook Ride</h3>
                   <button 
                     onClick={() => setRebookModal({ isOpen: false, booking: null })}
-                    className={`hover:text-white transition-colors text-white/50 p-2 rounded-xl hover:bg-white/5`}
+                    className={`hover:text-gray-900 transition-colors text-gray-900/50 p-2 rounded-xl hover:bg-white/5`}
                   >
                     <span className="sr-only">Close</span>
                     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2652,12 +2652,12 @@ export default function CustomerDashboard() {
                   </button>
                 </div>
                 
-                <div className={`mb-6 p-5 rounded-2xl border bg-black/50 border-white/5 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]`}>
-                  <p className={`text-sm mb-3 text-white/70`}>
-                    <span className={`font-semibold text-white/40 uppercase tracking-wider text-xs mr-2`}>Route:</span> {rebookModal.booking.tripType === 'Car Renting' ? `Car Rental: ${rebookModal.booking.numberOfDays} days, ${rebookModal.booking.numberOfCars} cars` : rebookModal.booking.tripType === 'Tour' ? `${rebookModal.booking.fromLocation} \u2192 ${Array.isArray(rebookModal.booking.destinations) ? rebookModal.booking.destinations.join(', ') : rebookModal.booking.destinations}` : `${rebookModal.booking.fromLocation} \u2192 ${rebookModal.booking.toLocation}`}
+                <div className={`mb-6 p-5 rounded-2xl border bg-black/50 border-gray-200 border-opacity-50 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]`}>
+                  <p className={`text-sm mb-3 text-gray-900/70`}>
+                    <span className={`font-semibold text-gray-900/40 uppercase tracking-wider text-xs mr-2`}>Route:</span> {rebookModal.booking.tripType === 'Car Renting' ? `Car Rental: ${rebookModal.booking.numberOfDays} days, ${rebookModal.booking.numberOfCars} cars` : rebookModal.booking.tripType === 'Tour' ? `${rebookModal.booking.fromLocation} \u2192 ${Array.isArray(rebookModal.booking.destinations) ? rebookModal.booking.destinations.join(', ') : rebookModal.booking.destinations}` : `${rebookModal.booking.fromLocation} \u2192 ${rebookModal.booking.toLocation}`}
                   </p>
-                  <p className={`text-sm text-white/70`}>
-                    <span className={`font-semibold text-white/40 uppercase tracking-wider text-xs mr-2`}>Vehicle:</span> {rebookModal.booking.suggestedVehicle} {rebookModal.booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
+                  <p className={`text-sm text-gray-900/70`}>
+                    <span className={`font-semibold text-gray-900/40 uppercase tracking-wider text-xs mr-2`}>Vehicle:</span> {rebookModal.booking.suggestedVehicle} {rebookModal.booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
                   </p>
                 </div>
 
@@ -2669,7 +2669,7 @@ export default function CustomerDashboard() {
                   )}
                   
                   <div>
-                    <label className={`block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase`}>Select New Date</label>
+                    <label className={`block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase`}>Select New Date</label>
                     <input
                       type="date"
                       required
@@ -2677,27 +2677,27 @@ export default function CustomerDashboard() {
                       value={rebookDate}
                       onChange={(e) => setRebookDate(e.target.value)}
                       onFocus={handleInputFocus}
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-[#13131A] shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] border-white/5 text-white`}
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] border-gray-200 border-opacity-50 text-gray-900`}
                     />
                   </div>
                   
                   <div>
-                    <label className={`block text-xs font-semibold mb-2 text-white/50 tracking-wider uppercase`}>Select New Time</label>
+                    <label className={`block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase`}>Select New Time</label>
                     <div className="flex gap-2 items-center">
                       <select
                         value={rebookTimeHour}
                         onChange={(e) => setRebookTimeHour(e.target.value)}
-                        className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-[#13131A] border-white/5 text-white appearance-none`}
+                        className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-white border-gray-200 border-opacity-50 text-gray-900 appearance-none`}
                       >
                         {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
                           <option key={h} value={h.toString().padStart(2, '0')}>{h.toString().padStart(2, '0')}</option>
                         ))}
                       </select>
-                      <span className={`flex items-center font-bold text-white/30`}>:</span>
+                      <span className={`flex items-center font-bold text-gray-900/30`}>:</span>
                       <select
                         value={rebookTimeMinute}
                         onChange={(e) => setRebookTimeMinute(e.target.value)}
-                        className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-[#13131A] border-white/5 text-white appearance-none`}
+                        className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-white border-gray-200 border-opacity-50 text-gray-900 appearance-none`}
                       >
                         {['00', '15', '30', '45'].map(m => (
                           <option key={m} value={m}>{m}</option>
@@ -2706,7 +2706,7 @@ export default function CustomerDashboard() {
                       <select
                         value={rebookTimeAmPm}
                         onChange={(e) => setRebookTimeAmPm(e.target.value)}
-                        className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-[#13131A] border-white/5 text-white appearance-none`}
+                        className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-white border-gray-200 border-opacity-50 text-gray-900 appearance-none`}
                       >
                         <option value="AM">AM</option>
                         <option value="PM">PM</option>
@@ -2718,14 +2718,14 @@ export default function CustomerDashboard() {
                     <button
                       type="button"
                       onClick={() => setRebookModal({ isOpen: false, booking: null })}
-                      className={`flex-1 px-6 py-3 border rounded-xl text-sm font-medium transition-all border-white/10 text-white/70 bg-white/5 hover:bg-white/10 hover:text-white`}
+                      className={`flex-1 px-6 py-3 border rounded-xl text-sm font-medium transition-all border-gray-200 border-opacity-50 text-gray-900/70 bg-white/5 hover:bg-white/10 hover:text-gray-900`}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={rebookLoading || !rebookDate}
-                      className={`flex-1 px-6 py-3 border border-indigo-400/30 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center transition-all bg-indigo-600 hover:bg-indigo-500`}
+                      className={`flex-1 px-6 py-3 border border-indigo-400/30 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] text-sm font-medium text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center transition-all bg-indigo-600 hover:bg-indigo-500`}
                     >
                       {rebookLoading ? (
                         <RefreshCw className="w-5 h-5 animate-spin" />
@@ -2750,7 +2750,7 @@ export default function CustomerDashboard() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.4, type: "spring", bounce: 0.5 }}
-              className={`rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] max-w-md w-full overflow-hidden bg-[#13131A] border border-white/10 max-h-[90dvh] flex flex-col`}
+              className={`rounded-3xl shadow-2xl max-w-md w-full overflow-hidden bg-white border border-gray-200 border-opacity-50 max-h-[90dvh] flex flex-col`}
             >
               <div className="p-8 text-center overflow-y-auto flex-1 relative">
                 <div className="relative mx-auto w-28 h-28 mb-8 flex items-center justify-center">
@@ -2765,7 +2765,7 @@ export default function CustomerDashboard() {
                       animate={{ pathLength: 1 }}
                       transition={{ duration: 0.5, delay: 0.2 }}
                     >
-                      <CheckCircle className="w-12 h-12 text-white" />
+                      <CheckCircle className="w-12 h-12 text-gray-900" />
                     </motion.div>
                   </motion.div>
                   <motion.div 
@@ -2775,13 +2775,13 @@ export default function CustomerDashboard() {
                   />
                 </div>
                 
-                <h2 className={`text-3xl font-bold mb-8 text-white tracking-tight`}>Booking Confirmed</h2>
+                <h2 className={`text-3xl font-bold mb-8 text-gray-900 tracking-tight`}>Booking Confirmed</h2>
 
-                <div className={`rounded-2xl p-5 text-left border mb-8 bg-black/50 border-white/5 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]`}>
+                <div className={`rounded-2xl p-5 text-left border mb-8 bg-black/50 border-gray-200 border-opacity-50 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]`}>
                   <div className="space-y-4 text-sm">
                     <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-4">
-                      <span className={'text-white/50 uppercase tracking-wider text-xs font-semibold whitespace-nowrap'}>Route</span>
-                      <span className={`font-medium text-left sm:text-right text-white break-words`}>
+                      <span className={'text-gray-900/50 uppercase tracking-wider text-xs font-semibold whitespace-nowrap'}>Route</span>
+                      <span className={`font-medium text-left sm:text-right text-gray-900 break-words`}>
                         {bookingSuccessData.tripType === 'Car Renting'
                           ? `Car Rental: ${bookingSuccessData.numberOfDays} days, ${bookingSuccessData.numberOfCars} cars`
                           : bookingSuccessData.tripType === 'Tour' 
@@ -2789,9 +2789,9 @@ export default function CustomerDashboard() {
                           : `${bookingSuccessData.fromLocation} \u2192 ${bookingSuccessData.toLocation}`}
                       </span>
                     </div>
-                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-4 pt-4 border-t border-white/10">
-                      <span className={'text-white/50 uppercase tracking-wider text-xs font-semibold whitespace-nowrap'}>Departure</span>
-                      <span className={`font-medium text-left sm:text-right text-white`}>
+                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-4 pt-4 border-t border-gray-200 border-opacity-50">
+                      <span className={'text-gray-900/50 uppercase tracking-wider text-xs font-semibold whitespace-nowrap'}>Departure</span>
+                      <span className={`font-medium text-left sm:text-right text-gray-900`}>
                         {safeFormatDate(bookingSuccessData.rideDate, 'dd/MM/yyyy hh:mm a')}
                       </span>
                     </div>
@@ -2809,7 +2809,7 @@ export default function CustomerDashboard() {
                   </div>
                 </div>
               </div>
-              <div className="p-6 pt-0 border-t border-white/10 bg-[#13131A]">
+              <div className="p-6 pt-0 border-t border-gray-200 border-opacity-50 bg-white">
                 <div className="flex flex-col sm:flex-row gap-4 w-full mt-6">
                   <button
                     onClick={() => {
@@ -2817,7 +2817,7 @@ export default function CustomerDashboard() {
                       setBookingSuccessData(null);
                       setBookingStep(1);
                     }}
-                    className={`flex-1 justify-center py-3 px-6 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] text-sm font-medium text-white transition-all bg-indigo-600 hover:bg-indigo-500 border border-indigo-400/30 transform active:scale-95`}
+                    className={`flex-1 justify-center py-3 px-6 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] text-sm font-medium text-gray-900 transition-all bg-indigo-600 hover:bg-indigo-500 border border-indigo-400/30 transform active:scale-95`}
                   >
                     Go to My Bookings
                   </button>
@@ -2827,7 +2827,7 @@ export default function CustomerDashboard() {
                       setBookingStep(1);
                       setIsSheetExpanded(false);
                     }}
-                    className={`flex-1 justify-center py-3 px-6 rounded-xl text-sm font-medium transition-all border text-white/80 bg-white/5 hover:bg-white/10 hover:text-white border-white/10 transform active:scale-95`}
+                    className={`flex-1 justify-center py-3 px-6 rounded-xl text-sm font-medium transition-all border text-gray-900/80 bg-white/5 hover:bg-white/10 hover:text-gray-900 border-gray-200 border-opacity-50 transform active:scale-95`}
                   >
                     Book Another
                   </button>
