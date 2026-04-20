@@ -115,7 +115,7 @@ const LoyaltyCard = ({ bookingsCount }: { bookingsCount: number,  }) => {
       className={`relative overflow-hidden rounded-2xl p-6 mb-8 border bg-gradient-to-br ${getTierStyles()} opacity-90`}
       style={{ transformStyle: 'preserve-3d', perspective: 1000 }}
     >
-      <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl"></div>
+      <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white dark:bg-[#ffffff]/5 opacity-10 rounded-full blur-2xl"></div>
       <div className="relative z-10 flex justify-between items-start">
         <div>
           <p className="text-xs uppercase tracking-widest opacity-80 font-semibold mb-1">Status Tier</p>
@@ -172,7 +172,7 @@ const VehicleShowroomCard = ({ vehicle, isSelected, isUnavailable,  onClick }: a
           <h4 className={`font-semibold text-base ${isSelected ? 'text-gray-900' : 'text-gray-900/80'}`}>
             {vehicle.name.replace(/ \(\d+ Seater\)/, '')}
           </h4>
-          <div className="flex items-center text-xs text-gray-900/40 gap-1 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200 border-opacity-50">
+          <div className="flex items-center text-xs text-gray-900/40 gap-1 bg-gray-100 dark:bg-[#ffffff]/10 px-2 py-0.5 rounded-full border border-gray-200 border-opacity-50">
             <Users className="w-3 h-3" /> {vehicle.capacity}
           </div>
         </div>
@@ -590,8 +590,12 @@ export default function CustomerDashboard() {
         const data = await api.getBookings(user.id, false, forceRefresh);
         setBookings(data);
       }
-    } catch (error) {
-      console.error('Failed to fetch bookings:', error);
+    } catch (error: any) {
+      if (error?.message === 'Failed to fetch') {
+        console.warn('Network connection to server temporarily lost. Retrying later...');
+      } else {
+        console.error('Failed to fetch bookings:', error);
+      }
     } finally {
       setLoading(false);
     }
@@ -605,8 +609,12 @@ export default function CustomerDashboard() {
         setProfileEmail(data.email);
         setProfilePhone(data.phone || '');
       }
-    } catch (error) {
-      console.error('Failed to fetch profile:', error);
+    } catch (error: any) {
+       if (error?.message === 'Failed to fetch') {
+        console.warn('Network connection to server temporarily lost. Retrying later...');
+      } else {
+        console.error('Failed to fetch profile:', error);
+      }
     }
   };
 
@@ -1224,7 +1232,7 @@ export default function CustomerDashboard() {
             initial={{ opacity: 0, y: -50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -50, scale: 0.9 }}
-            className="fixed top-24 right-4 z-50 bg-white text-emerald-400 px-6 py-4 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-emerald-500/20 flex items-center gap-3 backdrop-blur-md"
+            className="fixed top-24 right-4 z-50 bg-white dark:bg-[#ffffff]/5 text-emerald-400 px-6 py-4 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-emerald-500/20 flex items-center gap-3 backdrop-blur-md"
           >
             <CheckCircle className="w-5 h-5 text-emerald-500" />
             <span className="font-semibold text-sm tracking-wide text-gray-900">{profileSuccess}</span>
@@ -1250,7 +1258,7 @@ export default function CustomerDashboard() {
             : 'calc(100dvh - 64px)' 
         }}
         transition={{ type: 'spring', stiffness: 300, damping: 25, mass: 0.8 }}
-        className={`fixed bottom-0 sm:bottom-6 left-0 right-0 mx-auto w-full sm:w-[calc(100%-3rem)] max-w-5xl z-40 bg-white/70 dark:bg-[#060608]/70 backdrop-blur-md shadow-2xl sm:border border-gray-200 dark:border-white/10 flex flex-col transition-colors duration-500 ${
+        className={`fixed bottom-0 sm:bottom-6 left-0 right-0 mx-auto w-full sm:w-[calc(100%-3rem)] max-w-5xl z-40 bg-white/70 dark:bg-[#060608]/70 backdrop-blur-md shadow-2xl sm:border border-gray-200 dark:border-[#ffffff]/10 flex flex-col transition-colors duration-500 ${
           activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-[2.5rem] sm:rounded-[2.5rem]' : 'rounded-none sm:rounded-[2.5rem]'
         }`}
       >
@@ -1258,7 +1266,7 @@ export default function CustomerDashboard() {
         <div className="absolute top-full left-0 w-full h-[100vh] bg-[#F5F5F7] dark:bg-[#0F0F13] pointer-events-none sm:hidden transition-colors duration-500" />
 
         <div className="flex-1 overflow-y-auto pb-8 overscroll-none" id="bottom-sheet-container">
-          <div className={`sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-200 pb-2 transition-colors duration-500 ${activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-[2.5rem] sm:rounded-[2.5rem]' : ''}`}>
+          <div className={`sticky top-0 z-40 bg-white/95 dark:bg-[#060608]/95 backdrop-blur-xl border-b border-gray-200 dark:border-[#ffffff]/10 pb-2 transition-colors duration-500 ${activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-[2.5rem] sm:rounded-[2.5rem]' : ''}`}>
           {/* Drag Handle */}
           {activeTab === 'dashboard' && bookingStep > 1 && (
             <div 
@@ -1283,7 +1291,7 @@ export default function CustomerDashboard() {
                 </div>
               </div>
               <div className="flex items-center gap-4 w-full sm:w-auto">
-                <div className="flex p-1 bg-gray-100 border border-gray-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] rounded-lg w-full sm:w-auto relative transition-colors duration-500" role="tablist" aria-label="Dashboard Options">
+                <div className="flex p-1 bg-gray-100 dark:bg-[#ffffff]/10 border border-gray-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] rounded-lg w-full sm:w-auto relative transition-colors duration-500" role="tablist" aria-label="Dashboard Options">
                   {[{ id: 'dashboard', label: 'Dashboard' }, { id: 'bookings', label: 'My Bookings' }].map((tab) => {
                     const isSelected = activeTab === tab.id;
                     return (
@@ -1299,7 +1307,7 @@ export default function CustomerDashboard() {
                         {isSelected && (
                           <motion.div
                             layoutId="customerTabs"
-                            className="absolute inset-0 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.2)] border border-gray-200 rounded-md z-[-1] transition-colors duration-500"
+                            className="absolute inset-0 bg-white dark:bg-[#ffffff]/5 shadow-[0_1px_2px_rgba(0,0,0,0.1)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.2)] border border-gray-200 rounded-md z-[-1] transition-colors duration-500"
                             initial={false}
                             transition={{
                               type: "spring",
@@ -1325,7 +1333,7 @@ export default function CustomerDashboard() {
           {activeTab === 'profile' ? (
             <div className="max-w-2xl mx-auto space-y-8">
               <LoyaltyCard bookingsCount={bookings.filter(b => b.rideStatus === 'Completed').length}  />
-              <div className={`rounded-[2rem] shadow-[0_10px_40px_rgba(0,0,0,0.5)] border p-8 bg-black/40 border-gray-200 border-opacity-50`}>
+              <div className="relative overflow-hidden">
                 <div className={`flex justify-between items-start ${isEditingProfile ? 'mb-8' : ''}`}>
                   <div className="flex items-center gap-5">
                     <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-gray-900 font-bold text-3xl shadow-[0_0_20px_rgba(99,102,241,0.3)] bg-gradient-to-br from-indigo-500 to-indigo-700`}>
@@ -1368,7 +1376,7 @@ export default function CustomerDashboard() {
                           }
                         }}
                         onFocus={handleInputFocus}
-                        className="mt-1 block w-full border border-gray-200 border-opacity-50 bg-white text-gray-900 rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all"
+                        className="mt-1 block w-full border border-gray-200 border-opacity-50 bg-white dark:bg-[#ffffff]/5 text-gray-900 rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all"
                       />
                     </div>
                     <div>
@@ -1380,7 +1388,7 @@ export default function CustomerDashboard() {
                         value={profileEmail}
                         onChange={(e) => setProfileEmail(e.target.value)}
                         onFocus={handleInputFocus}
-                        className="mt-1 block w-full border border-gray-200 border-opacity-50 bg-white text-gray-900 rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all text-gray-900/50 cursor-not-allowed"
+                        className="mt-1 block w-full border border-gray-200 border-opacity-50 bg-white dark:bg-[#ffffff]/5 text-gray-900 rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all text-gray-900/50 cursor-not-allowed"
                         disabled
                       />
                     </div>
@@ -1397,7 +1405,7 @@ export default function CustomerDashboard() {
                           }
                         }}
                         onFocus={handleInputFocus}
-                        className="mt-1 block w-full border border-gray-200 border-opacity-50 bg-white text-gray-900 rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all"
+                        className="mt-1 block w-full border border-gray-200 border-opacity-50 bg-white dark:bg-[#ffffff]/5 text-gray-900 rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all"
                       />
                     </div>
                     <div className="flex space-x-4 pt-4">
@@ -1411,7 +1419,7 @@ export default function CustomerDashboard() {
                       <button
                         type="submit"
                         disabled={profileLoading}
-                        className="flex-1 flex justify-center py-3 px-6 border border-indigo-400/30 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] text-sm font-medium text-gray-900 bg-indigo-600 hover:bg-indigo-500 focus:outline-none transform active:scale-95 transition-all disabled:opacity-50"
+                        className="flex-1 flex justify-center py-3 px-6 border border-indigo-400/30 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] text-sm font-medium text-white dark:text-[#ffffff] bg-indigo-600 hover:bg-indigo-500 focus:outline-none transform active:scale-95 transition-all disabled:opacity-50"
                       >
                         {profileLoading ? 'Saving...' : 'Save Changes'}
                       </button>
@@ -1422,10 +1430,9 @@ export default function CustomerDashboard() {
             </div>
           ) : activeTab === 'dashboard' ? (
             <div className="flex flex-col gap-8">
-              <div className="flex flex-col gap-8">
                 
                 {/* Book a Ride Form */}
-                <div className={`relative overflow-hidden rounded-[2rem] p-6 sm:p-8 bg-black/40 border border-gray-200 border-opacity-50 shadow-[0_10px_40px_rgba(0,0,0,0.5)]`}>
+                <div className="relative overflow-hidden">
                 <AnimatePresence>
                   {bookingLoading && <ConciergeLoading  />}
                 </AnimatePresence>
@@ -1438,7 +1445,7 @@ export default function CustomerDashboard() {
                       <div key={step} className="flex items-center">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
                           bookingStep === step 
-                            ? ('bg-indigo-500 text-gray-900 shadow-[0_0_15px_rgba(99,102,241,0.5)]')
+                            ? ('bg-indigo-500 text-white dark:text-[#ffffff] shadow-[0_0_15px_rgba(99,102,241,0.5)]')
                             : bookingStep > step 
                               ? ('bg-white/10 text-indigo-400')
                               : ('bg-white/5 text-gray-500')
@@ -1528,7 +1535,7 @@ export default function CustomerDashboard() {
                                   setShowFromSuggestions(false);
                                 }, 200);
                               }}
-                              className={`mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 pl-4 ${tripType !== 'Tour' ? 'pr-12' : 'pr-4'} text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm`}
+                              className={`mt-1 block w-full bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 pl-4 ${tripType !== 'Tour' ? 'pr-12' : 'pr-4'} sm:pr-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm`}
                               placeholder="Source City"
                               autoComplete="off"
                             />
@@ -1562,7 +1569,7 @@ export default function CustomerDashboard() {
                           
                           {tripType !== 'Tour' && (
                             <>
-                              <div className="absolute left-[calc(50%-1.25rem)] sm:left-1/2 top-[calc(50%+0.5rem)] sm:top-[60%] sm:-translate-x-1/2 -translate-y-1/2 z-10 hidden sm:flex items-center justify-center pointer-events-none">
+                              <div className="relative z-10 flex items-center justify-end sm:justify-center pointer-events-none -my-5 sm:my-0 sm:mt-[26px] pr-4 sm:pr-0">
                                 <button
                                   type="button"
                                   onClick={(e) => {
@@ -1574,10 +1581,10 @@ export default function CustomerDashboard() {
                                     setToLocation(tempLoc);
                                     setToLocationData(tempData);
                                   }}
-                                  className="pointer-events-auto bg-gray-50 text-gray-900 p-2 rounded-full hover:bg-white/10 transition-colors shadow-lg border border-gray-200 border-opacity-50 flex items-center justify-center transform active:scale-95"
+                                  className="pointer-events-auto bg-white dark:bg-[#1a1a24] text-gray-900 p-2 rounded-full hover:bg-gray-50 dark:hover:bg-[#ffffff]/10 transition-colors shadow-md border border-gray-200 dark:border-[#ffffff]/10 flex items-center justify-center transform active:scale-95 sm:mx-0 sm:self-center"
                                   title="Swap locations"
                                 >
-                                  <ArrowUpDown className="h-4 w-4" />
+                                  <ArrowUpDown className="h-4 w-4 rotate-0 sm:rotate-90 transition-transform duration-300" />
                                 </button>
                               </div>
                               <div className="relative flex-1">
@@ -1605,7 +1612,7 @@ export default function CustomerDashboard() {
                                       setShowToSuggestions(false);
                                     }, 200);
                                   }}
-                                  className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 pl-4 pr-4 sm:pr-8 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
+                                  className="mt-1 block w-full bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 pl-4 pr-12 sm:pr-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                                   placeholder="Destination City"
                                   autoComplete="off"
                                 />
@@ -1694,7 +1701,7 @@ export default function CustomerDashboard() {
                                     setActiveDestinationIndex(null);
                                   }, 200);
                                 }}
-                                className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
+                                className="mt-1 block w-full bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                                 placeholder={`Destination ${index + 1}`}
                                 autoComplete="off"
                               />
@@ -1783,13 +1790,13 @@ export default function CustomerDashboard() {
                         value={rideDate}
                         onChange={(e) => setRideDate(e.target.value)}
                         onFocus={handleInputFocus}
-                        className="block w-full sm:flex-1 min-w-[150px] bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm [color-scheme:dark]"
+                        className="block w-full sm:flex-1 min-w-[150px] bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm [color-scheme:dark]"
                       />
                       <div className="flex gap-2 items-center flex-1 min-w-[240px]">
                         <select
                           value={rideTimeHour}
                           onChange={(e) => setRideTimeHour(e.target.value)}
-                          className="block w-full flex-1 bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
+                          className="block w-full flex-1 bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                         >
                           {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
                             <option key={h} value={h.toString().padStart(2, '0')}>{h.toString().padStart(2, '0')}</option>
@@ -1799,7 +1806,7 @@ export default function CustomerDashboard() {
                         <select
                           value={rideTimeMinute}
                           onChange={(e) => setRideTimeMinute(e.target.value)}
-                          className="block w-full flex-1 bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
+                          className="block w-full flex-1 bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                         >
                           {['00', '15', '30', '45'].map(m => (
                             <option key={m} value={m}>{m}</option>
@@ -1808,7 +1815,7 @@ export default function CustomerDashboard() {
                         <select
                           value={rideTimeAmPm}
                           onChange={(e) => setRideTimeAmPm(e.target.value)}
-                          className="block w-full flex-1 bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
+                          className="block w-full flex-1 bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                         >
                           <option value="AM">AM</option>
                           <option value="PM">PM</option>
@@ -1837,13 +1844,13 @@ export default function CustomerDashboard() {
                             value={returnDate}
                             onChange={(e) => setReturnDate(e.target.value)}
                             onFocus={handleInputFocus}
-                            className="block w-full sm:flex-1 min-w-[150px] bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm [color-scheme:dark]"
+                            className="block w-full sm:flex-1 min-w-[150px] bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm [color-scheme:dark]"
                           />
                           <div className="flex gap-2 items-center flex-1 min-w-[240px]">
                             <select
                               value={returnTimeHour}
                               onChange={(e) => setReturnTimeHour(e.target.value)}
-                              className="block w-full flex-1 bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
+                              className="block w-full flex-1 bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                             >
                               {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
                                 <option key={h} value={h.toString().padStart(2, '0')}>{h.toString().padStart(2, '0')}</option>
@@ -1853,7 +1860,7 @@ export default function CustomerDashboard() {
                             <select
                               value={returnTimeMinute}
                               onChange={(e) => setReturnTimeMinute(e.target.value)}
-                              className="block w-full flex-1 bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
+                              className="block w-full flex-1 bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                             >
                               {['00', '15', '30', '45'].map(m => (
                                 <option key={m} value={m}>{m}</option>
@@ -1862,7 +1869,7 @@ export default function CustomerDashboard() {
                             <select
                               value={returnTimeAmPm}
                               onChange={(e) => setReturnTimeAmPm(e.target.value)}
-                              className="block w-full flex-1 bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
+                              className="block w-full flex-1 bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                             >
                               <option value="AM">AM</option>
                               <option value="PM">PM</option>
@@ -1893,7 +1900,7 @@ export default function CustomerDashboard() {
                               value={numberOfDays}
                               onChange={(e) => setNumberOfDays(e.target.value === '' ? '' : parseInt(e.target.value))}
                               onFocus={handleInputFocus}
-                              className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
+                              className="mt-1 block w-full bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                             />
                           </div>
                           <div>
@@ -1907,7 +1914,7 @@ export default function CustomerDashboard() {
                               value={numberOfCars}
                               onChange={(e) => setNumberOfCars(e.target.value === '' ? '' : parseInt(e.target.value))}
                               onFocus={handleInputFocus}
-                              className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
+                              className="mt-1 block w-full bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                             />
                           </div>
                         </div>
@@ -1935,7 +1942,7 @@ export default function CustomerDashboard() {
                               value={weddingDate}
                               onChange={(e) => setWeddingDate(e.target.value)}
                               onFocus={handleInputFocus}
-                              className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm [color-scheme:dark]"
+                              className="mt-1 block w-full bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm [color-scheme:dark]"
                             />
                           </div>
                           <div>
@@ -1948,7 +1955,7 @@ export default function CustomerDashboard() {
                               onChange={(e) => setEventLocation(e.target.value)}
                               onFocus={handleInputFocus}
                               placeholder="e.g., Grand Hotel, City Center"
-                              className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
+                              className="mt-1 block w-full bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                             />
                           </div>
                         </div>
@@ -1964,7 +1971,7 @@ export default function CustomerDashboard() {
                               value={vehiclesRequired}
                               onChange={(e) => setVehiclesRequired(e.target.value)}
                               onFocus={handleInputFocus}
-                              className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
+                              className="mt-1 block w-full bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                             />
                           </div>
                           <div>
@@ -1973,7 +1980,7 @@ export default function CustomerDashboard() {
                               id="decorationRequired"
                               value={decorationRequired}
                               onChange={(e) => setDecorationRequired(e.target.value)}
-                              className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none"
+                              className="mt-1 block w-full bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none"
                             >
                               <option value="No">No</option>
                               <option value="Yes">Yes</option>
@@ -1994,7 +2001,7 @@ export default function CustomerDashboard() {
                         value={rideType}
                         onChange={(e) => setRideType(e.target.value)}
                         onFocus={handleInputFocus}
-                        className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none"
+                        className="mt-1 block w-full bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none"
                       >
                         <option value="Intercity">Intercity</option>
                         <option value="Airport Transfer">Airport Transfer</option>
@@ -2016,7 +2023,7 @@ export default function CustomerDashboard() {
                           value={numberOfPeople}
                           onChange={(e) => setNumberOfPeople(e.target.value === '' ? '' : parseInt(e.target.value))}
                           onFocus={handleInputFocus}
-                          className="mt-1 block w-full bg-white border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
+                          className="mt-1 block w-full bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
                         />
                       </div>
                     </div>
@@ -2081,7 +2088,7 @@ export default function CustomerDashboard() {
                                   max={AVAILABLE_VEHICLES.find(v => v.name === selectedVehicle)?.quantity || 10}
                                   value={numberOfCars}
                                   onChange={(e) => setNumberOfCars(e.target.value === '' ? '' : parseInt(e.target.value))}
-                                  className={`block w-full border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm bg-white border-gray-200 border-opacity-50 text-gray-900`}
+                                  className={`block w-full border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm bg-white dark:bg-[#ffffff]/5 border-gray-200 border-opacity-50 text-gray-900`}
                                 />
                               </div>
                             )}
@@ -2103,7 +2110,7 @@ export default function CustomerDashboard() {
                                     checked={isAC}
                                     onChange={(e) => setIsAC(e.target.checked)}
                                   />
-                                  <div className="w-11 h-6 rounded-full peer peer-focus:outline-none peer-focus:ring-2 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-200 border-opacity-50 after:border after:rounded-full after:h-5 after:w-5 after:transition-all bg-white/20 peer-focus:ring-indigo-500/30 peer-checked:bg-indigo-500"></div>
+                                  <div className="w-11 h-6 rounded-full peer peer-focus:outline-none peer-focus:ring-2 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-[#ffffff]/5 after:border-gray-200 border-opacity-50 after:border after:rounded-full after:h-5 after:w-5 after:transition-all bg-white/20 peer-focus:ring-indigo-500/30 peer-checked:bg-indigo-500"></div>
                                 </label>
                               </div>
                             )}
@@ -2114,7 +2121,7 @@ export default function CustomerDashboard() {
                       {bookingStep === 3 && (
                         <div className="space-y-6">
                           {/* Review Step */}
-                          <div className={`rounded-3xl p-6 sm:p-8 border bg-black/40 border-gray-200 border-opacity-50 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)]`}>
+                          <div className={`rounded-3xl p-6 sm:p-8 bg-white/50 dark:bg-[#ffffff]/5 border border-gray-200 dark:border-[#ffffff]/10 shadow-xl`}>
                             {tripType === 'Car Renting' ? (
                               <h4 className={`text-xl font-bold mb-6 text-gray-900 tracking-tight`}>Review Your Rental Car for {user?.name}</h4>
                             ) : (
@@ -2162,6 +2169,69 @@ export default function CustomerDashboard() {
                               </div>
                             </div>
                           </div>
+                          
+                          {/* Trip Summary and Slide to Book merged directly under Review */}
+                          <div className="bg-white/50 dark:bg-[#ffffff]/5 border border-gray-200 dark:border-[#ffffff]/10 rounded-3xl shadow-xl p-6 sm:p-8">
+                            <h3 className="text-xl font-bold text-gray-900 tracking-tight mb-6 flex items-center gap-3">
+                              <div className="p-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30">
+                                <CreditCard className="h-5 w-5 text-indigo-400" />
+                              </div>
+                              Trip Summary
+                            </h3>
+                            <div className="space-y-4">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-900/50">Trip Type</span>
+                                <span className="font-medium text-gray-900">{tripType}</span>
+                              </div>
+                              {tripType !== 'Car Renting' && (
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-gray-900/50">Total Distance</span>
+                                  <span className="font-medium text-gray-900">{estimatedKM} km</span>
+                                </div>
+                              )}
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-900/50">Vehicle</span>
+                                <span className="font-medium text-gray-900">{selectedVehicle.replace(/ \(\d+ Seater\)/, '')}</span>
+                              </div>
+                              {tripType === 'Round-trip' && (
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-gray-900/50">Halt Charges</span>
+                                  <span className="font-medium text-gray-900">₹{calculateHaltCharge()}</span>
+                                </div>
+                              )}
+                              <div className="border-t border-gray-200 border-opacity-50 pt-6 mt-6">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-base font-bold text-gray-900">Total Estimated Fare</span>
+                                  <span className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-fuchsia-400">₹{
+                                    tripType === 'Car Renting' 
+                                      ? (Number(numberOfDays) || 1) * 2000 * (Number(numberOfCars) || 1)
+                                      : (estimatedPrice || (estimatedKM * (selectedVehicle === 'Swift Dzire' ? 13 : selectedVehicle === 'Ertiga' ? 14 : 28) * (tripType === 'Wedding' ? (parseInt(vehiclesRequired) || 1) : (tripType === 'Tour' ? (Number(numberOfCars) || 1) : 1)))) + (tripType === 'Round-trip' ? calculateHaltCharge() : 0)
+                                  }</span>
+                                </div>
+                                <p className="text-xs text-gray-900/30 mt-2 text-right">*Final fare may vary based on actual distance and tolls.</p>
+                                
+                                {/* Slide to Book moved inside Trip Summary under the price */}
+                                <div className="mt-8 pt-6 border-t border-gray-200/50 dark:border-[#ffffff]/10">
+                                  <SlideToBookButton 
+                                    text={tripType === 'Car Renting' ? 'Slide to Rent' : 'Slide to Book'}
+                                    onConfirm={() => {
+                                      const btn = document.getElementById('hidden-submit-btn') as HTMLButtonElement;
+                                      if (btn) {
+                                        btn.click();
+                                      }
+                                    }}
+                                    isLoading={bookingLoading}
+                                    disabled={bookingLoading || (numberOfPeople > 22 && !confirmCapacity)}
+                                  />
+                                  <button
+                                    id="hidden-submit-btn"
+                                    type="submit"
+                                    className="hidden"
+                                  ></button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       )}
 
@@ -2182,9 +2252,13 @@ export default function CustomerDashboard() {
                           </button>
                         ) : <div></div>}
                         
-                        {bookingStep < 3 ? (
+                        {bookingStep < 3 && (
                           <button
-                            type="submit"
+                            type="button"
+                            onClick={() => {
+                              const btn = document.getElementById('hidden-next-btn');
+                              if (btn) btn.click();
+                            }}
                             disabled={isNextDisabled}
                             className={`flex items-center px-8 py-3 text-sm font-medium rounded-2xl text-gray-900 transition-all transform active:scale-95 ${
                               isNextDisabled 
@@ -2194,77 +2268,13 @@ export default function CustomerDashboard() {
                           >
                             Next <ChevronRight className="w-4 h-4 ml-1" />
                           </button>
-                        ) : (
-                          <div className="w-full max-w-xs ml-auto">
-                            <SlideToBookButton 
-                              text={tripType === 'Car Renting' ? 'Slide to Rent' : 'Slide to Book'}
-                              onConfirm={() => {
-                                const btn = document.getElementById('hidden-submit-btn') as HTMLButtonElement;
-                                if (btn) {
-                                  btn.click();
-                                }
-                              }}
-                              isLoading={bookingLoading}
-                              disabled={bookingLoading || (numberOfPeople > 22 && !confirmCapacity)}
-                            />
-                            <button
-                              id="hidden-submit-btn"
-                              type="submit"
-                              className="hidden"
-                            ></button>
-                          </div>
                         )}
+                        <button id="hidden-next-btn" type="submit" className="hidden"></button>
                       </div>
                     </motion.form>
                 </AnimatePresence>
               </div>
-
-              {/* Dynamic Receipt Component */}
-              {bookingStep === 3 && (
-                <div className="bg-black/40 border border-gray-200 border-opacity-50 backdrop-blur-xl rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] p-6 sm:p-8">
-                  <h3 className="text-xl font-bold text-gray-900 tracking-tight mb-6 flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30">
-                      <CreditCard className="h-5 w-5 text-indigo-400" />
-                    </div>
-                    Trip Summary
-                  </h3>
-                  <div className="space-y-4">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-900/50">Trip Type</span>
-                      <span className="font-medium text-gray-900">{tripType}</span>
-                    </div>
-                    {tripType !== 'Car Renting' && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-900/50">Total Distance</span>
-                        <span className="font-medium text-gray-900">{estimatedKM} km</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-900/50">Vehicle</span>
-                      <span className="font-medium text-gray-900">{selectedVehicle.replace(/ \(\d+ Seater\)/, '')}</span>
-                    </div>
-                    {tripType === 'Round-trip' && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-900/50">Halt Charges</span>
-                        <span className="font-medium text-gray-900">₹{calculateHaltCharge()}</span>
-                      </div>
-                    )}
-                    <div className="border-t border-gray-200 border-opacity-50 pt-6 mt-6">
-                      <div className="flex justify-between items-center">
-                        <span className="text-base font-bold text-gray-900">Total Estimated Fare</span>
-                        <span className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-fuchsia-400">₹{
-                          tripType === 'Car Renting' 
-                            ? (Number(numberOfDays) || 1) * 2000 * (Number(numberOfCars) || 1)
-                            : (estimatedPrice || (estimatedKM * (selectedVehicle === 'Swift Dzire' ? 13 : selectedVehicle === 'Ertiga' ? 14 : 28) * (tripType === 'Wedding' ? (parseInt(vehiclesRequired) || 1) : (tripType === 'Tour' ? (Number(numberOfCars) || 1) : 1)))) + (tripType === 'Round-trip' ? calculateHaltCharge() : 0)
-                        }</span>
-                      </div>
-                      <p className="text-xs text-gray-900/30 mt-2 text-right">*Final fare may vary based on actual distance and tolls.</p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
-          </div>
           ) : (
             <div className="max-w-5xl mx-auto">
               <div className="flex justify-between items-center mb-6">
@@ -2288,7 +2298,7 @@ export default function CustomerDashboard() {
                 {loading ? (
                   <div className="space-y-6">
                     {[1, 2, 3].map(i => (
-                      <div key={i} className="bg-black/40 border border-gray-200 border-opacity-50 backdrop-blur-xl rounded-3xl p-6 animate-pulse">
+                      <div key={i} className="bg-white/50 dark:bg-[#ffffff]/5 border border-gray-200 dark:border-[#ffffff]/10 rounded-3xl p-6 animate-pulse">
                         <div className="flex justify-between items-center mb-4">
                           <div className="h-6 bg-white/10 rounded-lg w-1/3"></div>
                           <div className="flex gap-2">
@@ -2305,7 +2315,7 @@ export default function CustomerDashboard() {
                     ))}
                   </div>
                 ) : bookings.length === 0 ? (
-                  <div className={`rounded-3xl p-12 text-center bg-black/40 border border-gray-200 border-opacity-50 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)]`}>
+                  <div className={`rounded-3xl p-12 text-center bg-white/50 dark:bg-[#ffffff]/5 border border-gray-200 dark:border-[#ffffff]/10 shadow-xl`}>
                     <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 bg-indigo-500/10 border border-indigo-500/20`}>
                       <Car className={`w-12 h-12 text-indigo-400`} />
                     </div>
@@ -2313,7 +2323,7 @@ export default function CustomerDashboard() {
                     <p className={`mb-8 max-w-sm mx-auto text-gray-900/50 leading-relaxed`}>You haven't made any bookings yet. Book your premium ride to get started.</p>
                     <button 
                       onClick={() => setActiveTab('dashboard')}
-                      className={`inline-flex items-center justify-center px-8 py-3 text-sm font-medium rounded-2xl text-gray-900 shadow-[0_0_30px_rgba(99,102,241,0.3)] transition-all bg-indigo-600 hover:bg-indigo-500 transform active:scale-95 border border-indigo-400/30`}
+                      className={`inline-flex items-center justify-center px-8 py-3 text-sm font-medium rounded-2xl text-white dark:text-[#ffffff] shadow-[0_0_30px_rgba(99,102,241,0.3)] transition-all bg-indigo-600 hover:bg-indigo-500 transform active:scale-95 border border-indigo-400/30`}
                     >
                       Book a Ride
                     </button>
@@ -2325,7 +2335,7 @@ export default function CustomerDashboard() {
                         {/* Timeline Node */}
                         <div className={`absolute -left-[41px] top-6 w-5 h-5 rounded-full border-4 bg-indigo-500 border-[#060608] shadow-[0_0_15px_rgba(99,102,241,0.5)] transition-transform group-hover:scale-125`}></div>
                         
-                        <div className={`rounded-3xl overflow-hidden transition-all bg-black/40 border border-gray-200 border-opacity-50 hover:border-gray-200 hover:bg-white/5 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)]`}>
+                        <div className={`rounded-3xl overflow-hidden transition-all bg-white/50 dark:bg-[#ffffff]/5 hover:bg-white/80 dark:hover:bg-[#ffffff]/10 border border-gray-200 dark:border-[#ffffff]/10 shadow-xl transition-all`}>
                           {/* Always visible header */}
                           <div 
                             className={`p-6 cursor-pointer`}
@@ -2561,7 +2571,7 @@ export default function CustomerDashboard() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.3, type: "spring", bounce: 0.4 }}
-              className={`rounded-3xl shadow-2xl max-w-md w-full overflow-hidden bg-white border border-gray-200 border-opacity-50`}
+              className={`rounded-3xl shadow-2xl max-w-md w-full overflow-hidden bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50`}
             >
               <div className="p-6 sm:p-8">
                 <div className="flex items-center justify-between mb-8">
@@ -2636,7 +2646,7 @@ export default function CustomerDashboard() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.3, type: "spring", bounce: 0.4 }}
-              className={`rounded-3xl shadow-2xl max-w-md w-full overflow-hidden bg-white border border-gray-200 border-opacity-50`}
+              className={`rounded-3xl shadow-2xl max-w-md w-full overflow-hidden bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50`}
             >
               <div className="p-6 sm:p-8">
                 <div className="flex items-center justify-between mb-8">
@@ -2677,7 +2687,7 @@ export default function CustomerDashboard() {
                       value={rebookDate}
                       onChange={(e) => setRebookDate(e.target.value)}
                       onFocus={handleInputFocus}
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] border-gray-200 border-opacity-50 text-gray-900`}
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white dark:bg-[#ffffff]/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] border-gray-200 border-opacity-50 text-gray-900`}
                     />
                   </div>
                   
@@ -2687,7 +2697,7 @@ export default function CustomerDashboard() {
                       <select
                         value={rebookTimeHour}
                         onChange={(e) => setRebookTimeHour(e.target.value)}
-                        className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-white border-gray-200 border-opacity-50 text-gray-900 appearance-none`}
+                        className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-white dark:bg-[#ffffff]/5 border-gray-200 border-opacity-50 text-gray-900 appearance-none`}
                       >
                         {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
                           <option key={h} value={h.toString().padStart(2, '0')}>{h.toString().padStart(2, '0')}</option>
@@ -2697,7 +2707,7 @@ export default function CustomerDashboard() {
                       <select
                         value={rebookTimeMinute}
                         onChange={(e) => setRebookTimeMinute(e.target.value)}
-                        className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-white border-gray-200 border-opacity-50 text-gray-900 appearance-none`}
+                        className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-white dark:bg-[#ffffff]/5 border-gray-200 border-opacity-50 text-gray-900 appearance-none`}
                       >
                         {['00', '15', '30', '45'].map(m => (
                           <option key={m} value={m}>{m}</option>
@@ -2706,7 +2716,7 @@ export default function CustomerDashboard() {
                       <select
                         value={rebookTimeAmPm}
                         onChange={(e) => setRebookTimeAmPm(e.target.value)}
-                        className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-white border-gray-200 border-opacity-50 text-gray-900 appearance-none`}
+                        className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-white dark:bg-[#ffffff]/5 border-gray-200 border-opacity-50 text-gray-900 appearance-none`}
                       >
                         <option value="AM">AM</option>
                         <option value="PM">PM</option>
@@ -2725,7 +2735,7 @@ export default function CustomerDashboard() {
                     <button
                       type="submit"
                       disabled={rebookLoading || !rebookDate}
-                      className={`flex-1 px-6 py-3 border border-indigo-400/30 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] text-sm font-medium text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center transition-all bg-indigo-600 hover:bg-indigo-500`}
+                      className={`flex-1 px-6 py-3 border border-indigo-400/30 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] text-sm font-medium text-white dark:text-[#ffffff] disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center transition-all bg-indigo-600 hover:bg-indigo-500`}
                     >
                       {rebookLoading ? (
                         <RefreshCw className="w-5 h-5 animate-spin" />
@@ -2750,7 +2760,7 @@ export default function CustomerDashboard() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.4, type: "spring", bounce: 0.5 }}
-              className={`rounded-3xl shadow-2xl max-w-md w-full overflow-hidden bg-white border border-gray-200 border-opacity-50 max-h-[90dvh] flex flex-col`}
+              className={`rounded-3xl shadow-2xl max-w-md w-full overflow-hidden bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 max-h-[90dvh] flex flex-col`}
             >
               <div className="p-8 text-center overflow-y-auto flex-1 relative">
                 <div className="relative mx-auto w-28 h-28 mb-8 flex items-center justify-center">
@@ -2799,17 +2809,17 @@ export default function CustomerDashboard() {
                 </div>
 
                 <div className="space-y-4 mb-4">
-                  <div className={`p-4 rounded-xl text-sm border flex items-start gap-3 text-left bg-indigo-500/10 text-indigo-100 border-indigo-500/20`}>
-                    <Info className="w-5 h-5 flex-shrink-0 mt-0.5 text-indigo-400" />
+                  <div className={`p-4 rounded-xl text-sm border flex items-start gap-3 text-left bg-indigo-500/10 text-indigo-900 dark:text-indigo-100 border-indigo-500/20`}>
+                    <Info className="w-5 h-5 flex-shrink-0 mt-0.5 text-indigo-500 dark:text-indigo-400" />
                     <p className="opacity-90">We will contact you shortly.</p>
                   </div>
-                  <div className={`p-4 rounded-xl text-sm border flex items-start gap-3 text-left bg-blue-500/10 text-blue-100 border-blue-500/20`}>
-                    <Info className="w-5 h-5 flex-shrink-0 mt-0.5 text-blue-400" />
+                  <div className={`p-4 rounded-xl text-sm border flex items-start gap-3 text-left bg-blue-500/10 text-blue-900 dark:text-blue-100 border-blue-500/20`}>
+                    <Info className="w-5 h-5 flex-shrink-0 mt-0.5 text-blue-500 dark:text-blue-400" />
                     <p className="opacity-90">You will receive an SMS with driver and vehicle information once assigned.</p>
                   </div>
                 </div>
               </div>
-              <div className="p-6 pt-0 border-t border-gray-200 border-opacity-50 bg-white">
+              <div className="p-6 pt-0 border-t border-gray-200 border-opacity-50 bg-white dark:bg-[#ffffff]/5">
                 <div className="flex flex-col sm:flex-row gap-4 w-full mt-6">
                   <button
                     onClick={() => {
@@ -2817,7 +2827,7 @@ export default function CustomerDashboard() {
                       setBookingSuccessData(null);
                       setBookingStep(1);
                     }}
-                    className={`flex-1 justify-center py-3 px-6 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] text-sm font-medium text-gray-900 transition-all bg-indigo-600 hover:bg-indigo-500 border border-indigo-400/30 transform active:scale-95`}
+                    className={`flex-1 justify-center py-3 px-6 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] text-sm font-medium text-white dark:text-[#ffffff] transition-all bg-indigo-600 hover:bg-indigo-500 border border-indigo-400/30 transform active:scale-95`}
                   >
                     Go to My Bookings
                   </button>
