@@ -69,6 +69,7 @@ router.get('/location', async (req, res) => {
           'city', 'town', 'village', 'municipality', 'suburb', 'neighbourhood', 
           'hamlet', 'locality', 'aeroway', 'aerodrome', 'station', 'bus_station', 
           'airport', 'train_station', 'state_district', 'district', 'county',
+          'state', 'administrative', 'region', 'island', 'archipelago',
           'amenity', 'building', 'highway', 'tourism', 'historic', 'leisure'
         ];
 
@@ -127,14 +128,14 @@ router.get('/location', async (req, res) => {
     const resultsMap = new Map();
     for (const item of results) {
       const existing = resultsMap.get(item.displayName);
-      const isCity = item.city === item.name || item.primaryText === item.city || item.addresstype === 'city' || item.addresstype === 'town';
+      const isImportant = item.city === item.name || item.primaryText === item.city || item.addresstype === 'city' || item.addresstype === 'town' || item.addresstype === 'state';
       
       if (!existing) {
         resultsMap.set(item.displayName, item);
       } else {
         // If existing is not a city but the new one is, replace it
-        const existingIsCity = existing.city === existing.name || existing.primaryText === existing.city || existing.addresstype === 'city' || existing.addresstype === 'town';
-        if (!existingIsCity && isCity) {
+        const existingIsImportant = existing.city === existing.name || existing.primaryText === existing.city || existing.addresstype === 'city' || existing.addresstype === 'town' || existing.addresstype === 'state';
+        if (!existingIsImportant && isImportant) {
           resultsMap.set(item.displayName, item);
         }
       }
@@ -144,10 +145,10 @@ router.get('/location', async (req, res) => {
 
     // Prioritize cities and towns over districts/states in the final list
     uniqueResults.sort((a: any, b: any) => {
-      const aIsCity = a.city === a.name || a.primaryText === a.city || a.addresstype === 'city' || a.addresstype === 'town';
-      const bIsCity = b.city === b.name || b.primaryText === b.city || b.addresstype === 'city' || b.addresstype === 'town';
-      if (aIsCity && !bIsCity) return -1;
-      if (!aIsCity && bIsCity) return 1;
+      const aIsImportant = a.city === a.name || a.primaryText === a.city || a.addresstype === 'city' || a.addresstype === 'town' || a.addresstype === 'state';
+      const bIsImportant = b.city === b.name || b.primaryText === b.city || b.addresstype === 'city' || b.addresstype === 'town' || b.addresstype === 'state';
+      if (aIsImportant && !bIsImportant) return -1;
+      if (!aIsImportant && bIsImportant) return 1;
       return 0;
     });
 
