@@ -200,23 +200,22 @@ const ConciergeLoading = () => (
     initial={{ opacity: 0 }} 
     animate={{ opacity: 1 }} 
     exit={{ opacity: 0 }}
-    className={`absolute inset-0 z-50 flex flex-col items-center justify-center rounded-[2rem] backdrop-blur-xl bg-[#060608]/80`}
+    className={`absolute inset-0 z-50 flex flex-col items-center justify-center sm:rounded-[2.5rem] backdrop-blur-xl bg-white/80 dark:bg-[#060608]/90`}
   >
-    <div className="relative w-32 h-32 flex items-center justify-center mb-6">
+    <div className="relative w-full max-w-xs h-32 flex flex-col items-center justify-center mb-6 overflow-hidden">
       <motion.div 
-        animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.7, 0.3] }}
-        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        className={`absolute inset-0 rounded-full blur-2xl bg-indigo-500/30`}
-      />
-      <Car className={`w-16 h-16 relative z-10 animate-pulse text-indigo-400`} />
-      
-      {/* Shimmering effect */}
-      <motion.div 
-        initial={{ x: -100, opacity: 0 }}
-        animate={{ x: 100, opacity: [0, 1, 0] }}
-        transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 z-20"
-      />
+        animate={{ x: ['-100%', '100%'] }}
+        transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+        className="relative z-10 text-indigo-500 flex items-center"
+      >
+        <Car className="w-16 h-16" />
+        <motion.div 
+          animate={{ opacity: [0.2, 0.8, 0.2] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          className="w-12 h-1 bg-gradient-to-r from-indigo-500/50 to-transparent -ml-2 blur-[2px]"
+        />
+      </motion.div>
+      <div className="absolute bottom-4 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent" />
     </div>
     <h3 className={`text-xl font-bold mb-2 text-gray-900 tracking-tight`}>Curating your route...</h3>
     <p className={`text-sm text-gray-900/50`}>Preparing your premium vehicle</p>
@@ -247,11 +246,12 @@ export default function CustomerDashboard() {
   const dragControls = useDragControls();
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     const container = document.getElementById('bottom-sheet-container');
     if (container) {
       container.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [bookingStep]);
+  }, [bookingStep, activeTab]);
   
   // Theme State
   
@@ -1157,9 +1157,34 @@ export default function CustomerDashboard() {
   const greetingData = getGreeting();
 
   const handleInputFocus = (e: React.FocusEvent<HTMLElement>) => {
+    if (window.innerWidth > 640) return; // Only process on mobile screens
+
+    // Allow keyboard to fully transition before calculating viewport
     setTimeout(() => {
-      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 300);
+      const container = document.getElementById('bottom-sheet-container');
+      if (!container || !e.target) return;
+      
+      const targetRect = (e.target as HTMLElement).getBoundingClientRect();
+      // visualViewport perfectly accounts for software keyboards on iOS & Android
+      const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      
+      // How far the bottom of this input is from the top of the keyboard (or screen bottom)
+      const distanceToBottom = viewportHeight - targetRect.bottom;
+      
+      // We need enough clearance below the input to gracefully show the autocomplete dropdowns
+      const requiredClearance = 240; 
+      
+      // Only scroll if the input is pushed beneath the keyboard or too close to it
+      if (distanceToBottom < requiredClearance) {
+        const amountToScroll = requiredClearance - distanceToBottom;
+        
+        container.scrollBy({
+          top: amountToScroll,
+          behavior: 'smooth'
+        });
+      }
+      // If distanceToBottom >= requiredClearance, it's already comfortably visible. Do nothing.
+    }, 450);
   };
 
   const isNextDisabled = useMemo(() => {
@@ -1255,18 +1280,20 @@ export default function CustomerDashboard() {
         animate={{ 
           height: activeTab === 'dashboard' && bookingStep > 1 
             ? (isSheetExpanded ? '90dvh' : '50dvh') 
-            : 'calc(100dvh - 64px)' 
+            : 'calc(100vh - 64px)' 
         }}
         transition={{ type: 'spring', stiffness: 300, damping: 25, mass: 0.8 }}
-        className={`fixed bottom-0 sm:bottom-6 left-0 right-0 mx-auto w-full sm:w-[calc(100%-3rem)] max-w-5xl z-40 bg-white/70 dark:bg-[#060608]/70 backdrop-blur-md shadow-2xl sm:border border-gray-200 dark:border-[#ffffff]/10 flex flex-col transition-colors duration-500 ${
+        className={`fixed bottom-0 sm:bottom-6 left-0 right-0 mx-auto w-full sm:w-[calc(100%-3rem)] max-w-5xl z-40 bg-white dark:bg-[#060608] shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-2xl sm:border border-gray-200 dark:border-[#ffffff]/10 flex flex-col transition-colors duration-500 ${
           activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-[2.5rem] sm:rounded-[2.5rem]' : 'rounded-none sm:rounded-[2.5rem]'
         }`}
       >
         {/* Filler for overscroll to prevent map from peeking through without ruining rounded corners */}
         <div className="absolute top-full left-0 w-full h-[100vh] bg-[#F5F5F7] dark:bg-[#0F0F13] pointer-events-none sm:hidden transition-colors duration-500" />
 
-        <div className="flex-1 overflow-y-auto pb-8 overscroll-none" id="bottom-sheet-container">
-          <div className={`sticky top-0 z-40 bg-white/95 dark:bg-[#060608]/95 backdrop-blur-xl border-b border-gray-200 dark:border-[#ffffff]/10 pb-2 transition-colors duration-500 ${activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-[2.5rem] sm:rounded-[2.5rem]' : ''}`}>
+        <div className="flex-1 overflow-y-auto pb-24 overscroll-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" id="bottom-sheet-container">
+          <div className={`sticky top-0 z-40 bg-white dark:bg-[#060608] pb-2 transition-colors duration-500 ${
+            activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-[2.5rem] sm:rounded-[2.5rem]' : ''
+          }`}>
           {/* Drag Handle */}
           {activeTab === 'dashboard' && bookingStep > 1 && (
             <div 
@@ -1274,7 +1301,7 @@ export default function CustomerDashboard() {
               onPointerDown={(e) => dragControls.start(e)}
               onClick={() => setIsSheetExpanded(!isSheetExpanded)}
             >
-              <div className="w-12 h-1.5 bg-white/20 rounded-full pointer-events-none"></div>
+              <div className="w-12 h-1.5 bg-gray-300 dark:bg-white/20 rounded-full pointer-events-none"></div>
             </div>
           )}
 
@@ -2762,35 +2789,35 @@ export default function CustomerDashboard() {
               transition={{ duration: 0.4, type: "spring", bounce: 0.5 }}
               className={`rounded-3xl shadow-2xl max-w-md w-full overflow-hidden bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 max-h-[90dvh] flex flex-col`}
             >
-              <div className="p-8 text-center overflow-y-auto flex-1 relative">
-                <div className="relative mx-auto w-28 h-28 mb-8 flex items-center justify-center">
+              <div className="p-6 text-center overflow-y-auto flex-1 relative">
+                <div className="relative mx-auto w-20 h-20 mb-4 flex items-center justify-center">
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                    className={`relative z-10 w-24 h-24 rounded-full flex items-center justify-center bg-emerald-500 shadow-[0_0_40px_rgba(16,185,129,0.4)] border border-emerald-400/50`}
+                    className={`relative z-10 w-16 h-16 rounded-full flex items-center justify-center bg-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.3)] border border-emerald-400/50`}
                   >
                     <motion.div
                       initial={{ pathLength: 0 }}
                       animate={{ pathLength: 1 }}
                       transition={{ duration: 0.5, delay: 0.2 }}
                     >
-                      <CheckCircle className="w-12 h-12 text-gray-900" />
+                      <CheckCircle className="w-8 h-8 text-white" />
                     </motion.div>
                   </motion.div>
                   <motion.div 
                     animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    className={`absolute inset-0 rounded-full blur-2xl bg-emerald-500/30`}
+                    className={`absolute inset-0 rounded-full blur-xl bg-emerald-500/30`}
                   />
                 </div>
                 
-                <h2 className={`text-3xl font-bold mb-8 text-gray-900 tracking-tight`}>Booking Confirmed</h2>
+                <h2 className={`text-2xl font-bold mb-6 text-gray-900 tracking-tight`}>Booking Confirmed</h2>
 
-                <div className={`rounded-2xl p-5 text-left border mb-8 bg-black/50 border-gray-200 border-opacity-50 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]`}>
-                  <div className="space-y-4 text-sm">
+                <div className={`rounded-2xl p-4 text-left border mb-6 bg-white dark:bg-[#ffffff]/5 border-gray-200 border-opacity-50 shadow-sm`}>
+                  <div className="space-y-3 text-sm">
                     <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-4">
-                      <span className={'text-gray-900/50 uppercase tracking-wider text-xs font-semibold whitespace-nowrap'}>Route</span>
+                      <span className={'text-gray-900/50 uppercase tracking-wider text-[11px] font-semibold whitespace-nowrap'}>Route</span>
                       <span className={`font-medium text-left sm:text-right text-gray-900 break-words`}>
                         {bookingSuccessData.tripType === 'Car Renting'
                           ? `Car Rental: ${bookingSuccessData.numberOfDays} days, ${bookingSuccessData.numberOfCars} cars`
@@ -2799,8 +2826,8 @@ export default function CustomerDashboard() {
                           : `${bookingSuccessData.fromLocation} \u2192 ${bookingSuccessData.toLocation}`}
                       </span>
                     </div>
-                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-4 pt-4 border-t border-gray-200 border-opacity-50">
-                      <span className={'text-gray-900/50 uppercase tracking-wider text-xs font-semibold whitespace-nowrap'}>Departure</span>
+                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-4 pt-3 border-t border-gray-200 border-opacity-50">
+                      <span className={'text-gray-900/50 uppercase tracking-wider text-[11px] font-semibold whitespace-nowrap'}>Departure</span>
                       <span className={`font-medium text-left sm:text-right text-gray-900`}>
                         {safeFormatDate(bookingSuccessData.rideDate, 'dd/MM/yyyy hh:mm a')}
                       </span>
@@ -2808,14 +2835,10 @@ export default function CustomerDashboard() {
                   </div>
                 </div>
 
-                <div className="space-y-4 mb-4">
-                  <div className={`p-4 rounded-xl text-sm border flex items-start gap-3 text-left bg-indigo-500/10 text-indigo-900 dark:text-indigo-100 border-indigo-500/20`}>
-                    <Info className="w-5 h-5 flex-shrink-0 mt-0.5 text-indigo-500 dark:text-indigo-400" />
-                    <p className="opacity-90">We will contact you shortly.</p>
-                  </div>
-                  <div className={`p-4 rounded-xl text-sm border flex items-start gap-3 text-left bg-blue-500/10 text-blue-900 dark:text-blue-100 border-blue-500/20`}>
-                    <Info className="w-5 h-5 flex-shrink-0 mt-0.5 text-blue-500 dark:text-blue-400" />
-                    <p className="opacity-90">You will receive an SMS with driver and vehicle information once assigned.</p>
+                <div className="space-y-3 mb-2">
+                  <div className={`p-3 rounded-xl text-xs sm:text-sm border flex items-start gap-3 text-left bg-indigo-50 dark:bg-indigo-500/10 text-indigo-900 dark:text-indigo-100 border-indigo-100 dark:border-indigo-500/20`}>
+                    <Info className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5 text-indigo-500 dark:text-indigo-400" />
+                    <p className="opacity-90 leading-relaxed">We will contact you shortly to confirm the pickup details.</p>
                   </div>
                 </div>
               </div>

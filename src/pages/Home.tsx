@@ -218,7 +218,6 @@ export default function Home() {
                     src="/images/chhindwara.png"
                     alt="Chhindwara"
                     imageClassName="transition-transform duration-700 group-hover:scale-110"
-                    fallbackSrc="https://images.unsplash.com/photo-1626684496076-07e23c6361ff?auto=format&fit=crop&w=800&q=80"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none"></div>
                   
@@ -251,7 +250,6 @@ export default function Home() {
                     src="/images/nagpur.png"
                     alt="Nagpur"
                     imageClassName="transition-transform duration-700 group-hover:scale-110"
-                    fallbackSrc="https://images.unsplash.com/photo-1555505019-8c3f1c4aba5f?auto=format&fit=crop&w=800&q=80"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none"></div>
                   
@@ -284,7 +282,6 @@ export default function Home() {
                     src="/images/jabalpur.png"
                     alt="Jabalpur"
                     imageClassName="transition-transform duration-700 group-hover:scale-110"
-                    fallbackSrc="https://images.unsplash.com/photo-1586899028174-e7098604235b?auto=format&fit=crop&w=800&q=80"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none"></div>
                   

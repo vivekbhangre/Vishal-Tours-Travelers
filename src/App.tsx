@@ -29,6 +29,10 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
 function AppRoutes() {
   const location = useLocation();
   
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+  
   return (
     <AnimatePresence mode="wait">
       {/* @ts-ignore */}
