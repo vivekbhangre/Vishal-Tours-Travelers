@@ -69,31 +69,53 @@ const getInitialDateTime = () => {
   return { date: dateStr, hour: hourStr, minute: minuteStr, ampm };
 };
 
-const AbstractMiniMap = ({ from, to }: { from: string, to: string,  }) => (
-  <div className={`h-24 w-full rounded-xl relative overflow-hidden bg-indigo-50/50 border border-indigo-100 flex items-center justify-center p-4 mb-4`}>
-    <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(99,102,241,0.4) 1px, transparent 0)', backgroundSize: '16px 16px' }}></div>
-    <div className="relative w-full max-w-xs flex items-center justify-between">
-      <div className="flex flex-col items-center gap-1 z-10">
-        <div className={`w-4 h-4 rounded-full bg-indigo-600 border-2 border-white`}></div>
-        <span className={`text-[10px] font-medium truncate w-20 text-center text-gray-600`}>{from.split(',')[0]}</span>
-      </div>
-      <div className="flex-1 h-0 border-t-2 border-dashed border-indigo-300/50 mx-2 relative">
-        <motion.div 
-          initial={{ left: 0 }}
-          animate={{ left: '100%' }}
-          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-          className="absolute -top-2 -ml-2 w-4 h-4 text-indigo-500"
-        >
-          <Car className="w-4 h-4" />
-        </motion.div>
-      </div>
-      <div className="flex flex-col items-center gap-1 z-10">
-        <div className={`w-4 h-4 rounded-full bg-purple-600 border-2 border-white`}></div>
-        <span className={`text-[10px] font-medium truncate w-20 text-center text-gray-600`}>{to.split(',')[0]}</span>
+const AbstractMiniMap = ({ from, to, status }: { from: string, to: string, status?: string }) => {
+  let initialLeft: string | number = 0;
+  let animateLeft: string | number = '100%';
+  let transitionProps: any = { duration: 3, repeat: Infinity, ease: "linear" };
+
+  if (status === 'Completed') {
+    initialLeft = '100%';
+    animateLeft = '100%';
+    transitionProps = { duration: 0 };
+  } else if (!status || status === 'Ongoing') {
+    // If no status is provided (e.g., in step 2 preview) or if it's ongoing, animate it continuously
+    initialLeft = 0;
+    animateLeft = '100%';
+    transitionProps = { duration: 3, repeat: Infinity, ease: "linear" };
+  } else {
+    // Pending, Confirmed, Assigned, Cancelled
+    initialLeft = 0;
+    animateLeft = 0;
+    transitionProps = { duration: 0 };
+  }
+
+  return (
+    <div className={`h-24 w-full rounded-xl relative overflow-hidden bg-indigo-50/50 border border-indigo-100 flex items-center justify-center p-4 mb-4`}>
+      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(99,102,241,0.4) 1px, transparent 0)', backgroundSize: '16px 16px' }}></div>
+      <div className="relative w-full max-w-xs flex items-center justify-between">
+        <div className="flex flex-col items-center gap-1 z-10">
+          <div className={`w-4 h-4 rounded-full bg-indigo-600 border-2 border-white`}></div>
+          <span className={`text-[10px] font-medium truncate w-20 text-center text-gray-600`}>{from.split(',')[0]}</span>
+        </div>
+        <div className="flex-1 h-0 border-t-2 border-dashed border-indigo-300/50 mx-2 relative">
+          <motion.div 
+            initial={{ left: initialLeft }}
+            animate={{ left: animateLeft }}
+            transition={transitionProps}
+            className="absolute -top-2 -ml-2 w-4 h-4 text-indigo-500"
+          >
+            <Car className="w-4 h-4" />
+          </motion.div>
+        </div>
+        <div className="flex flex-col items-center gap-1 z-10">
+          <div className={`w-4 h-4 rounded-full bg-purple-600 border-2 border-white`}></div>
+          <span className={`text-[10px] font-medium truncate w-20 text-center text-gray-600`}>{to.split(',')[0]}</span>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const LoyaltyCard = ({ bookingsCount }: { bookingsCount: number,  }) => {
   const tier = bookingsCount >= 6 ? 'Black' : bookingsCount >= 3 ? 'Gold' : 'Silver';
@@ -200,7 +222,7 @@ const ConciergeLoading = () => (
     initial={{ opacity: 0 }} 
     animate={{ opacity: 1 }} 
     exit={{ opacity: 0 }}
-    className={`absolute inset-0 z-50 flex flex-col items-center justify-center sm:rounded-[2.5rem] backdrop-blur-xl bg-white/80 dark:bg-[#060608]/90`}
+    className={`absolute inset-0 z-[60] flex flex-col items-center justify-center rounded-t-[2.5rem] sm:rounded-[2.5rem] backdrop-blur-xl bg-white/80 dark:bg-[#060608]/90 overflow-hidden`}
   >
     <div className="relative w-full max-w-xs h-32 flex flex-col items-center justify-center mb-6 overflow-hidden">
       <motion.div 
@@ -1237,7 +1259,11 @@ export default function CustomerDashboard() {
       </div>
 
       {/* Map Component as Background */}
-      <div className="fixed inset-0 z-0 w-full h-full pt-16 opacity-100 dark:opacity-100 transition-opacity duration-1000 mix-blend-multiply dark:mix-blend-normal">
+      <div className={`fixed inset-0 z-0 w-full h-full pt-16 transition-opacity duration-1000 mix-blend-multiply dark:mix-blend-normal ${
+        activeTab === 'dashboard' && bookingStep === 1 
+          ? 'opacity-0 sm:opacity-100 pointer-events-none sm:pointer-events-auto' 
+          : 'opacity-100 dark:opacity-100'
+      }`}>
         <InteractiveMap 
           fromLocation={fromLocationData || (showFromSuggestions && fromSuggestions.length > 0 ? fromSuggestions[0] : null)} 
           toLocation={toLocationData || (showToSuggestions && toSuggestions.length > 0 ? toSuggestions[0] : null)} 
@@ -1287,6 +1313,10 @@ export default function CustomerDashboard() {
           activeTab === 'dashboard' && bookingStep > 1 ? 'rounded-t-[2.5rem] sm:rounded-[2.5rem]' : 'rounded-none sm:rounded-[2.5rem]'
         }`}
       >
+        <AnimatePresence>
+          {bookingLoading && <ConciergeLoading />}
+        </AnimatePresence>
+        
         {/* Filler for overscroll to prevent map from peeking through without ruining rounded corners */}
         <div className="absolute top-full left-0 w-full h-[100vh] bg-[#F5F5F7] dark:bg-[#0F0F13] pointer-events-none sm:hidden transition-colors duration-500" />
 
@@ -1460,9 +1490,6 @@ export default function CustomerDashboard() {
                 
                 {/* Book a Ride Form */}
                 <div className="relative overflow-hidden">
-                <AnimatePresence>
-                  {bookingLoading && <ConciergeLoading  />}
-                </AnimatePresence>
                 <div className="flex items-center justify-between mb-8">
                   <h3 className={`text-xl font-bold text-gray-900 tracking-tight`}>Book a Ride</h3>
                   
@@ -2371,16 +2398,21 @@ export default function CustomerDashboard() {
                             <AbstractMiniMap 
                               from={booking.fromLocation} 
                               to={booking.tripType === 'Tour' ? (Array.isArray(booking.destinations) ? booking.destinations.join(', ') : booking.destinations) : booking.toLocation || 'Destination'} 
-                               
+                              status={booking.rideStatus}
                             />
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2 sm:gap-4">
-                              <h4 className={`text-lg font-bold break-words w-full sm:w-auto text-gray-900 tracking-tight`}>
-                                {booking.tripType === 'Car Renting'
-                                  ? `Car Rental: ${booking.numberOfDays} days, ${booking.numberOfCars} cars`
-                                  : booking.tripType === 'Tour' 
-                                  ? `${booking.fromLocation} \u2192 ${Array.isArray(booking.destinations) ? booking.destinations.join(', ') : booking.destinations}`
-                                  : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
-                              </h4>
+                              <div>
+                                <h4 className={`text-lg font-bold break-words w-full sm:w-auto text-gray-900 tracking-tight`}>
+                                  {booking.tripType === 'Car Renting'
+                                    ? `Car Rental: ${booking.numberOfDays} days, ${booking.numberOfCars} cars`
+                                    : booking.tripType === 'Tour' 
+                                    ? `${booking.fromLocation} \u2192 ${Array.isArray(booking.destinations) ? booking.destinations.join(', ') : booking.destinations}`
+                                    : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
+                                </h4>
+                                {booking.timestamp && (
+                                  <p className="text-xs text-gray-400 mt-1">Booked on: {format(new Date(booking.timestamp), "MMM d, yyyy 'at' h:mm a")}</p>
+                                )}
+                              </div>
                               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
                                 <span className={`px-3 py-1 rounded-full text-xs font-medium border border-gray-200 border-opacity-50 ${booking.rideStatus === 'Cancelled' ? 'bg-red-500/10 text-red-400' : 'bg-white/10 text-gray-900'}`}>
                                   {booking.rideStatus === 'Cancelled' && booking.refundStatus === 'Processed' ? 'Refunded' : booking.rideStatus}

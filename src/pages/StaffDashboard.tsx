@@ -98,32 +98,47 @@ export default function StaffDashboard() {
       
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-            <div className="flex items-center gap-4">
-              <h1 className="text-3xl font-bold text-gray-900">Welcome, {user?.name || 'Staff'}</h1>
-            </div>
-            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-4 w-full sm:w-auto">
-              <div className="flex flex-wrap sm:flex-nowrap bg-white rounded-lg shadow-sm border border-gray-100 p-1 w-full sm:w-auto">
+          <div className="flex flex-col gap-6 mb-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="flex items-center gap-4">
+                <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Welcome, {user?.name || 'Staff'}</h1>
+              </div>
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3 w-full md:w-auto">
                 <button
-                  onClick={() => setMainTab('Bookings')}
-                  className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${mainTab === 'Bookings' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+                  onClick={() => fetchBookings(true)}
+                  className="w-full md:w-auto inline-flex items-center justify-center px-5 py-2.5 border border-gray-200 rounded-xl shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition-colors whitespace-nowrap"
                 >
-                  Bookings
-                </button>
-                <button
-                  onClick={() => setMainTab('Profile')}
-                  className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${mainTab === 'Profile' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-                >
-                  Profile
+                  <RefreshCw className={`-ml-1 mr-2 h-4 w-4 ${loading ? 'animate-spin text-indigo-500' : 'text-gray-400'}`} aria-hidden="true" />
+                  Refresh Data
                 </button>
               </div>
-              <button
-                onClick={() => fetchBookings(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                <RefreshCw className={`-ml-1 mr-2 h-5 w-5 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
-                Refresh Data
-              </button>
+            </div>
+
+            <div className="grid grid-cols-2 lg:flex bg-white rounded-xl shadow-sm border border-gray-100 w-full lg:w-fit p-1 gap-1">
+              {[
+                { id: 'Bookings', label: 'Bookings' },
+                { id: 'Profile', label: 'Profile' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setMainTab(tab.id as any)}
+                  className={`relative flex items-center justify-center lg:flex-none px-4 py-2.5 lg:py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap z-10 ${
+                    mainTab === tab.id
+                      ? 'text-white'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  {mainTab === tab.id && (
+                    <motion.div
+                      layoutId="staffMainTab"
+                      className="absolute inset-0 bg-indigo-500 rounded-lg z-[-1] shadow-[0_0_15px_rgba(99,102,241,0.4)]"
+                      initial={false}
+                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10">{tab.label}</span>
+                </button>
+              ))}
             </div>
           </div>
           

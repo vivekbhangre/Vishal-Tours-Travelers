@@ -307,94 +307,97 @@ export default function AdminDashboard() {
       
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
-            <div className="flex items-center gap-4">
-              <h1 className="text-3xl font-bold text-gray-900">Welcome, {user?.name || 'Admin'}</h1>
-            </div>
-            <div className="flex flex-col lg:flex-row flex-wrap items-stretch lg:items-center gap-4 w-full lg:w-auto">
-              <div className="flex flex-wrap sm:flex-nowrap bg-white rounded-lg shadow-sm border border-gray-100 p-1 w-full lg:w-auto">
-                <button
-                  onClick={() => setMainTab('Bookings')}
-                  className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${mainTab === 'Bookings' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-                >
-                  Bookings
-                </button>
-                <button
-                  onClick={() => setMainTab('Fleet')}
-                  className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${mainTab === 'Fleet' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-                >
-                  Fleet Management
-                </button>
-                <button
-                  onClick={() => setMainTab('Revenue')}
-                  className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${mainTab === 'Revenue' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-                >
-                  Revenue
-                </button>
-                <button
-                  onClick={() => setMainTab('Profile')}
-                  className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${mainTab === 'Profile' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-                >
-                  Profile
-                </button>
+          <div className="flex flex-col gap-6 mb-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="flex items-center gap-4">
+                <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Welcome, {user?.name || 'Admin'}</h1>
               </div>
-              <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full lg:w-auto">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3 w-full md:w-auto">
                 <button
                   onClick={handleGlobalRefresh}
-                  className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 whitespace-nowrap"
+                  className="w-full md:w-auto inline-flex items-center justify-center px-5 py-2.5 border border-gray-200 rounded-xl shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition-colors whitespace-nowrap"
                 >
-                  <RefreshCw className={`-ml-1 mr-2 h-5 w-5 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
+                  <RefreshCw className={`-ml-1 mr-2 h-4 w-4 ${loading ? 'animate-spin text-indigo-500' : 'text-gray-400'}`} aria-hidden="true" />
                   Refresh Data
                 </button>
                 <button
                   onClick={handleDownloadReport}
-                  className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 whitespace-nowrap"
+                  className="w-full md:w-auto inline-flex items-center justify-center px-5 py-2.5 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none transition-colors whitespace-nowrap"
                 >
-                  <Download className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                  <Download className="-ml-1 mr-2 h-4 w-4" aria-hidden="true" />
                   Download Monthly Report
                 </button>
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 lg:flex bg-white rounded-xl shadow-sm border border-gray-100 w-full lg:w-fit p-1 gap-1">
+              {[
+                { id: 'Bookings', label: 'Bookings' },
+                { id: 'Fleet', label: 'Fleet Management' },
+                { id: 'Revenue', label: 'Revenue' },
+                { id: 'Profile', label: 'Profile' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setMainTab(tab.id as any)}
+                  className={`relative flex items-center justify-center lg:flex-none px-4 py-2.5 lg:py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap z-10 ${
+                    mainTab === tab.id
+                      ? 'text-white'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  {mainTab === tab.id && (
+                    <motion.div
+                      layoutId="adminMainTab"
+                      className="absolute inset-0 bg-indigo-500 rounded-lg z-[-1] shadow-[0_0_15px_rgba(99,102,241,0.4)]"
+                      initial={false}
+                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10">{tab.label}</span>
+                </button>
+              ))}
             </div>
           </div>
           
           {mainTab === 'Bookings' && (
             <>
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-4 sm:gap-5 sm:grid-cols-3 lg:grid-cols-6 mb-8">
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <dt className="text-sm font-medium text-gray-500 truncate">Total</dt>
-                <dd className="mt-1 text-2xl sm:text-3xl font-semibold text-gray-900">{totalRides}</dd>
+              {/* Stats Layout */}
+              <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-5 mb-8">
+            <div className="bg-white overflow-hidden shadow-sm border border-gray-100 rounded-xl">
+              <div className="px-3 py-4 sm:p-6 text-center lg:text-left">
+                <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">Total</dt>
+                <dd className="mt-1 text-xl sm:text-3xl font-bold text-gray-900 tracking-tight">{totalRides}</dd>
               </div>
             </div>
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <dt className="text-sm font-medium text-gray-500 truncate">Completed</dt>
-                <dd className="mt-1 text-2xl sm:text-3xl font-semibold text-green-600">{completedRides}</dd>
+            <div className="bg-white overflow-hidden shadow-sm border border-emerald-100 rounded-xl">
+              <div className="px-3 py-4 sm:p-6 text-center lg:text-left">
+                <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">Completed</dt>
+                <dd className="mt-1 text-xl sm:text-3xl font-bold text-emerald-600 tracking-tight">{completedRides}</dd>
               </div>
             </div>
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <dt className="text-sm font-medium text-gray-500 truncate">Ongoing</dt>
-                <dd className="mt-1 text-2xl sm:text-3xl font-semibold text-blue-600">{ongoingRides}</dd>
+            <div className="bg-white overflow-hidden shadow-sm border border-blue-100 rounded-xl">
+              <div className="px-3 py-4 sm:p-6 text-center lg:text-left">
+                <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">Ongoing</dt>
+                <dd className="mt-1 text-xl sm:text-3xl font-bold text-blue-600 tracking-tight">{ongoingRides}</dd>
               </div>
             </div>
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <dt className="text-sm font-medium text-gray-500 truncate">Cancelled</dt>
-                <dd className="mt-1 text-2xl sm:text-3xl font-semibold text-red-600">{cancelledRides}</dd>
+            <div className="bg-white overflow-hidden shadow-sm border border-red-100 rounded-xl">
+              <div className="px-3 py-4 sm:p-6 text-center lg:text-left">
+                <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">Cancelled</dt>
+                <dd className="mt-1 text-xl sm:text-3xl font-bold text-red-600 tracking-tight">{cancelledRides}</dd>
               </div>
             </div>
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <dt className="text-sm font-medium text-gray-500 truncate">Pending</dt>
-                <dd className="mt-1 text-2xl sm:text-3xl font-semibold text-yellow-600">{pendingRides}</dd>
+            <div className="bg-white overflow-hidden shadow-sm border border-amber-100 rounded-xl">
+              <div className="px-3 py-4 sm:p-6 text-center lg:text-left">
+                <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">Pending</dt>
+                <dd className="mt-1 text-xl sm:text-3xl font-bold text-amber-500 tracking-tight">{pendingRides}</dd>
               </div>
             </div>
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <dt className="text-sm font-medium text-gray-500 truncate">Confirmed</dt>
-                <dd className="mt-1 text-2xl sm:text-3xl font-semibold text-indigo-600">{confirmedRides}</dd>
+            <div className="bg-white overflow-hidden shadow-sm border border-indigo-100 rounded-xl">
+              <div className="px-3 py-4 sm:p-6 text-center lg:text-left">
+                <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">Confirmed</dt>
+                <dd className="mt-1 text-xl sm:text-3xl font-bold text-indigo-600 tracking-tight">{confirmedRides}</dd>
               </div>
             </div>
           </div>
