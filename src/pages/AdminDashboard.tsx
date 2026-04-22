@@ -330,7 +330,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 lg:flex bg-white rounded-xl shadow-sm border border-gray-100 w-full lg:w-fit p-1 gap-1">
+            <div className="flex overflow-x-auto sm:flex-nowrap bg-white rounded-xl shadow-sm border border-gray-100 w-full md:w-fit p-1 gap-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {[
                 { id: 'Bookings', label: 'Bookings' },
                 { id: 'Fleet', label: 'Fleet Management' },
@@ -340,7 +340,7 @@ export default function AdminDashboard() {
                 <button
                   key={tab.id}
                   onClick={() => setMainTab(tab.id as any)}
-                  className={`relative flex items-center justify-center lg:flex-none px-4 py-2.5 lg:py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap z-10 ${
+                  className={`relative flex-none px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap z-10 ${
                     mainTab === tab.id
                       ? 'text-white'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -363,41 +363,41 @@ export default function AdminDashboard() {
           {mainTab === 'Bookings' && (
             <>
               {/* Stats Layout */}
-              <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-5 mb-8">
-            <div className="bg-white overflow-hidden shadow-sm border border-gray-100 rounded-xl">
-              <div className="px-3 py-4 sm:p-6 text-center lg:text-left">
-                <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">Total</dt>
-                <dd className="mt-1 text-xl sm:text-3xl font-bold text-gray-900 tracking-tight">{totalRides}</dd>
+              <div className="flex overflow-x-auto pb-4 -mb-4 lg:grid lg:grid-cols-6 gap-4 sm:gap-5 mb-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="bg-white overflow-hidden shadow-sm border border-gray-100 rounded-xl min-w-[140px] flex-shrink-0 lg:flex-shrink">
+              <div className="px-4 py-5 sm:p-6">
+                <dt className="text-sm font-medium text-gray-500 truncate">Total</dt>
+                <dd className="mt-1 text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">{totalRides}</dd>
               </div>
             </div>
-            <div className="bg-white overflow-hidden shadow-sm border border-emerald-100 rounded-xl">
-              <div className="px-3 py-4 sm:p-6 text-center lg:text-left">
-                <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">Completed</dt>
-                <dd className="mt-1 text-xl sm:text-3xl font-bold text-emerald-600 tracking-tight">{completedRides}</dd>
+            <div className="bg-white overflow-hidden shadow-sm border border-emerald-100 rounded-xl min-w-[140px] flex-shrink-0 lg:flex-shrink">
+              <div className="px-4 py-5 sm:p-6">
+                <dt className="text-sm font-medium text-gray-500 truncate">Completed</dt>
+                <dd className="mt-1 text-2xl sm:text-3xl font-bold text-emerald-600 tracking-tight">{completedRides}</dd>
               </div>
             </div>
-            <div className="bg-white overflow-hidden shadow-sm border border-blue-100 rounded-xl">
-              <div className="px-3 py-4 sm:p-6 text-center lg:text-left">
-                <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">Ongoing</dt>
-                <dd className="mt-1 text-xl sm:text-3xl font-bold text-blue-600 tracking-tight">{ongoingRides}</dd>
+            <div className="bg-white overflow-hidden shadow-sm border border-blue-100 rounded-xl min-w-[140px] flex-shrink-0 lg:flex-shrink">
+              <div className="px-4 py-5 sm:p-6">
+                <dt className="text-sm font-medium text-gray-500 truncate">Ongoing</dt>
+                <dd className="mt-1 text-2xl sm:text-3xl font-bold text-blue-600 tracking-tight">{ongoingRides}</dd>
               </div>
             </div>
-            <div className="bg-white overflow-hidden shadow-sm border border-red-100 rounded-xl">
-              <div className="px-3 py-4 sm:p-6 text-center lg:text-left">
-                <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">Cancelled</dt>
-                <dd className="mt-1 text-xl sm:text-3xl font-bold text-red-600 tracking-tight">{cancelledRides}</dd>
+            <div className="bg-white overflow-hidden shadow-sm border border-red-100 rounded-xl min-w-[140px] flex-shrink-0 lg:flex-shrink">
+              <div className="px-4 py-5 sm:p-6">
+                <dt className="text-sm font-medium text-gray-500 truncate">Cancelled</dt>
+                <dd className="mt-1 text-2xl sm:text-3xl font-bold text-red-600 tracking-tight">{cancelledRides}</dd>
               </div>
             </div>
-            <div className="bg-white overflow-hidden shadow-sm border border-amber-100 rounded-xl">
-              <div className="px-3 py-4 sm:p-6 text-center lg:text-left">
-                <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">Pending</dt>
-                <dd className="mt-1 text-xl sm:text-3xl font-bold text-amber-500 tracking-tight">{pendingRides}</dd>
+            <div className="bg-white overflow-hidden shadow-sm border border-amber-100 rounded-xl min-w-[140px] flex-shrink-0 lg:flex-shrink">
+              <div className="px-4 py-5 sm:p-6">
+                <dt className="text-sm font-medium text-gray-500 truncate">Pending</dt>
+                <dd className="mt-1 text-2xl sm:text-3xl font-bold text-amber-500 tracking-tight">{pendingRides}</dd>
               </div>
             </div>
-            <div className="bg-white overflow-hidden shadow-sm border border-indigo-100 rounded-xl">
-              <div className="px-3 py-4 sm:p-6 text-center lg:text-left">
-                <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">Confirmed</dt>
-                <dd className="mt-1 text-xl sm:text-3xl font-bold text-indigo-600 tracking-tight">{confirmedRides}</dd>
+            <div className="bg-white overflow-hidden shadow-sm border border-indigo-100 rounded-xl min-w-[140px] flex-shrink-0 lg:flex-shrink">
+              <div className="px-4 py-5 sm:p-6">
+                <dt className="text-sm font-medium text-gray-500 truncate">Confirmed</dt>
+                <dd className="mt-1 text-2xl sm:text-3xl font-bold text-indigo-600 tracking-tight">{confirmedRides}</dd>
               </div>
             </div>
           </div>

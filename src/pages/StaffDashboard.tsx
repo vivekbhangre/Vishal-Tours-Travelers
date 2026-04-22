@@ -114,7 +114,7 @@ export default function StaffDashboard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 lg:flex bg-white rounded-xl shadow-sm border border-gray-100 w-full lg:w-fit p-1 gap-1">
+            <div className="flex overflow-x-auto sm:flex-nowrap bg-white rounded-xl shadow-sm border border-gray-100 w-full md:w-fit p-1 gap-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {[
                 { id: 'Bookings', label: 'Bookings' },
                 { id: 'Profile', label: 'Profile' }
@@ -122,7 +122,7 @@ export default function StaffDashboard() {
                 <button
                   key={tab.id}
                   onClick={() => setMainTab(tab.id as any)}
-                  className={`relative flex items-center justify-center lg:flex-none px-4 py-2.5 lg:py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap z-10 ${
+                  className={`relative flex-none px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap z-10 ${
                     mainTab === tab.id
                       ? 'text-white'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
