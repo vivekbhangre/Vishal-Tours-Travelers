@@ -8,6 +8,11 @@ import GenuineIndiaMap from '../components/GenuineIndiaMap';
 import ScrollReveal from '../components/ScrollReveal';
 import ParallaxBackground from '../components/ParallaxBackground';
 
+// Static image imports
+import chhindwaraImg from '../assets/images/chhindwara.png';
+import nagpurImg from '../assets/images/nagpur.png';
+import jabalpurImg from '../assets/images/jabalpur.png';
+
 export default function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -215,7 +220,7 @@ export default function Home() {
                   className="relative h-72 rounded-2xl overflow-hidden group cursor-pointer shadow-sm hover:shadow-xl transition-shadow"
                 >
                   <ParallaxBackground 
-                    src="/images/chhindwara.png"
+                    src={chhindwaraImg}
                     alt="Chhindwara"
                     imageClassName="transition-transform duration-700 group-hover:scale-110"
                   />
@@ -247,7 +252,7 @@ export default function Home() {
                   className="relative h-72 rounded-2xl overflow-hidden group cursor-pointer shadow-sm hover:shadow-xl transition-shadow"
                 >
                   <ParallaxBackground 
-                    src="/images/nagpur.png"
+                    src={nagpurImg}
                     alt="Nagpur"
                     imageClassName="transition-transform duration-700 group-hover:scale-110"
                   />
@@ -279,7 +284,7 @@ export default function Home() {
                   className="relative h-72 rounded-2xl overflow-hidden group cursor-pointer shadow-sm hover:shadow-xl transition-shadow"
                 >
                   <ParallaxBackground 
-                    src="/images/jabalpur.png"
+                    src={jabalpurImg}
                     alt="Jabalpur"
                     imageClassName="transition-transform duration-700 group-hover:scale-110"
                   />
