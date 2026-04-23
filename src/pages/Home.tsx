@@ -221,6 +221,7 @@ export default function Home() {
                 >
                   <ParallaxBackground 
                     src={chhindwaraImg}
+                    fallbackSrc="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?q=80&w=1920&auto=format&fit=crop"
                     alt="Chhindwara"
                     imageClassName="transition-transform duration-700 group-hover:scale-110"
                   />
@@ -253,6 +254,7 @@ export default function Home() {
                 >
                   <ParallaxBackground 
                     src={nagpurImg}
+                    fallbackSrc="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=1920&auto=format&fit=crop"
                     alt="Nagpur"
                     imageClassName="transition-transform duration-700 group-hover:scale-110"
                   />
@@ -285,6 +287,7 @@ export default function Home() {
                 >
                   <ParallaxBackground 
                     src={jabalpurImg}
+                    fallbackSrc="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=1920&auto=format&fit=crop"
                     alt="Jabalpur"
                     imageClassName="transition-transform duration-700 group-hover:scale-110"
                   />

@@ -52,21 +52,23 @@ async function startServer() {
     const imageName = req.params.imageName.replace(/[^a-zA-Z0-9_-]/g, ''); // Sanitize input
     
     // Check multiple potential paths just to be absolutely sure
+    // We add the explicit absolute EC2 paths here because PM2 often loses the correct process.cwd()
     const pathsToCheck = [
       path.join(process.cwd(), 'src', 'assets', 'images', `${imageName}.png`),
-      path.join(process.cwd(), 'public', 'images', `${imageName}.png`)
+      path.join(process.cwd(), 'public', 'images', `${imageName}.png`),
+      `/home/ec2-user/Vishal-Tours-Travelers/src/assets/images/${imageName}.png`,
+      `/home/ec2-user/Vishal-Tours-Travelers/public/images/${imageName}.png`
     ];
 
     for (const imgPath of pathsToCheck) {
       if (fs.existsSync(imgPath)) {
         res.setHeader('Content-Type', 'image/png');
-        // Force browsers to not cache this if it's broken, so it fixes instantly
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate'); 
+        res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day once found
         return res.sendFile(imgPath);
       }
     }
     
-    res.status(404).json({ error: 'Image file not found on EC2 disk' });
+    res.status(404).json({ error: 'Image file not found on EC2 disk', tried: pathsToCheck });
   });
 
   app.get('/api/health', (req, res) => {
