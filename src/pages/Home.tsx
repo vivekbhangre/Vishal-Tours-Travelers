@@ -8,10 +8,10 @@ import GenuineIndiaMap from '../components/GenuineIndiaMap';
 import ScrollReveal from '../components/ScrollReveal';
 import ParallaxBackground from '../components/ParallaxBackground';
 
-// Static image imports for Vite to handle directly
-import chhindwaraImg from '../assets/images/chhindwara.png';
-import nagpurImg from '../assets/images/nagpur.png';
-import jabalpurImg from '../assets/images/jabalpur.png';
+// Unblockable route links (By omitting .png, Nginx doesn't automatically block them)
+const chhindwaraImg = '/api/raw-image/chhindwara';
+const nagpurImg = '/api/raw-image/nagpur';
+const jabalpurImg = '/api/raw-image/jabalpur';
 
 export default function Home() {
   const { user } = useAuth();
@@ -221,7 +221,6 @@ export default function Home() {
                 >
                   <ParallaxBackground 
                     src={chhindwaraImg}
-                    fallbackSrc="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?q=80&w=1920&auto=format&fit=crop"
                     alt="Chhindwara"
                     imageClassName="transition-transform duration-700 group-hover:scale-110"
                   />
@@ -254,7 +253,6 @@ export default function Home() {
                 >
                   <ParallaxBackground 
                     src={nagpurImg}
-                    fallbackSrc="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=1920&auto=format&fit=crop"
                     alt="Nagpur"
                     imageClassName="transition-transform duration-700 group-hover:scale-110"
                   />
@@ -287,7 +285,6 @@ export default function Home() {
                 >
                   <ParallaxBackground 
                     src={jabalpurImg}
-                    fallbackSrc="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=1920&auto=format&fit=crop"
                     alt="Jabalpur"
                     imageClassName="transition-transform duration-700 group-hover:scale-110"
                   />
