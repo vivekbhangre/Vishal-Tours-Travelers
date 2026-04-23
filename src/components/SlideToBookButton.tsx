@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, useMotionValue, useTransform } from 'motion/react';
+import { motion, useMotionValue, useTransform, animate } from 'motion/react';
 import { Car, RefreshCw, Check } from 'lucide-react';
 
 interface SlideToBookButtonProps {
@@ -34,9 +34,10 @@ export default function SlideToBookButton({ onConfirm, isLoading, disabled, text
   }, []);
 
   const handleDragEnd = () => {
-    if (x.get() >= maxDrag * 0.8) {
-      // Confirmed
-      x.set(maxDrag);
+    // Lower threshold to 65% so it's much easier and feels smoother to slide all the way
+    if (x.get() >= maxDrag * 0.65) {
+      // Confirmed - smoothly snap to the very end with a satisfying spring
+      animate(x, maxDrag, { type: "spring", stiffness: 400, damping: 30 });
       setIsConfirmed(true);
       
       // Haptic feedback (success pattern: two short bursts)
@@ -49,19 +50,19 @@ export default function SlideToBookButton({ onConfirm, isLoading, disabled, text
         onConfirm();
       }, 700);
     } else {
-      // Reset
-      x.set(0);
+      // Reset - smoothly bounce back to the start instead of an ugly jump
+      animate(x, 0, { type: "spring", stiffness: 400, damping: 30 });
     }
   };
 
   useEffect(() => {
     if (!isLoading && isConfirmed) {
       // Reset if loading finishes and we want to allow re-submission (e.g. on error)
-      x.set(0);
+      animate(x, 0, { type: "spring", stiffness: 400, damping: 30 });
       setIsConfirmed(false);
     }
     if (disabled && !isLoading) {
-       x.set(0);
+       animate(x, 0, { type: "spring", stiffness: 400, damping: 30 });
        setIsConfirmed(false);
     }
   }, [isLoading, disabled, isConfirmed, x]);
