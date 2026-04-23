@@ -8,10 +8,10 @@ import GenuineIndiaMap from '../components/GenuineIndiaMap';
 import ScrollReveal from '../components/ScrollReveal';
 import ParallaxBackground from '../components/ParallaxBackground';
 
-// Static image imports
-import chhindwaraImg from '../assets/images/chhindwara.png';
-import nagpurImg from '../assets/images/nagpur.png';
-import jabalpurImg from '../assets/images/jabalpur.png';
+// We are using API routes to bypass Nginx file extension blocking
+const chhindwaraImg = '/api/images/chhindwara';
+const nagpurImg = '/api/images/nagpur';
+const jabalpurImg = '/api/images/jabalpur';
 
 export default function Home() {
   const { user } = useAuth();

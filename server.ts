@@ -47,6 +47,28 @@ async function startServer() {
   // API Routes
   setupFleetRoutes(app, io);
 
+  // Ultimate Image Fallback Route - Bypasses Nginx completely
+  app.get('/api/images/:imageName', (req, res) => {
+    const imageName = req.params.imageName.replace(/[^a-zA-Z0-9_-]/g, ''); // Sanitize input
+    
+    // Check multiple potential paths just to be absolutely sure
+    const pathsToCheck = [
+      path.join(process.cwd(), 'src', 'assets', 'images', `${imageName}.png`),
+      path.join(process.cwd(), 'public', 'images', `${imageName}.png`)
+    ];
+
+    for (const imgPath of pathsToCheck) {
+      if (fs.existsSync(imgPath)) {
+        res.setHeader('Content-Type', 'image/png');
+        // Force browsers to not cache this if it's broken, so it fixes instantly
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate'); 
+        return res.sendFile(imgPath);
+      }
+    }
+    
+    res.status(404).json({ error: 'Image file not found on EC2 disk' });
+  });
+
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', sheetsReady: !!getDoc() });
   });
