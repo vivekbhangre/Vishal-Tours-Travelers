@@ -1181,32 +1181,31 @@ export default function CustomerDashboard() {
   const handleInputFocus = (e: React.FocusEvent<HTMLElement>) => {
     if (window.innerWidth > 640) return; // Only process on mobile screens
 
-    // Allow keyboard to fully transition before calculating viewport
+    // Allow keyboard to fully slide up before calculating viewport bounds
     setTimeout(() => {
       const container = document.getElementById('bottom-sheet-container');
-      if (!container || !e.target) return;
+      const target = e.target as HTMLElement;
+      if (!container || !target) return;
       
-      const targetRect = (e.target as HTMLElement).getBoundingClientRect();
-      // visualViewport perfectly accounts for software keyboards on iOS & Android
+      const targetRect = target.getBoundingClientRect();
+      // visualViewport accurately reflects the screen height AFTER the software keyboard appears
       const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
       
-      // How far the bottom of this input is from the top of the keyboard (or screen bottom)
-      const distanceToBottom = viewportHeight - targetRect.bottom;
+      // Maintain a comfortable, small 60px gap between the keyboard and the input field
+      // (This reduces the "flying up" behavior significantly while preventing keyboard overlap)
+      const paddingAboveKeyboard = 60; 
       
-      // We need enough clearance below the input to gracefully show the autocomplete dropdowns
-      const requiredClearance = 240; 
-      
-      // Only scroll if the input is pushed beneath the keyboard or too close to it
-      if (distanceToBottom < requiredClearance) {
-        const amountToScroll = requiredClearance - distanceToBottom;
+      // Only scroll if the input is actively hidden behind the keyboard, or too close to it
+      if (targetRect.bottom > (viewportHeight - paddingAboveKeyboard)) {
+        // Calculate exactly how many pixels to scroll down
+        const amountToScroll = targetRect.bottom - (viewportHeight - paddingAboveKeyboard);
         
         container.scrollBy({
           top: amountToScroll,
           behavior: 'smooth'
         });
       }
-      // If distanceToBottom >= requiredClearance, it's already comfortably visible. Do nothing.
-    }, 450);
+    }, 300); // 300ms matches standard iOS/Android keyboard slide-up animations
   };
 
   const isNextDisabled = useMemo(() => {
@@ -2183,7 +2182,7 @@ export default function CustomerDashboard() {
                             )}
                             <div className="space-y-6">
                               <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-indigo-500/20 border border-indigo-500/30">
+                                <div className="w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center bg-indigo-500/20 border border-indigo-500/30">
                                   <MapPin className={`w-5 h-5 text-indigo-400`} />
                                 </div>
                                 <div>
@@ -2196,7 +2195,7 @@ export default function CustomerDashboard() {
                                 </div>
                               </div>
                               <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-fuchsia-500/20 border border-fuchsia-500/30">
+                                <div className="w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center bg-fuchsia-500/20 border border-fuchsia-500/30">
                                   <Calendar className={`w-5 h-5 text-fuchsia-400`} />
                                 </div>
                                 <div>
@@ -2211,7 +2210,7 @@ export default function CustomerDashboard() {
                                 </div>
                               </div>
                               <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-500/20 border border-blue-500/30">
+                                <div className="w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center bg-blue-500/20 border border-blue-500/30">
                                   <Car className={`w-5 h-5 text-blue-400`} />
                                 </div>
                                 <div>
@@ -2867,11 +2866,15 @@ export default function CustomerDashboard() {
                   </div>
                 </div>
 
-                <div className="space-y-3 mb-2">
-                  <div className={`p-3 rounded-xl text-xs sm:text-sm border flex items-start gap-3 text-left bg-indigo-50 dark:bg-indigo-500/10 text-indigo-900 dark:text-indigo-100 border-indigo-100 dark:border-indigo-500/20`}>
-                    <Info className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5 text-indigo-500 dark:text-indigo-400" />
-                    <p className="opacity-90 leading-relaxed">We will contact you shortly to confirm the pickup details.</p>
-                  </div>
+                <div className="space-y-1 mb-2 px-2">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300 leading-relaxed text-center flex items-center justify-center gap-2">
+                    <Info className="w-4 h-4 text-indigo-500 dark:text-indigo-400 flex-shrink-0" />
+                    We will contact you shortly.
+                  </p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 leading-relaxed flex items-start sm:items-center justify-center gap-2 text-left sm:text-center mt-2">
+                    <Info className="w-4 h-4 text-indigo-500 dark:text-indigo-400 flex-shrink-0 mt-0.5 sm:mt-0" />
+                    <span>You will receive an Email with driver and vehicle information once assigned.</span>
+                  </p>
                 </div>
               </div>
               <div className="p-6 pt-0 border-t border-gray-200 border-opacity-50 bg-white dark:bg-[#ffffff]/5">
