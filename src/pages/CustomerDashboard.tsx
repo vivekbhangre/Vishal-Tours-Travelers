@@ -2866,15 +2866,21 @@ export default function CustomerDashboard() {
                   </div>
                 </div>
 
-                <div className="space-y-1 mb-2 px-2">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300 leading-relaxed text-center flex items-center justify-center gap-2">
-                    <Info className="w-4 h-4 text-indigo-500 dark:text-indigo-400 flex-shrink-0" />
-                    We will contact you shortly.
-                  </p>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 leading-relaxed flex items-start sm:items-center justify-center gap-2 text-left sm:text-center mt-2">
-                    <Info className="w-4 h-4 text-indigo-500 dark:text-indigo-400 flex-shrink-0 mt-0.5 sm:mt-0" />
-                    <span>You will receive an Email with driver and vehicle information once assigned.</span>
-                  </p>
+                <div className="mt-6 mb-2 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-xl p-4">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-start gap-3">
+                      <Info className="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm font-medium text-indigo-900 dark:text-indigo-200 leading-relaxed text-left">
+                        We will contact you shortly.
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Info className="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm font-medium text-indigo-900 dark:text-indigo-200 leading-relaxed text-left">
+                        You will receive an Email with driver and vehicle information once assigned.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="p-6 pt-0 border-t border-gray-200 border-opacity-50 bg-white dark:bg-[#ffffff]/5">
