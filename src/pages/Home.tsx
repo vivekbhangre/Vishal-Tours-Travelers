@@ -1,17 +1,13 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { MapPin, Calendar, CreditCard, ShieldCheck, Phone, Mail, Instagram, ArrowRight, Clock } from 'lucide-react';
+import { MapPin, Calendar, CreditCard, ShieldCheck, Phone, Mail, Instagram, ArrowRight, Clock, Map as MapIcon, Compass, Navigation } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'motion/react';
 import GenuineIndiaMap from '../components/GenuineIndiaMap';
 import ScrollReveal from '../components/ScrollReveal';
 import ParallaxBackground from '../components/ParallaxBackground';
-
-// Native React/Vite Imports (Guarantees they work in the IDE right now)
-import chhindwaraImg from '../assets/images/chhindwara.png';
-import nagpurImg from '../assets/images/nagpur.png';
-import jabalpurImg from '../assets/images/jabalpur.png';
+import SlideToBookButton from '../components/SlideToBookButton';
 
 export default function Home() {
   const { user } = useAuth();
@@ -216,30 +212,39 @@ export default function Home() {
               {/* Card 1: Seoni to Chhindwara */}
               <ScrollReveal delay={0.1}>
                 <motion.div
-                  onClick={() => handleRouteClick('Chhindwara')}
-                  className="relative h-72 rounded-2xl overflow-hidden group cursor-pointer shadow-sm hover:shadow-xl transition-shadow"
+                  className="relative h-80 rounded-2xl overflow-hidden group shadow-sm hover:shadow-xl transition-shadow bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-900 dark:to-indigo-950 flex flex-col justify-between p-6"
                 >
-                  <ParallaxBackground 
-                    src={chhindwaraImg}
-                    alt="Chhindwara"
-                    imageClassName="transition-transform duration-700 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none"></div>
+                  <div className="absolute top-0 right-0 -mt-10 -mr-10 text-white/10 group-hover:text-white/20 transition-colors duration-500 pointer-events-none">
+                    <MapIcon className="w-64 h-64" />
+                  </div>
                   
-                  <div className="absolute inset-0 p-6 flex flex-col justify-end pointer-events-none">
-                    <div className="flex justify-between items-end gap-2">
-                      <div className="min-w-0">
-                        <h3 className="text-xl sm:text-2xl font-bold text-[#ffffff] flex items-center gap-2 mb-2">
-                          Seoni <ArrowRight className="h-5 w-5 text-indigo-400 flex-shrink-0" /> <span className="truncate">Chhindwara</span>
-                        </h3>
-                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#ffffff]/20 backdrop-blur-md text-[#ffffff] text-sm font-medium border border-[#ffffff]/10 whitespace-nowrap">
-                          <Clock className="h-4 w-4 mr-1.5 flex-shrink-0" />
-                          50 Mins
-                        </div>
+                  <div className="relative z-10 flex justify-between items-start">
+                    <div className="bg-white/20 backdrop-blur-sm w-12 h-12 rounded-full flex items-center justify-center text-white mb-4">
+                      <Compass className="w-6 h-6" />
+                    </div>
+                    <div className="inline-flex items-center px-4 py-2 rounded-full bg-white text-indigo-600 text-sm font-bold shadow-lg whitespace-nowrap flex-shrink-0">
+                      From ₹2200
+                    </div>
+                  </div>
+                  
+                  <div className="relative z-10 flex flex-col justify-end mt-auto space-y-4">
+                    <div className="min-w-0">
+                      <h3 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2 mb-2">
+                        Seoni <ArrowRight className="h-5 w-5 text-indigo-200 flex-shrink-0" /> <span className="truncate">Chhindwara</span>
+                      </h3>
+                      <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-sm font-medium border border-white/10 whitespace-nowrap">
+                        <Clock className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                        50 Mins
                       </div>
-                      <div className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-600 text-[#ffffff] text-sm font-bold shadow-lg whitespace-nowrap flex-shrink-0">
-                        From ₹2200
-                      </div>
+                    </div>
+                    
+                    <div className="w-full pt-2">
+                      <SlideToBookButton 
+                        onConfirm={() => handleRouteClick('Chhindwara')} 
+                        isLoading={false} 
+                        disabled={false} 
+                        text="Slide to Book"
+                      />
                     </div>
                   </div>
                 </motion.div>
@@ -248,30 +253,39 @@ export default function Home() {
               {/* Card 2: Seoni to Nagpur */}
               <ScrollReveal delay={0.2}>
                 <motion.div
-                  onClick={() => handleRouteClick('Nagpur')}
-                  className="relative h-72 rounded-2xl overflow-hidden group cursor-pointer shadow-sm hover:shadow-xl transition-shadow"
+                  className="relative h-80 rounded-2xl overflow-hidden group shadow-sm hover:shadow-xl transition-shadow bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-emerald-900 dark:to-teal-950 flex flex-col justify-between p-6"
                 >
-                  <ParallaxBackground 
-                    src={nagpurImg}
-                    alt="Nagpur"
-                    imageClassName="transition-transform duration-700 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none"></div>
+                  <div className="absolute top-0 right-0 -mt-10 -mr-10 text-white/10 group-hover:text-white/20 transition-colors duration-500 pointer-events-none">
+                    <Navigation className="w-64 h-64" />
+                  </div>
                   
-                  <div className="absolute inset-0 p-6 flex flex-col justify-end pointer-events-none">
-                    <div className="flex justify-between items-end gap-2">
-                      <div className="min-w-0">
-                        <h3 className="text-xl sm:text-2xl font-bold text-[#ffffff] flex items-center gap-2 mb-2">
-                          Seoni <ArrowRight className="h-5 w-5 text-indigo-400 flex-shrink-0" /> <span className="truncate">Nagpur</span>
-                        </h3>
-                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#ffffff]/20 backdrop-blur-md text-[#ffffff] text-sm font-medium border border-[#ffffff]/10 whitespace-nowrap">
-                          <Clock className="h-4 w-4 mr-1.5 flex-shrink-0" />
-                          2.0 Hours
-                        </div>
+                  <div className="relative z-10 flex justify-between items-start">
+                    <div className="bg-white/20 backdrop-blur-sm w-12 h-12 rounded-full flex items-center justify-center text-white mb-4">
+                      <Compass className="w-6 h-6" />
+                    </div>
+                    <div className="inline-flex items-center px-4 py-2 rounded-full bg-white text-teal-700 text-sm font-bold shadow-lg whitespace-nowrap flex-shrink-0">
+                      From ₹4000
+                    </div>
+                  </div>
+                  
+                  <div className="relative z-10 flex flex-col justify-end mt-auto space-y-4">
+                    <div className="min-w-0">
+                      <h3 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2 mb-2">
+                        Seoni <ArrowRight className="h-5 w-5 text-teal-200 flex-shrink-0" /> <span className="truncate">Nagpur</span>
+                      </h3>
+                      <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-sm font-medium border border-white/10 whitespace-nowrap">
+                        <Clock className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                        2.0 Hours
                       </div>
-                      <div className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-600 text-[#ffffff] text-sm font-bold shadow-lg whitespace-nowrap flex-shrink-0">
-                        From ₹4000
-                      </div>
+                    </div>
+                    
+                    <div className="w-full pt-2">
+                      <SlideToBookButton 
+                        onConfirm={() => handleRouteClick('Nagpur')} 
+                        isLoading={false} 
+                        disabled={false} 
+                        text="Slide to Book"
+                      />
                     </div>
                   </div>
                 </motion.div>
@@ -280,30 +294,39 @@ export default function Home() {
               {/* Card 3: Seoni to Jabalpur */}
               <ScrollReveal delay={0.3}>
                 <motion.div
-                  onClick={() => handleRouteClick('Jabalpur')}
-                  className="relative h-72 rounded-2xl overflow-hidden group cursor-pointer shadow-sm hover:shadow-xl transition-shadow"
+                  className="relative h-80 rounded-2xl overflow-hidden group shadow-sm hover:shadow-xl transition-shadow bg-gradient-to-br from-orange-400 to-red-500 dark:from-orange-900 dark:to-red-950 flex flex-col justify-between p-6"
                 >
-                  <ParallaxBackground 
-                    src={jabalpurImg}
-                    alt="Jabalpur"
-                    imageClassName="transition-transform duration-700 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none"></div>
+                  <div className="absolute top-0 right-0 -mt-10 -mr-10 text-white/10 group-hover:text-white/20 transition-colors duration-500 pointer-events-none">
+                    <MapPin className="w-64 h-64" />
+                  </div>
+
+                  <div className="relative z-10 flex justify-between items-start">
+                    <div className="bg-white/20 backdrop-blur-sm w-12 h-12 rounded-full flex items-center justify-center text-white mb-4">
+                      <Compass className="w-6 h-6" />
+                    </div>
+                    <div className="inline-flex items-center px-4 py-2 rounded-full bg-white text-red-600 text-sm font-bold shadow-lg whitespace-nowrap flex-shrink-0">
+                      From ₹4300
+                    </div>
+                  </div>
                   
-                  <div className="absolute inset-0 p-6 flex flex-col justify-end pointer-events-none">
-                    <div className="flex justify-between items-end gap-2">
-                      <div className="min-w-0">
-                        <h3 className="text-xl sm:text-2xl font-bold text-[#ffffff] flex items-center gap-2 mb-2">
-                          Seoni <ArrowRight className="h-5 w-5 text-indigo-400 flex-shrink-0" /> <span className="truncate">Jabalpur</span>
-                        </h3>
-                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#ffffff]/20 backdrop-blur-md text-[#ffffff] text-sm font-medium border border-[#ffffff]/10 whitespace-nowrap">
-                          <Clock className="h-4 w-4 mr-1.5 flex-shrink-0" />
-                          2.6 Hours
-                        </div>
+                  <div className="relative z-10 flex flex-col justify-end mt-auto space-y-4">
+                    <div className="min-w-0">
+                      <h3 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2 mb-2">
+                        Seoni <ArrowRight className="h-5 w-5 text-red-200 flex-shrink-0" /> <span className="truncate">Jabalpur</span>
+                      </h3>
+                      <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-sm font-medium border border-white/10 whitespace-nowrap">
+                        <Clock className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                        2.6 Hours
                       </div>
-                      <div className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-600 text-[#ffffff] text-sm font-bold shadow-lg whitespace-nowrap flex-shrink-0">
-                        From ₹4300
-                      </div>
+                    </div>
+                    
+                    <div className="w-full pt-2">
+                      <SlideToBookButton 
+                        onConfirm={() => handleRouteClick('Jabalpur')} 
+                        isLoading={false} 
+                        disabled={false} 
+                        text="Slide to Book"
+                      />
                     </div>
                   </div>
                 </motion.div>
