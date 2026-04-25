@@ -8,10 +8,10 @@ import GenuineIndiaMap from '../components/GenuineIndiaMap';
 import ScrollReveal from '../components/ScrollReveal';
 import ParallaxBackground from '../components/ParallaxBackground';
 
-// Unblockable route links (By omitting .png, Nginx doesn't automatically block them)
-const chhindwaraImg = '/api/raw-image/chhindwara';
-const nagpurImg = '/api/raw-image/nagpur';
-const jabalpurImg = '/api/raw-image/jabalpur';
+// Native React/Vite Imports (Guarantees they work in the IDE right now)
+import chhindwaraImg from '../assets/images/chhindwara.png';
+import nagpurImg from '../assets/images/nagpur.png';
+import jabalpurImg from '../assets/images/jabalpur.png';
 
 export default function Home() {
   const { user } = useAuth();

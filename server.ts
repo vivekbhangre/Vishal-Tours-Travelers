@@ -47,28 +47,6 @@ async function startServer() {
   // API Routes
   setupFleetRoutes(app, io);
 
-  // Unblockable Image Proxy (Bypasses Nginx by dropping the .png extension from the request)
-  app.get('/api/raw-image/:name', (req, res) => {
-    const name = req.params.name.replace(/[^a-zA-Z0-9_-]/g, '');
-    
-    // Check every single possible location the image could mathematically be sitting in
-    const searchPaths = [
-      path.join(process.cwd(), 'src', 'assets', 'images', `${name}.png`),
-      path.join(process.cwd(), 'public', 'images', `${name}.png`),
-      `/home/ec2-user/Vishal-Tours-Travelers/src/assets/images/${name}.png`,
-      `/var/www/html/images/${name}.png` // We check the exact folder we copied it to
-    ];
-
-    for (const imgPath of searchPaths) {
-      if (fs.existsSync(imgPath)) {
-        res.setHeader('Content-Type', 'image/png');
-        return res.sendFile(imgPath);
-      }
-    }
-    
-    res.status(404).end();
-  });
-
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', sheetsReady: !!getDoc() });
   });
