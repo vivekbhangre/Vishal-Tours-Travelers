@@ -56,16 +56,13 @@ export default function SlideToBookButton({ onConfirm, isLoading, disabled, text
   };
 
   useEffect(() => {
-    if (!isLoading && isConfirmed) {
-      // Reset if loading finishes and we want to allow re-submission (e.g. on error)
-      animate(x, 0, { type: "spring", stiffness: 400, damping: 30 });
-      setIsConfirmed(false);
-    }
+    // Allow the button to stay at the right position when confirmed.
+    // We only reset if the button is explicitly disabled (e.g. form validation fails).
     if (disabled && !isLoading) {
        animate(x, 0, { type: "spring", stiffness: 400, damping: 30 });
        setIsConfirmed(false);
     }
-  }, [isLoading, disabled, isConfirmed, x]);
+  }, [isLoading, disabled, x]);
 
   return (
     <motion.div 
