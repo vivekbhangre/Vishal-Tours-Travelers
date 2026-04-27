@@ -1849,29 +1849,29 @@ export default function CustomerDashboard() {
                         <select
                           value={rideTimeHour}
                           onChange={(e) => setRideTimeHour(e.target.value)}
-                          className="block w-full flex-1 bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
+                          className="block w-full flex-1 bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                         >
                           {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
-                            <option key={h} value={h.toString().padStart(2, '0')}>{h.toString().padStart(2, '0')}</option>
+                            <option key={h} value={h.toString().padStart(2, '0')} className="bg-white text-gray-900">{h.toString().padStart(2, '0')}</option>
                           ))}
                         </select>
                         <span className="flex items-center text-gray-900/30 font-bold">:</span>
                         <select
                           value={rideTimeMinute}
                           onChange={(e) => setRideTimeMinute(e.target.value)}
-                          className="block w-full flex-1 bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
+                          className="block w-full flex-1 bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                         >
                           {['00', '15', '30', '45'].map(m => (
-                            <option key={m} value={m}>{m}</option>
+                            <option key={m} value={m} className="bg-white text-gray-900">{m}</option>
                           ))}
                         </select>
                         <select
                           value={rideTimeAmPm}
                           onChange={(e) => setRideTimeAmPm(e.target.value)}
-                          className="block w-full flex-1 bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
+                          className="block w-full flex-1 bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                         >
-                          <option value="AM">AM</option>
-                          <option value="PM">PM</option>
+                          <option value="AM" className="bg-white text-gray-900">AM</option>
+                          <option value="PM" className="bg-white text-gray-900">PM</option>
                         </select>
                       </div>
                     </div>
@@ -1903,29 +1903,29 @@ export default function CustomerDashboard() {
                             <select
                               value={returnTimeHour}
                               onChange={(e) => setReturnTimeHour(e.target.value)}
-                              className="block w-full flex-1 bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
+                              className="block w-full flex-1 bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                             >
                               {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
-                                <option key={h} value={h.toString().padStart(2, '0')}>{h.toString().padStart(2, '0')}</option>
+                                <option key={h} value={h.toString().padStart(2, '0')} className="bg-white text-gray-900">{h.toString().padStart(2, '0')}</option>
                               ))}
                             </select>
                             <span className="flex items-center font-bold text-gray-900/30">:</span>
                             <select
                               value={returnTimeMinute}
                               onChange={(e) => setReturnTimeMinute(e.target.value)}
-                              className="block w-full flex-1 bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
+                              className="block w-full flex-1 bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                             >
                               {['00', '15', '30', '45'].map(m => (
-                                <option key={m} value={m}>{m}</option>
+                                <option key={m} value={m} className="bg-white text-gray-900">{m}</option>
                               ))}
                             </select>
                             <select
                               value={returnTimeAmPm}
                               onChange={(e) => setReturnTimeAmPm(e.target.value)}
-                              className="block w-full flex-1 bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
+                              className="block w-full flex-1 bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-center"
                             >
-                              <option value="AM">AM</option>
-                              <option value="PM">PM</option>
+                              <option value="AM" className="bg-white text-gray-900">AM</option>
+                              <option value="PM" className="bg-white text-gray-900">PM</option>
                             </select>
                           </div>
                         </div>
@@ -2033,10 +2033,10 @@ export default function CustomerDashboard() {
                               id="decorationRequired"
                               value={decorationRequired}
                               onChange={(e) => setDecorationRequired(e.target.value)}
-                              className="mt-1 block w-full bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none"
+                              className="mt-1 block w-full bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none"
                             >
-                              <option value="No">No</option>
-                              <option value="Yes">Yes</option>
+                              <option value="No" className="bg-white text-gray-900">No</option>
+                              <option value="Yes" className="bg-white text-gray-900">Yes</option>
                             </select>
                           </div>
                         </div>
@@ -2056,9 +2056,9 @@ export default function CustomerDashboard() {
                         onFocus={handleInputFocus}
                         className="mt-1 block w-full bg-white dark:bg-[#0a0f12] border border-gray-200 border-opacity-50 dark:border-white/10 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-left"
                       >
-                        <option value="Intercity">Intercity</option>
-                        <option value="Airport Transfer">Airport Transfer</option>
-                        <option value="Other">Other</option>
+                        <option value="Intercity" className="bg-white text-gray-900">Intercity</option>
+                        <option value="Airport Transfer" className="bg-white text-gray-900">Airport Transfer</option>
+                        <option value="Other" className="bg-white text-gray-900">Other</option>
                       </select>
                     </div>
                   )}
@@ -2148,23 +2148,29 @@ export default function CustomerDashboard() {
 
                             {/* AC Selection */}
                             {tripType !== 'Car Renting' && (
-                              <div className={`mt-6 mx-2 border rounded-2xl p-4 shadow-sm flex items-center gap-4 bg-gray-50 border-gray-200 border-opacity-50`}>
+                              <div className="mt-6 mx-2 border rounded-2xl p-4 shadow-sm flex items-center gap-4 bg-gray-50 dark:bg-[#0a0f12] border-gray-200 dark:border-white/10 border-opacity-50">
                                 <div className="w-12 h-12 rounded-xl bg-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.2)] flex items-center justify-center flex-shrink-0">
-                                  <Snowflake className="w-6 h-6 text-indigo-400" />
+                                  <Snowflake className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
                                 </div>
                                 <div className="flex-1">
-                                  <h4 className={`font-bold text-base text-gray-900`}>Air Conditioning</h4>
-                                  <p className={`text-xs text-gray-900/50`}>Cooler cabin · Ideal for summer</p>
+                                  <h4 className="font-bold text-base text-gray-900 dark:text-white">Air Conditioning</h4>
+                                  <p className="text-xs text-gray-900/50 dark:text-gray-400">Cooler cabin · Ideal for summer</p>
                                 </div>
-                                <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                                  <input 
-                                    type="checkbox" 
-                                    className="sr-only peer"
-                                    checked={isAC}
-                                    onChange={(e) => setIsAC(e.target.checked)}
+                                <button
+                                  type="button"
+                                  onClick={() => setIsAC(!isAC)}
+                                  className={`relative w-12 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-[#9353d3]/50 focus:ring-offset-1 dark:focus:ring-offset-[#0a0f12] ${
+                                    isAC ? 'bg-[#9353d3]' : 'bg-gray-300 dark:bg-[#3f3f46]'
+                                  }`}
+                                >
+                                  <motion.div
+                                    layout
+                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                    className="bg-white w-5 h-5 rounded-full shadow-sm"
+                                    initial={false}
+                                    animate={{ x: isAC ? 20 : 0 }}
                                   />
-                                  <div className="w-11 h-6 rounded-full peer peer-focus:outline-none peer-focus:ring-2 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-[#ffffff]/5 after:border-gray-200 border-opacity-50 after:border after:rounded-full after:h-5 after:w-5 after:transition-all bg-white/20 peer-focus:ring-indigo-500/30 peer-checked:bg-indigo-500"></div>
-                                </label>
+                                </button>
                               </div>
                             )}
                           </div>
@@ -2758,7 +2764,7 @@ export default function CustomerDashboard() {
                         className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-white dark:bg-[#ffffff]/5 border-gray-200 border-opacity-50 text-gray-900 appearance-none`}
                       >
                         {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
-                          <option key={h} value={h.toString().padStart(2, '0')}>{h.toString().padStart(2, '0')}</option>
+                          <option key={h} value={h.toString().padStart(2, '0')} className="bg-white text-gray-900">{h.toString().padStart(2, '0')}</option>
                         ))}
                       </select>
                       <span className={`flex items-center font-bold text-gray-900/30`}>:</span>
@@ -2768,7 +2774,7 @@ export default function CustomerDashboard() {
                         className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-white dark:bg-[#ffffff]/5 border-gray-200 border-opacity-50 text-gray-900 appearance-none`}
                       >
                         {['00', '15', '30', '45'].map(m => (
-                          <option key={m} value={m}>{m}</option>
+                          <option key={m} value={m} className="bg-white text-gray-900">{m}</option>
                         ))}
                       </select>
                       <select
@@ -2776,8 +2782,8 @@ export default function CustomerDashboard() {
                         onChange={(e) => setRebookTimeAmPm(e.target.value)}
                         className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-white dark:bg-[#ffffff]/5 border-gray-200 border-opacity-50 text-gray-900 appearance-none`}
                       >
-                        <option value="AM">AM</option>
-                        <option value="PM">PM</option>
+                        <option value="AM" className="bg-white text-gray-900">AM</option>
+                        <option value="PM" className="bg-white text-gray-900">PM</option>
                       </select>
                     </div>
                   </div>
@@ -2786,7 +2792,7 @@ export default function CustomerDashboard() {
                     <button
                       type="button"
                       onClick={() => setRebookModal({ isOpen: false, booking: null })}
-                      className={`flex-1 px-6 py-3 border rounded-xl text-sm font-medium transition-all border-gray-200 border-opacity-50 text-gray-900/70 bg-white/5 hover:bg-white/10 hover:text-gray-900`}
+                      className={`flex-1 px-6 py-3 border rounded-xl text-sm font-medium transition-all border-gray-200 border-opacity-50 text-gray-900 dark:text-white/70 bg-white/5 hover:bg-white/10 hover:text-gray-900`}
                     >
                       Cancel
                     </button>
