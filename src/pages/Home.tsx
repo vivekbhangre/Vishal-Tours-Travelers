@@ -8,6 +8,7 @@ import GenuineIndiaMap from '../components/GenuineIndiaMap';
 import ScrollReveal from '../components/ScrollReveal';
 import ParallaxBackground from '../components/ParallaxBackground';
 import SlideToBookButton from '../components/SlideToBookButton';
+import FleetSection from '../components/FleetSection';
 
 export default function Home() {
   const { user } = useAuth();
@@ -334,6 +335,8 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        <FleetSection />
       </div>
 
       {/* Footer Section */}

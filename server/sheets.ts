@@ -2,27 +2,32 @@ import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { JWT } from 'google-auth-library';
 
 let doc: GoogleSpreadsheet | null = null;
+let initPromise: Promise<GoogleSpreadsheet | null> | null = null;
 
 export async function initSheets() {
-  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  const key = process.env.GOOGLE_PRIVATE_KEY;
-  const sheetId = process.env.GOOGLE_SHEET_ID;
+  if (initPromise) return initPromise;
+  
+  initPromise = (async () => {
+    const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+    const key = process.env.GOOGLE_PRIVATE_KEY;
+    const sheetId = process.env.GOOGLE_SHEET_ID;
 
-  if (!email || !key || !sheetId) {
-    console.warn('Google Sheets credentials missing. Please configure them in the environment.');
-    return null;
-  }
+    if (!email || !key || !sheetId) {
+      console.warn('Google Sheets credentials missing. Please configure them in the environment.');
+      return null;
+    }
 
-  try {
-    const serviceAccountAuth = new JWT({
-      email: email,
-      key: key.replace(/\\n/g, '\n'),
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-    });
+    try {
+      const serviceAccountAuth = new JWT({
+        email: email,
+        key: key.replace(/\\n/g, '\n'),
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      });
 
-    doc = new GoogleSpreadsheet(sheetId, serviceAccountAuth);
-    await doc.loadInfo();
-    console.log(`Loaded Google Sheet: ${doc.title}`);
+      const newDoc = new GoogleSpreadsheet(sheetId, serviceAccountAuth);
+      await newDoc.loadInfo();
+      doc = newDoc;
+      console.log(`Loaded Google Sheet: ${doc.title}`);
 
     // Set default format to prevent text wrapping
     await doc.updateProperties({ defaultFormat: { wrapStrategy: 'CLIP' } });
@@ -180,6 +185,8 @@ export async function initSheets() {
     console.error('Error initializing Google Sheets:', error);
     return null;
   }
+  })();
+  return initPromise;
 }
 
 export function getDoc() {
@@ -191,6 +198,9 @@ const fetchPromises = new Map<string, Promise<any[]>>();
 const CACHE_TTL = 30000; // 30 seconds
 
 export async function getCachedRows(sheetTitle: string, forceRefresh: boolean = false) {
+  // Ensure that initialization is fully complete before checking doc
+  await initSheets();
+
   const now = Date.now();
   const cached = rowCache.get(sheetTitle);
   if (!forceRefresh && cached && (now - cached.timestamp < CACHE_TTL)) {
