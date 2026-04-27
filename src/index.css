@@ -79,7 +79,18 @@
     --theme-green-800: #166534;
   }
 
+  .dark select {
+    color-scheme: light !important;
+    color: white !important;
+  }
+  
+  .dark select option {
+    background-color: white !important;
+    color: black !important;
+  }
+
   .dark {
+    color-scheme: dark;
     --theme-white: #020617;
     --theme-gray-50: #020617;
     --theme-gray-100: #0f172a;

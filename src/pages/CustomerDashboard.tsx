@@ -2054,7 +2054,7 @@ export default function CustomerDashboard() {
                         value={rideType}
                         onChange={(e) => setRideType(e.target.value)}
                         onFocus={handleInputFocus}
-                        className="mt-1 block w-full bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none"
+                        className="mt-1 block w-full bg-white dark:bg-[#0a0f12] border border-gray-200 border-opacity-50 dark:border-white/10 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] rounded-xl py-3 px-4 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm appearance-none text-left"
                       >
                         <option value="Intercity">Intercity</option>
                         <option value="Airport Transfer">Airport Transfer</option>
