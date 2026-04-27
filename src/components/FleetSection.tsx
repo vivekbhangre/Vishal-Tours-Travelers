@@ -58,25 +58,26 @@ export default function FleetSection() {
               <ScrollReveal delay={index * 0.1} className="flex-1 flex flex-col w-full h-full block">
                 <motion.div
                 whileHover={{ y: -5 }}
-                className={`relative flex-1 w-full rounded-3xl overflow-hidden group shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] border border-gray-200 dark:border-gray-300 bg-white dark:bg-gray-50 backdrop-blur-md transition-all duration-500 h-full flex flex-col`}
+                className={`relative flex-1 w-full rounded-3xl overflow-hidden group shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] border border-gray-200 dark:border-white/10 bg-transparent transition-all duration-500 h-full flex flex-col`}
               >
                 {/* Image Section */}
-                <div className="relative h-64 overflow-hidden bg-white dark:bg-gray-100 flex items-center justify-center border-b border-gray-100 dark:border-gray-200">
+                <div className="relative h-64 overflow-hidden bg-white dark:bg-gray-200 flex items-center justify-center border-b border-gray-200/50 dark:border-white/10 z-10">
                   <img 
                     src={vehicle.image} 
-                    alt={vehicle.name} 
+                    alt={vehicle.name}
+                    loading="lazy"
                     referrerPolicy="no-referrer"
                     className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 z-0" 
                   />
                   <div className="absolute bottom-4 left-6 z-20">
-                    <span className="px-3 py-1 bg-gray-900 dark:bg-gray-100 backdrop-blur-md rounded-full text-[#ffffff] dark:text-[#ffffff] text-xs font-semibold uppercase tracking-wider shadow-sm">
+                    <span className="px-3 py-1 bg-gray-900/80 dark:bg-black/70 backdrop-blur-md rounded-full text-white text-xs font-semibold uppercase tracking-wider shadow-sm">
                       {vehicle.type}
                     </span>
                   </div>
                 </div>
 
                 {/* Content Section */}
-                <div className="p-6 flex-grow flex flex-col">
+                <div className="p-6 flex-grow flex flex-col bg-white/60 dark:bg-[#0a0f12]/60 backdrop-blur-xl relative z-0">
                   <h3 className="text-2xl font-bold text-gray-900 mb-3 transition-colors duration-500">{vehicle.name}</h3>
                   <p className="text-gray-600 text-sm mb-6 flex-grow transition-colors duration-500">
                     {vehicle.description}
@@ -84,23 +85,23 @@ export default function FleetSection() {
 
                   {/* Attributes */}
                   <div className="grid grid-cols-2 gap-4 mt-auto">
-                    <div className="flex items-center space-x-3 p-3 rounded-2xl bg-gray-50 border border-gray-100 dark:border-gray-200 transition-colors duration-500">
+                    <div className="flex items-center space-x-3 p-3 rounded-2xl bg-white/50 dark:bg-white/5 border border-white/40 dark:border-white/10 transition-colors duration-500 shadow-sm">
                       <div className={`p-2 rounded-xl bg-gradient-to-br ${vehicle.color} text-[#ffffff]`}>
                         <Users className="w-5 h-5" />
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Capacity</p>
-                        <p className="text-sm font-semibold text-gray-900">{vehicle.passengers}</p>
+                        <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide">Capacity</p>
+                        <p className="text-xs sm:text-sm font-semibold text-gray-900">{vehicle.passengers}</p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-3 p-3 rounded-2xl bg-gray-50 border border-gray-100 dark:border-gray-200 transition-colors duration-500">
+                    <div className="flex items-center space-x-3 p-3 rounded-2xl bg-white/50 dark:bg-white/5 border border-white/40 dark:border-white/10 transition-colors duration-500 shadow-sm">
                       <div className={`p-2 rounded-xl bg-gradient-to-br ${vehicle.color} text-[#ffffff]`}>
                         <Briefcase className="w-5 h-5" />
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Luggage</p>
-                        <p className="text-sm font-semibold text-gray-900">{vehicle.luggage}</p>
+                        <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide">Luggage</p>
+                        <p className="text-xs sm:text-sm font-semibold text-gray-900">{vehicle.luggage}</p>
                       </div>
                     </div>
                   </div>
