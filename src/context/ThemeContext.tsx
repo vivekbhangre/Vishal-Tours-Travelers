@@ -14,12 +14,27 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [theme, setTheme] = useState<Theme>(() => {
+    const storedUser = sessionStorage.getItem('user');
+    if (!storedUser) {
+      return 'light';
+    }
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'light' || savedTheme === 'dark') {
       return savedTheme;
     }
     return 'light';
   });
+
+  useEffect(() => {
+    if (!user) {
+      setTheme('light');
+    } else {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        setTheme('dark');
+      }
+    }
+  }, [user]);
 
   useEffect(() => {
     const root = window.document.documentElement;
