@@ -11,6 +11,8 @@ import debounce from 'lodash.debounce';
 import InteractiveMap from '../components/InteractiveMap';
 import SlideToBookButton from '../components/SlideToBookButton';
 
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+
 interface LocationData {
   name: string;
   city: string;
@@ -25,10 +27,10 @@ interface LocationData {
 }
 
 const AVAILABLE_VEHICLES = [
-  { name: 'Swift Dzire', capacity: 4, quantity: 1 },
-  { name: 'Ertiga', capacity: 7, quantity: 2 },
-  { name: 'Force Traveller (18 Seater)', capacity: 18, quantity: 1 },
-  { name: 'Force Traveller (22 Seater)', capacity: 22, quantity: 1 },
+  { name: 'Swift Dzire', capacity: 4, quantity: 1, lottieUrl: 'https://lottie.host/a3fc0f6f-20c3-434a-897e-34be96418de4/QxfkOjC2kd.lottie' },
+  { name: 'Ertiga', capacity: 7, quantity: 2, lottieUrl: 'https://lottie.host/75a3a692-ae50-4dc3-8012-e684598abb73/zzjksJNlHK.lottie' },
+  { name: 'Force Traveller (18 Seater)', capacity: 18, quantity: 1, lottieUrl: 'https://lottie.host/98f55fa3-cdc6-4ac9-ad8a-8ccd5e4ddeab/O5vGj1aR50.lottie' },
+  { name: 'Force Traveller (22 Seater)', capacity: 22, quantity: 1, lottieUrl: 'https://lottie.host/98f55fa3-cdc6-4ac9-ad8a-8ccd5e4ddeab/O5vGj1aR50.lottie' },
 ];
 
 const getInitialDateTime = () => {
@@ -184,8 +186,17 @@ const VehicleShowroomCard = ({ vehicle, isSelected, isUnavailable,  onClick }: a
       }`}
     >
       {/* Car Icon Box */}
-      <div className="w-12 h-10 flex items-center justify-center flex-shrink-0">
-        <Car className={`w-8 h-8 ${isSelected ? 'text-indigo-400' : 'text-gray-900/50'}`} />
+      <div className="w-14 h-14 flex items-center justify-center flex-shrink-0">
+        {vehicle.lottieUrl ? (
+          <DotLottieReact
+            src={vehicle.lottieUrl}
+            loop
+            autoplay
+            className="w-full h-full object-contain pointer-events-none"
+          />
+        ) : (
+          <Car className={`w-8 h-8 ${isSelected ? 'text-indigo-400' : 'text-gray-900/50'}`} />
+        )}
       </div>
 
       {/* Details */}
@@ -2153,7 +2164,7 @@ export default function CustomerDashboard() {
                                   <Snowflake className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
                                 </div>
                                 <div className="flex-1">
-                                  <h4 className="font-bold text-base text-gray-900 dark:text-white">Air Conditioning</h4>
+                                  <h4 className="font-bold text-base text-gray-900">Air Conditioning</h4>
                                   <p className="text-xs text-gray-900/50 dark:text-gray-400">Cooler cabin · Ideal for summer</p>
                                 </div>
                                 <button
