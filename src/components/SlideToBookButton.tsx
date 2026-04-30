@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, useMotionValue, useTransform, animate } from 'motion/react';
 import { Car, RefreshCw, Check } from 'lucide-react';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 interface SlideToBookButtonProps {
   onConfirm: () => void;
@@ -121,8 +122,14 @@ export default function SlideToBookButton({ onConfirm, isLoading, disabled, text
           {isConfirmed ? (
             <Check className="w-5 h-5 text-green-500" />
           ) : (
-            <motion.div style={{ color: iconColor }} className="flex items-center justify-center">
-              <Car className="w-5 h-5" />
+            <motion.div style={{ color: iconColor }} className="flex items-center justify-center w-16 h-16 absolute pointer-events-none">
+              <DotLottieReact
+                src="https://lottie.host/a3fc0f6f-20c3-434a-897e-34be96418de4/QxfkOjC2kd.lottie"
+                loop
+                autoplay
+                className="w-full h-full object-contain pointer-events-none"
+                renderConfig={{ autoResize: true, devicePixelRatio: typeof window !== 'undefined' ? window.devicePixelRatio : 2 }}
+              />
             </motion.div>
           )}
         </motion.div>

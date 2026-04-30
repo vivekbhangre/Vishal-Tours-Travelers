@@ -193,6 +193,7 @@ const VehicleShowroomCard = ({ vehicle, isSelected, isUnavailable,  onClick }: a
             loop
             autoplay
             className="w-full h-full object-contain pointer-events-none"
+            renderConfig={{ autoResize: true, devicePixelRatio: typeof window !== 'undefined' ? window.devicePixelRatio : 2 }}
           />
         ) : (
           <Car className={`w-8 h-8 ${isSelected ? 'text-indigo-400' : 'text-gray-900/50'}`} />
@@ -239,19 +240,22 @@ const ConciergeLoading = () => (
       <motion.div 
         animate={{ x: ['-100%', '100%'] }}
         transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-        className="relative z-10 text-indigo-500 flex items-center"
+        className="relative z-10 flex items-center"
       >
-        <Car className="w-16 h-16" />
-        <motion.div 
-          animate={{ opacity: [0.2, 0.8, 0.2] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-          className="w-12 h-1 bg-gradient-to-r from-indigo-500/50 to-transparent -ml-2 blur-[2px]"
-        />
+        <div className="w-32 h-32 scale-x-[-1]">
+          <DotLottieReact
+            src="https://lottie.host/0c72bf38-adf9-4b08-b51c-6566aed4c60d/JpUdeM1tWH.lottie"
+            loop
+            autoplay
+            className="w-full h-full object-contain pointer-events-none"
+            renderConfig={{ autoResize: true, devicePixelRatio: typeof window !== 'undefined' ? window.devicePixelRatio : 2 }}
+          />
+        </div>
       </motion.div>
       <div className="absolute bottom-4 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent" />
     </div>
-    <h3 className={`text-xl font-bold mb-2 text-gray-900 tracking-tight`}>Curating your route...</h3>
-    <p className={`text-sm text-gray-900/50`}>Preparing your premium vehicle</p>
+    <h3 className={`text-xl font-bold mb-2 text-gray-900 dark:text-white tracking-tight`}>Curating your route...</h3>
+    <p className={`text-sm text-gray-900/50 dark:text-gray-400`}>Preparing your premium vehicle</p>
   </motion.div>
 );
 
@@ -941,28 +945,31 @@ export default function CustomerDashboard() {
 
       const validDestinations = destinations.filter(d => d.trim() !== '');
       
-      const newBooking = await api.createBooking({
-        userId: user.id,
-        userName: user.name,
-        userEmail: user.email,
-        fromLocation,
-        toLocation: tripType === 'Tour' ? 'N/A' : toLocation,
-        destinations: tripType === 'Tour' ? validDestinations.join(', ') : 'N/A',
-        rideDate: formattedRideDate,
-        tripType,
-        returnDate: formattedReturnDate,
-        rideType,
-        numberOfPeople,
-        fareAmount: finalEstimatedPrice,
-        numberOfDays: tripType === 'Car Renting' ? days : 'N/A',
-        numberOfCars: tripType === 'Car Renting' ? cars : (tripType === 'Tour' ? cars : 'N/A'),
-        estimatedKM: tripType !== 'Car Renting' ? estimatedKM : 'N/A',
-        suggestedVehicle: selectedVehicle,
-        isAC,
-        weddingDetails: tripType === 'Wedding' ? { weddingDate, eventLocation, vehiclesRequired, decorationRequired } : undefined,
-        airportDetails: rideType === 'Airport Transfer' ? { pickupType } : undefined,
-        customRequirements: rideType === 'Other' ? customRequirements : undefined
-      });
+      const [newBooking] = await Promise.all([
+        api.createBooking({
+          userId: user.id,
+          userName: user.name,
+          userEmail: user.email,
+          fromLocation,
+          toLocation: tripType === 'Tour' ? 'N/A' : toLocation,
+          destinations: tripType === 'Tour' ? validDestinations.join(', ') : 'N/A',
+          rideDate: formattedRideDate,
+          tripType,
+          returnDate: formattedReturnDate,
+          rideType,
+          numberOfPeople,
+          fareAmount: finalEstimatedPrice,
+          numberOfDays: tripType === 'Car Renting' ? days : 'N/A',
+          numberOfCars: tripType === 'Car Renting' ? cars : (tripType === 'Tour' ? cars : 'N/A'),
+          estimatedKM: tripType !== 'Car Renting' ? estimatedKM : 'N/A',
+          suggestedVehicle: selectedVehicle,
+          isAC,
+          weddingDetails: tripType === 'Wedding' ? { weddingDate, eventLocation, vehiclesRequired, decorationRequired } : undefined,
+          airportDetails: rideType === 'Airport Transfer' ? { pickupType } : undefined,
+          customRequirements: rideType === 'Other' ? customRequirements : undefined
+        }),
+        new Promise(resolve => setTimeout(resolve, 3000))
+      ]);
 
       setFromLocation('');
       setFromLocationData(null);
