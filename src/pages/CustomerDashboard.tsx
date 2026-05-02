@@ -5,11 +5,12 @@ import { api, socket } from '../lib/api';
 import { validateEmail, validateName, validatePhone, parseRideDate, safeFormatDate } from '../lib/validation';
 import { format } from 'date-fns';
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useDragControls } from 'motion/react';
-import { CheckCircle, Calendar, Clock, Car, Users, MapPin, Grid, RefreshCw, Info, ChevronDown, ChevronUp, CreditCard, ChevronRight, ChevronLeft, Moon, Sun, Crown, Star, Shield, Radar, Snowflake, ArrowUpDown } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { CheckCircle, Calendar, Clock, Car, Users, MapPin, Grid, RefreshCw, Info, ChevronDown, ChevronUp, CreditCard, ChevronRight, ChevronLeft, Moon, Sun, Crown, Star, Shield, Radar, Snowflake, ArrowUpDown, Home, List, User } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import debounce from 'lodash.debounce';
 import InteractiveMap from '../components/InteractiveMap';
 import SlideToBookButton from '../components/SlideToBookButton';
+import { toast } from 'sonner';
 
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
@@ -262,18 +263,23 @@ const ConciergeLoading = () => (
 export default function CustomerDashboard() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'profile'>(() => {
-    return (localStorage.getItem('customerActiveTab') as 'dashboard' | 'bookings' | 'profile') || 'dashboard';
-  });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTabParam = searchParams.get('tab') as 'dashboard' | 'bookings' | 'profile' | null;
+  const activeTab = activeTabParam || 'dashboard';
+
+  const setActiveTab = (tab: 'dashboard' | 'bookings' | 'profile') => {
+    setSearchParams({ tab });
+    localStorage.setItem('customerActiveTab', tab);
+  };
 
   useEffect(() => {
     const handleStorageChange = () => {
       const tab = localStorage.getItem('customerActiveTab') as 'dashboard' | 'bookings' | 'profile';
-      if (tab) setActiveTab(tab);
+      if (tab && !activeTabParam) setActiveTab(tab);
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  }, [activeTabParam, setSearchParams]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -300,7 +306,7 @@ export default function CustomerDashboard() {
   const [rideTimeAmPm, setRideTimeAmPm] = useState<string>(() => getInitialDateTime().ampm);
   const [rideType, setRideType] = useState('Intercity');
   const [numberOfPeople, setNumberOfPeople] = useState<number | ''>(1);
-  const [bookingError, setBookingError] = useState('');
+  const setBookingError = (msg: string) => { if (msg) toast.error(msg); };
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingSuccessData, setBookingSuccessData] = useState<any>(null);
 
@@ -348,8 +354,8 @@ export default function CustomerDashboard() {
   const [profilePhone, setProfilePhone] = useState('');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
-  const [profileError, setProfileError] = useState('');
-  const [profileSuccess, setProfileSuccess] = useState('');
+  const setProfileError = (msg: string) => { if (msg) toast.error(msg); };
+  const setProfileSuccess = (msg: string) => { if (msg) toast.success(msg); };
   const [cancelMessage, setCancelMessage] = useState<{id: string, text: string, type: 'success' | 'error'} | null>(null);
   const [cancelModal, setCancelModal] = useState<{ isOpen: boolean, booking: any | null, refundInfo: any | null }>({ isOpen: false, booking: null, refundInfo: null });
 
@@ -384,7 +390,7 @@ export default function CustomerDashboard() {
   const [rebookTimeMinute, setRebookTimeMinute] = useState('00');
   const [rebookTimeAmPm, setRebookTimeAmPm] = useState('AM');
   const [rebookLoading, setRebookLoading] = useState(false);
-  const [rebookError, setRebookError] = useState('');
+  const setRebookError = (msg: string) => { if (msg) toast.error(msg); };
 
   // Autocomplete State
   const [fromLocationData, setFromLocationData] = useState<LocationData | null>(null);
@@ -444,15 +450,6 @@ export default function CustomerDashboard() {
       socket.off('booking:created');
     };
   }, [user?.id]);
-
-  useEffect(() => {
-    if (profileSuccess) {
-      const timer = setTimeout(() => {
-        setProfileSuccess('');
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [profileSuccess]);
 
   const fetchLocationSuggestions = useMemo(
     () =>
@@ -1292,21 +1289,6 @@ export default function CustomerDashboard() {
       <div className="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-md border-b border-gray-200 shadow-sm transition-colors duration-500">
         <Navbar />
       </div>
-        
-      {/* Toast Notification */}
-      <AnimatePresence>
-        {profileSuccess && (
-          <motion.div
-            initial={{ opacity: 0, y: -50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -50, scale: 0.9 }}
-            className="fixed top-24 right-4 z-50 bg-white dark:bg-[#ffffff]/5 text-emerald-400 px-6 py-4 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-emerald-500/20 flex items-center gap-3 backdrop-blur-md"
-          >
-            <CheckCircle className="w-5 h-5 text-emerald-500" />
-            <span className="font-semibold text-sm tracking-wide text-gray-900">{profileSuccess}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Bottom Sheet Container */}
       <motion.div 
@@ -1364,7 +1346,7 @@ export default function CustomerDashboard() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 w-full sm:w-auto">
+              <div className="hidden sm:flex items-center gap-4 w-full sm:w-auto">
                 <div className="flex p-1 bg-gray-100 dark:bg-[#ffffff]/10 border border-gray-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] rounded-lg w-full sm:w-auto relative transition-colors duration-500" role="tablist" aria-label="Dashboard Options">
                   {[{ id: 'dashboard', label: 'Dashboard' }, { id: 'bookings', label: 'My Bookings' }].map((tab) => {
                     const isSelected = activeTab === tab.id;
@@ -1427,12 +1409,6 @@ export default function CustomerDashboard() {
                     </button>
                   )}
                 </div>
-                
-                {profileError && (
-                  <div className="mb-6 bg-red-500/10 border border-red-500/20 text-red-400 px-5 py-4 rounded-xl text-sm shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)] leading-relaxed">
-                    {profileError}
-                  </div>
-                )}
                 
                 {isEditingProfile && (
                   <form onSubmit={handleUpdateProfile} className="space-y-6 border-t border-gray-200 border-opacity-50 pt-8 mt-4">
@@ -1546,11 +1522,6 @@ export default function CustomerDashboard() {
                       onSubmit={handleBookRide} 
                       className="space-y-6"
                     >
-                      {bookingError && (
-                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl relative text-sm backdrop-blur-md">
-                          {bookingError}
-                        </div>
-                      )}
                       
                       {bookingStep === 1 && (
                         <>
@@ -2392,19 +2363,30 @@ export default function CustomerDashboard() {
                     ))}
                   </div>
                 ) : bookings.length === 0 ? (
-                  <div className={`rounded-3xl p-12 text-center bg-white/50 dark:bg-[#ffffff]/5 border border-gray-200 dark:border-[#ffffff]/10 shadow-xl`}>
-                    <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 bg-indigo-500/10 border border-indigo-500/20`}>
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className={`rounded-3xl p-12 text-center bg-white/50 dark:bg-[#ffffff]/5 border border-gray-200 dark:border-[#ffffff]/10 shadow-xl`}
+                  >
+                    <motion.div 
+                      animate={{ y: [0, -10, 0] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                      className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 bg-indigo-500/10 border border-indigo-500/20`}
+                    >
                       <Car className={`w-12 h-12 text-indigo-400`} />
-                    </div>
+                    </motion.div>
                     <h3 className={`text-xl font-bold mb-2 text-gray-900 tracking-tight`}>No bookings yet</h3>
                     <p className={`mb-8 max-w-sm mx-auto text-gray-900/50 leading-relaxed`}>You haven't made any bookings yet. Book your premium ride to get started.</p>
-                    <button 
+                    <motion.button 
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={() => setActiveTab('dashboard')}
-                      className={`inline-flex items-center justify-center px-8 py-3 text-sm font-medium rounded-2xl text-white dark:text-[#ffffff] shadow-[0_0_30px_rgba(99,102,241,0.3)] transition-all bg-indigo-600 hover:bg-indigo-500 transform active:scale-95 border border-indigo-400/30`}
+                      className={`inline-flex items-center justify-center px-8 py-3 text-sm font-medium rounded-2xl text-white dark:text-[#ffffff] shadow-[0_0_30px_rgba(99,102,241,0.3)] transition-all bg-indigo-600 hover:bg-indigo-500 border border-indigo-400/30`}
                     >
                       Book a Ride
-                    </button>
-                  </div>
+                    </motion.button>
+                  </motion.div>
                 ) : (
                   <div className={`relative border-l-2 ml-4 pl-8 space-y-8 border-gray-200 border-opacity-50`}>
                     {bookings.map((booking, index) => (
@@ -2754,11 +2736,6 @@ export default function CustomerDashboard() {
                 </div>
 
                 <form onSubmit={handleRebookSubmit} className="space-y-6">
-                  {rebookError && (
-                    <div className={`p-4 text-sm rounded-xl border bg-red-500/10 text-red-400 border-red-500/20`}>
-                      {rebookError}
-                    </div>
-                  )}
                   
                   <div>
                     <label className={`block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase`}>Select New Date</label>
@@ -2935,6 +2912,39 @@ export default function CustomerDashboard() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Mobile Bottom Navigation */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-[#060608]/90 backdrop-blur-xl border-t border-gray-200 dark:border-white/10 flex justify-around items-center p-3 z-50 overflow-hidden pb-safe">
+        <button
+          onClick={() => setActiveTab('dashboard')}
+          className={`flex flex-col items-center justify-center w-16 h-12 rounded-xl transition-all ${
+            activeTab === 'dashboard' ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+          }`}
+        >
+          <Home className={`w-5 h-5 mb-1 ${activeTab === 'dashboard' ? 'fill-indigo-100 dark:fill-indigo-900/30' : ''}`} />
+          <span className="text-[10px] tracking-wide">Book</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('bookings')}
+          className={`flex flex-col items-center justify-center w-16 h-12 rounded-xl transition-all ${
+            activeTab === 'bookings' ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+          }`}
+        >
+          <List className={`w-5 h-5 mb-1 ${activeTab === 'bookings' ? 'fill-indigo-100 dark:fill-indigo-900/30' : ''}`} />
+          <span className="text-[10px] tracking-wide">Rides</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('profile')}
+          className={`flex flex-col items-center justify-center w-16 h-12 rounded-xl transition-all ${
+            activeTab === 'profile' ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+          }`}
+        >
+          <User className={`w-5 h-5 mb-1 ${activeTab === 'profile' ? 'fill-indigo-100 dark:fill-indigo-900/30' : ''}`} />
+          <span className="text-[10px] tracking-wide">Profile</span>
+        </button>
+      </div>
     </motion.div>
   );
 }

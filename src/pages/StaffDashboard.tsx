@@ -5,23 +5,37 @@ import { api, socket } from '../lib/api';
 import { parseRideDate, safeFormatDate } from '../lib/validation';
 import { format } from 'date-fns';
 import { motion } from 'motion/react';
-import { RefreshCw } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { RefreshCw, List, User, Car } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
 
 export default function StaffDashboard() {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const [searchParams, setSearchParams] = useSearchParams();
+  const mainTabParam = searchParams.get('tab') as 'Bookings' | 'Profile' | null;
+  const mainTab = mainTabParam || 'Bookings';
+
+  const setMainTab = (tab: 'Bookings' | 'Profile') => {
+    setSearchParams({ tab });
+    localStorage.setItem('staffMainTab', tab);
+  };
+  
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('staffActiveTab') || 'All';
   });
-  const [mainTab, setMainTab] = useState<'Bookings' | 'Profile'>(() => {
-    return (localStorage.getItem('staffMainTab') as 'Bookings' | 'Profile') || 'Bookings';
-  });
 
   useEffect(() => {
-    localStorage.setItem('staffMainTab', mainTab);
-  }, [mainTab]);
+    const handleStorageChange = () => {
+      const tab = localStorage.getItem('staffMainTab') as 'Bookings' | 'Profile';
+      if (tab && !mainTabParam) setMainTab(tab);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [mainTabParam, setSearchParams]);
 
   useEffect(() => {
     localStorage.setItem('staffActiveTab', activeTab);
@@ -61,7 +75,7 @@ export default function StaffDashboard() {
       await api.updateBooking(id, { [field]: value });
     } catch (error) {
       console.error('Failed to update booking:', error);
-      alert('Failed to update booking status');
+      toast.error('Failed to update booking status');
     }
   };
 
@@ -176,9 +190,34 @@ export default function StaffDashboard() {
 
             <div className="border-t border-gray-200">
               {loading ? (
-                <div className="p-4 text-center text-gray-500">Loading bookings...</div>
+                <div className="p-6 space-y-4">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="animate-pulse flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                      <div className="space-y-3 w-1/3">
+                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                      </div>
+                      <div className="h-8 bg-gray-200 rounded w-24"></div>
+                    </div>
+                  ))}
+                </div>
               ) : filteredBookings.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">No {activeTab !== 'All' ? activeTab.toLowerCase() : ''} bookings found.</div>
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  className="p-12 text-center"
+                >
+                  <motion.div 
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4"
+                  >
+                    <Car className="w-10 h-10 text-indigo-400" />
+                  </motion.div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">No bookings found</h3>
+                  <p className="text-gray-500 text-sm">There are currently no {activeTab !== 'All' ? activeTab.toLowerCase() : ''} bookings to show.</p>
+                </motion.div>
               ) : (
                 <>
                   {/* Mobile View (Cards) */}
@@ -336,6 +375,29 @@ export default function StaffDashboard() {
             <ProfileSection />
           )}
         </div>
+      </div>
+      
+      {/* Mobile Bottom Navigation */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-[#060608]/90 backdrop-blur-xl border-t border-gray-200 dark:border-white/10 flex justify-around items-center p-3 z-50 overflow-hidden pb-safe">
+        <button
+          onClick={() => setMainTab('Bookings')}
+          className={`flex flex-col items-center justify-center w-16 h-12 rounded-xl transition-all ${
+            mainTab === 'Bookings' ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+          }`}
+        >
+          <List className={`w-5 h-5 mb-1 ${mainTab === 'Bookings' ? 'fill-indigo-100 dark:fill-indigo-900/30' : ''}`} />
+          <span className="text-[10px] tracking-wide">Bookings</span>
+        </button>
+
+        <button
+          onClick={() => setMainTab('Profile')}
+          className={`flex flex-col items-center justify-center w-16 h-12 rounded-xl transition-all ${
+            mainTab === 'Profile' ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+          }`}
+        >
+          <User className={`w-5 h-5 mb-1 ${mainTab === 'Profile' ? 'fill-indigo-100 dark:fill-indigo-900/30' : ''}`} />
+          <span className="text-[10px] tracking-wide">Profile</span>
+        </button>
       </div>
     </motion.div>
   );

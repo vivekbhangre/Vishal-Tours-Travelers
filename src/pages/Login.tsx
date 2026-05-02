@@ -6,13 +6,14 @@ import { validateEmail, validatePassword } from '../lib/validation';
 import { Map, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'motion/react';
 import GenuineIndiaMap from '../components/GenuineIndiaMap';
+import { toast } from 'sonner';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const setError = (msg: string) => { if (msg) toast.error(msg); };
+  const setSuccess = (msg: string) => { if (msg) toast.success(msg); };
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -28,8 +29,6 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
     
     const emailError = validateEmail(email, true);
     if (emailError) {
@@ -104,16 +103,6 @@ export default function Login() {
           </p>
 
           <form className="relative z-10 mt-6 sm:mt-8 space-y-3 sm:space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl relative backdrop-blur-sm" role="alert">
-                <span className="block sm:inline">{error}</span>
-              </div>
-            )}
-            {success && (
-              <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-xl relative backdrop-blur-sm" role="alert">
-                <span className="block sm:inline">{success}</span>
-              </div>
-            )}
             
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 ml-1 transition-colors duration-500">

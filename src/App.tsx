@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { AnimatePresence } from 'motion/react';
 import { PageTransition } from './components/PageTransition';
+import { Toaster } from 'sonner';
 
 const Home = React.lazy(() => import('./pages/Home'));
 const Login = React.lazy(() => import('./pages/Login'));
@@ -85,6 +86,7 @@ function App() {
     <AuthProvider>
       <ThemeProvider>
         <BrowserRouter>
+          <Toaster position="top-center" richColors />
           <AppRoutes />
         </BrowserRouter>
       </ThemeProvider>

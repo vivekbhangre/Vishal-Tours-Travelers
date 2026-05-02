@@ -5,6 +5,7 @@ import { validateEmail, validatePassword, validateName, validatePhone } from '..
 import { Map, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'motion/react';
 import GenuineIndiaMap from '../components/GenuineIndiaMap';
+import { toast } from 'sonner';
 
 export default function ForgotPassword() {
   const [step, setStep] = useState(1);
@@ -15,7 +16,7 @@ export default function ForgotPassword() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState('');
+  const setError = (msg: string) => { if (msg) toast.error(msg); };
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState('');
   const [isStaff, setIsStaff] = useState(false);
@@ -23,7 +24,6 @@ export default function ForgotPassword() {
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
 
     const nameError = validateName(name);
     if (nameError) {
@@ -61,7 +61,6 @@ export default function ForgotPassword() {
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
 
     const passwordError = validatePassword(newPassword);
     if (passwordError) {
@@ -118,11 +117,6 @@ export default function ForgotPassword() {
           </p>
 
           <form className="mt-6 sm:mt-8 space-y-3 sm:space-y-6" onSubmit={step === 1 ? handleVerify : handleReset}>
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl relative backdrop-blur-sm" role="alert">
-                <span className="block sm:inline">{error}</span>
-              </div>
-            )}
             
             {step === 1 ? (
               <>
