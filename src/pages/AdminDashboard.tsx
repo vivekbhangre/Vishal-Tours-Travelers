@@ -310,12 +310,13 @@ export default function AdminDashboard() {
     : bookings.filter(b => b.rideStatus === activeTab);
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="min-h-screen bg-gray-50 transition-colors duration-300"
-    >
+    <>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        className="min-h-screen bg-gray-50 transition-colors duration-300 pb-20 md:pb-0"
+      >
       <Navbar />
       
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -1401,6 +1402,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+      </motion.div>
 
       {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-[#060608]/90 backdrop-blur-xl border-t border-gray-200 dark:border-white/10 flex justify-around items-center p-3 z-50 overflow-hidden pb-safe">
@@ -1444,6 +1446,6 @@ export default function AdminDashboard() {
           <span className="text-[10px] tracking-wide">Profile</span>
         </button>
       </div>
-    </motion.div>
+    </>
   );
 }

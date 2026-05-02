@@ -126,48 +126,50 @@ const LoyaltyCard = ({ bookingsCount }: { bookingsCount: number,  }) => {
   const progress = tier === 'Silver' ? (bookingsCount / 3) * 100 : tier === 'Gold' ? ((bookingsCount - 3) / 3) * 100 : 100;
   
   const getTierStyles = () => {
-    if (tier === 'Black') return 'from-gray-900 via-gray-800 to-black border-gray-700 text-gray-900 shadow-[0_0_30px_rgba(0,0,0,0.8)] border border-gray-200 border-opacity-50';
-    if (tier === 'Gold') return 'from-amber-700 via-yellow-600 to-amber-800 border-yellow-500/50 text-gray-900 shadow-[0_0_30px_rgba(217,119,6,0.3)] border';
-    return 'from-slate-700 via-slate-600 to-slate-800 border-slate-500/30 text-gray-900 shadow-[0_0_30px_rgba(71,85,105,0.3)] border';
+    if (tier === 'Black') return 'from-gray-900 via-gray-800 to-black border-gray-700 text-gray-900 shadow-[0_4px_15px_rgba(0,0,0,0.5)] border';
+    if (tier === 'Gold') return 'from-amber-700 via-yellow-600 to-amber-800 border-yellow-500/50 text-gray-900 shadow-[0_4px_15px_rgba(217,119,6,0.3)] border';
+    return 'from-slate-700 via-slate-600 to-slate-800 border-slate-500/30 text-gray-900 shadow-[0_4px_15px_rgba(71,85,105,0.3)] border';
   };
 
   const Icon = tier === 'Black' ? Crown : tier === 'Gold' ? Star : Shield;
 
   return (
     <motion.div 
-      whileHover={{ scale: 1.02, rotateX: 5, rotateY: -5 }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className={`relative overflow-hidden rounded-2xl p-6 mb-8 border bg-gradient-to-br ${getTierStyles()} opacity-90`}
-      style={{ transformStyle: 'preserve-3d', perspective: 1000 }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`relative overflow-hidden rounded-2xl p-4 sm:p-5 border bg-gradient-to-br ${getTierStyles()} opacity-90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4`}
     >
-      <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white dark:bg-[#ffffff]/5 opacity-10 rounded-full blur-2xl"></div>
-      <div className="relative z-10 flex justify-between items-start">
-        <div>
-          <p className="text-xs uppercase tracking-widest opacity-80 font-semibold mb-1">Status Tier</p>
-          <h3 className="text-2xl font-bold flex items-center gap-2">
-            {tier} Member <Icon className="w-5 h-5" />
-          </h3>
+      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-1/2 -translate-y-1/2"></div>
+      <div className="relative z-10 flex items-center gap-4">
+        <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20">
+          <Icon className="w-6 h-6 text-white" />
         </div>
-        <div className="text-right">
-          <p className="text-3xl font-light">{bookingsCount}</p>
-          <p className="text-xs opacity-80">Total Rides</p>
+        <div>
+          <h3 className="text-xl font-bold flex items-center gap-2 text-white">
+            {tier} Member
+          </h3>
+          <p className="text-xs tracking-wider opacity-80 text-white mt-0.5">{bookingsCount} Total Rides</p>
         </div>
       </div>
       
-      {nextTier && (
-        <div className="mt-6 relative z-10">
-          <div className="flex justify-between text-xs mb-2 opacity-90 font-medium">
-            <span>{bookingsCount} rides</span>
-            <span>{tier === 'Silver' ? 3 : 6} rides for {nextTier}</span>
+      {nextTier ? (
+        <div className="relative z-10 w-full sm:w-1/3 min-w-[200px]">
+          <div className="flex justify-between text-xs mb-1.5 text-white/90 font-medium">
+            <span>Next Tier: {nextTier}</span>
+            <span>{tier === 'Silver' ? 3 - bookingsCount : 6 - bookingsCount} rides left</span>
           </div>
-          <div className="h-1.5 w-full bg-black/20 rounded-full overflow-hidden">
+          <div className="h-1.5 w-full bg-black/30 rounded-full overflow-hidden">
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
-              transition={{ duration: 1, delay: 0.5 }}
-              className="h-full bg-white/80 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)]"
+              transition={{ duration: 1, delay: 0.2 }}
+              className="h-full bg-white/90 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)]"
             />
           </div>
+        </div>
+      ) : (
+        <div className="relative z-10 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-bold text-white uppercase tracking-wider">
+          Top Tier Reached
         </div>
       )}
     </motion.div>
@@ -359,7 +361,11 @@ export default function CustomerDashboard() {
   const [cancelMessage, setCancelMessage] = useState<{id: string, text: string, type: 'success' | 'error'} | null>(null);
   const [cancelModal, setCancelModal] = useState<{ isOpen: boolean, booking: any | null, refundInfo: any | null }>({ isOpen: false, booking: null, refundInfo: null });
 
-  const calculateRefund = (rideDateStr: string, fareAmount: number, numberOfDays: number | string) => {
+  const calculateRefund = (rideDateStr: string, fareAmount: number, numberOfDays: number | string, paymentStatus?: string) => {
+    if (paymentStatus !== 'Paid') {
+      return { refundPercent: 100, refundAmount: 0, message: "No payment made, cancellation is free." };
+    }
+
     let rideDate = parseRideDate(rideDateStr);
     
     if (isNaN(rideDate.getTime())) {
@@ -1255,12 +1261,13 @@ export default function CustomerDashboard() {
   }, [bookingStep, tripType, fromLocationData, toLocationData, destinationData, rideDate, returnDate, numberOfDays, numberOfCars, weddingDate, eventLocation, vehiclesRequired, numberOfPeople]);
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, filter: 'blur(10px)' }}
-      animate={{ opacity: 1, filter: 'blur(0px)' }}
-      exit={{ opacity: 0, filter: 'blur(10px)' }}
-      className={`min-h-screen transition-colors duration-500 bg-[#F5F5F7] dark:bg-[#060608] text-gray-900 overscroll-none`}
-    >
+    <>
+      <motion.div 
+        initial={{ opacity: 0, filter: 'blur(10px)' }}
+        animate={{ opacity: 1, filter: 'blur(0px)' }}
+        exit={{ opacity: 0, filter: 'blur(10px)' }}
+        className={`h-[100dvh] w-full overflow-hidden transition-colors duration-500 bg-[#F5F5F7] dark:bg-[#060608] text-gray-900 overscroll-none`}
+      >
       {/* Dynamic Background Mesh (Viktor Oddy Dark Style) */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 bg-[#F5F5F7] dark:bg-[#060608] transition-colors duration-500">
         <div className={`absolute inset-0 bg-gradient-to-br from-indigo-900/20 to-purple-900/20 opacity-60 mix-blend-screen`}></div>
@@ -1305,7 +1312,7 @@ export default function CustomerDashboard() {
         animate={{ 
           height: activeTab === 'dashboard' && bookingStep > 1 
             ? (isSheetExpanded ? '90dvh' : '50dvh') 
-            : 'calc(100vh - 64px)' 
+            : 'calc(100dvh - 64px)' 
         }}
         transition={{ type: 'spring', stiffness: 300, damping: 25, mass: 0.8 }}
         className={`fixed bottom-0 sm:bottom-6 left-0 right-0 mx-auto w-full sm:w-[calc(100%-3rem)] max-w-5xl z-40 bg-white dark:bg-[#060608] shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-2xl sm:border border-gray-200 dark:border-[#ffffff]/10 flex flex-col transition-colors duration-500 ${
@@ -1317,7 +1324,7 @@ export default function CustomerDashboard() {
         </AnimatePresence>
         
         {/* Filler for overscroll to prevent map from peeking through without ruining rounded corners */}
-        <div className="absolute top-full left-0 w-full h-[100vh] bg-[#F5F5F7] dark:bg-[#0F0F13] pointer-events-none sm:hidden transition-colors duration-500" />
+        <div className="absolute top-full left-0 w-full h-[100dvh] bg-[#F5F5F7] dark:bg-[#0F0F13] pointer-events-none sm:hidden transition-colors duration-500" />
 
         <div className="flex-1 overflow-y-auto pb-24 overscroll-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" id="bottom-sheet-container">
           <div className={`sticky top-0 z-40 bg-white dark:bg-[#060608] pb-2 transition-colors duration-500 ${
@@ -1387,50 +1394,68 @@ export default function CustomerDashboard() {
           <div className="py-2 sm:px-0">
           
           {activeTab === 'profile' ? (
-            <div className="max-w-2xl mx-auto space-y-8">
+            <div className="max-w-2xl mx-auto space-y-6">
               <LoyaltyCard bookingsCount={bookings.filter(b => b.rideStatus === 'Completed').length}  />
-              <div className="relative overflow-hidden">
-                <div className={`flex justify-between items-start ${isEditingProfile ? 'mb-8' : ''}`}>
-                  <div className="flex items-center gap-5">
-                    <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-gray-900 font-bold text-3xl shadow-[0_0_20px_rgba(99,102,241,0.3)] bg-gradient-to-br from-indigo-500 to-indigo-700`}>
+              <div className="relative overflow-hidden bg-white/50 dark:bg-[#ffffff]/5 rounded-3xl p-6 border border-gray-200 dark:border-[#ffffff]/10 shadow-sm backdrop-blur-xl">
+                <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${isEditingProfile ? 'mb-6 pb-6 border-b border-gray-200 dark:border-[#ffffff]/10' : ''}`}>
+                  <div className="flex items-center gap-4">
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-[0_4px_15px_rgba(99,102,241,0.5)] bg-gradient-to-br from-indigo-500 to-indigo-700 ring-2 ring-white dark:ring-[#060608]`}>
                       {profileName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <h3 className={`text-2xl font-bold text-gray-900 tracking-tight`}>{profileName}</h3>
-                      <p className={`text-sm text-gray-900/50 tracking-wider uppercase font-semibold mt-1`}>Customer</p>
+                      <h3 className={`text-xl font-bold text-gray-900 tracking-tight`}>{profileName}</h3>
+                      <p className={`text-xs text-gray-900/50 tracking-wider uppercase font-semibold mt-0.5`}>Customer</p>
                     </div>
                   </div>
                   {!isEditingProfile && (
                     <button
                       onClick={() => setIsEditingProfile(true)}
-                      className={`text-xs font-semibold uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all text-gray-900 border border-gray-200 border-opacity-50 bg-white/5 hover:bg-white/10 hover:border-gray-200 shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_15px_rgba(255,255,255,0.05)] transform active:scale-95`}
+                      className={`text-xs font-semibold uppercase tracking-wider px-5 py-2 rounded-lg transition-all text-gray-900 border border-gray-200 border-opacity-50 bg-white/50 hover:bg-white/80 shadow-sm transform active:scale-95 w-full sm:w-auto mt-2 sm:mt-0`}
                     >
                       Edit Profile
                     </button>
                   )}
                 </div>
                 
-                {isEditingProfile && (
-                  <form onSubmit={handleUpdateProfile} className="space-y-6 border-t border-gray-200 border-opacity-50 pt-8 mt-4">
-                    <div>
-                      <label htmlFor="profileName" className="block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase">Name</label>
-                      <input
-                        type="text"
-                        id="profileName"
-                        required
-                        value={profileName}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (/^[a-zA-Z\s]*$/.test(val)) {
-                            setProfileName(val);
-                          }
-                        }}
-                        onFocus={handleInputFocus}
-                        className="mt-1 block w-full border border-gray-200 border-opacity-50 bg-white dark:bg-[#ffffff]/5 text-gray-900 rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all"
-                      />
+                {isEditingProfile ? (
+                  <form onSubmit={handleUpdateProfile} className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="profileName" className="block text-[10px] font-bold mb-1.5 text-gray-900/50 tracking-wider uppercase">Name</label>
+                        <input
+                          type="text"
+                          id="profileName"
+                          required
+                          value={profileName}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^[a-zA-Z\s]*$/.test(val)) {
+                              setProfileName(val);
+                            }
+                          }}
+                          onFocus={handleInputFocus}
+                          className="block w-full border border-gray-200 border-opacity-50 bg-white dark:bg-[#ffffff]/5 text-gray-900 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 sm:text-sm transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="profilePhone" className="block text-[10px] font-bold mb-1.5 text-gray-900/50 tracking-wider uppercase">Phone</label>
+                        <input
+                          type="tel"
+                          id="profilePhone"
+                          value={profilePhone}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '');
+                            if (val.length <= 10) {
+                              setProfilePhone(val);
+                            }
+                          }}
+                          onFocus={handleInputFocus}
+                          className="block w-full border border-gray-200 border-opacity-50 bg-white dark:bg-[#ffffff]/5 text-gray-900 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 sm:text-sm transition-all"
+                        />
+                      </div>
                     </div>
                     <div>
-                      <label htmlFor="profileEmail" className="block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase">Email</label>
+                      <label htmlFor="profileEmail" className="block text-[10px] font-bold mb-1.5 text-gray-900/50 tracking-wider uppercase">Email</label>
                       <input
                         type="email"
                         id="profileEmail"
@@ -1438,43 +1463,38 @@ export default function CustomerDashboard() {
                         value={profileEmail}
                         onChange={(e) => setProfileEmail(e.target.value)}
                         onFocus={handleInputFocus}
-                        className="mt-1 block w-full border border-gray-200 border-opacity-50 bg-white dark:bg-[#ffffff]/5 text-gray-900 rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all text-gray-900/50 cursor-not-allowed"
+                        className="block w-full border border-gray-200 border-opacity-50 bg-white dark:bg-[#ffffff]/5 text-gray-900 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 sm:text-sm transition-all text-gray-900/50 cursor-not-allowed"
                         disabled
                       />
                     </div>
-                    <div>
-                      <label htmlFor="profilePhone" className="block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase">Phone</label>
-                      <input
-                        type="tel"
-                        id="profilePhone"
-                        value={profilePhone}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '');
-                          if (val.length <= 10) {
-                            setProfilePhone(val);
-                          }
-                        }}
-                        onFocus={handleInputFocus}
-                        className="mt-1 block w-full border border-gray-200 border-opacity-50 bg-white dark:bg-[#ffffff]/5 text-gray-900 rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all"
-                      />
-                    </div>
-                    <div className="flex space-x-4 pt-4">
+                    <div className="flex space-x-3 pt-3">
                       <button
                         type="button"
                         onClick={() => setIsEditingProfile(false)}
-                        className="flex-1 flex justify-center py-3 px-6 border border-gray-200 border-opacity-50 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.1)] text-sm font-medium text-gray-900/80 bg-white/5 hover:bg-white/10 hover:text-gray-900 transition-all transform active:scale-95"
+                        className="flex-1 py-2 px-4 border border-gray-200 border-opacity-50 rounded-lg shadow-sm text-sm font-medium text-gray-900/80 bg-white/50 hover:bg-white transition-all transform active:scale-95"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={profileLoading}
-                        className="flex-1 flex justify-center py-3 px-6 border border-indigo-400/30 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] text-sm font-medium text-white dark:text-[#ffffff] bg-indigo-600 hover:bg-indigo-500 focus:outline-none transform active:scale-95 transition-all disabled:opacity-50"
+                        className="flex-1 py-2 px-4 border border-indigo-400/30 rounded-lg shadow-[0_4px_15px_rgba(99,102,241,0.3)] text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none transform active:scale-95 transition-all disabled:opacity-50"
                       >
                         {profileLoading ? 'Saving...' : 'Save Changes'}
                       </button>
                     </div>
                   </form>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 mt-6">
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-900/50 tracking-wider uppercase mb-1">Email</p>
+                      <p className="text-sm text-gray-900 font-medium">{profileEmail}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-900/50 tracking-wider uppercase mb-1">Phone</p>
+                      <p className="text-sm text-gray-900 font-medium">{profilePhone || 'Not provided'}</p>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -2388,62 +2408,57 @@ export default function CustomerDashboard() {
                     </motion.button>
                   </motion.div>
                 ) : (
-                  <div className={`relative border-l-2 ml-4 pl-8 space-y-8 border-gray-200 border-opacity-50`}>
+                  <div className={`space-y-4`}>
                     {bookings.map((booking, index) => (
                       <div key={booking.id} className="relative group">
-                        {/* Timeline Node */}
-                        <div className={`absolute -left-[41px] top-6 w-5 h-5 rounded-full border-4 bg-indigo-500 border-[#060608] shadow-[0_0_15px_rgba(99,102,241,0.5)] transition-transform group-hover:scale-125`}></div>
-                        
-                        <div className={`rounded-3xl overflow-hidden transition-all bg-white/50 dark:bg-[#ffffff]/5 hover:bg-white/80 dark:hover:bg-[#ffffff]/10 border border-gray-200 dark:border-[#ffffff]/10 shadow-xl transition-all`}>
+                        <div className={`rounded-2xl overflow-hidden transition-all bg-white/50 dark:bg-[#ffffff]/5 hover:bg-white/80 dark:hover:bg-[#ffffff]/10 border border-gray-200 dark:border-[#ffffff]/10 shadow-sm`}>
                           {/* Always visible header */}
                           <div 
-                            className={`p-6 cursor-pointer`}
+                            className={`p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer`}
                             onClick={() => setExpandedBookingId(expandedBookingId === booking.id ? null : booking.id)}
                           >
-                            <AbstractMiniMap 
-                              from={booking.fromLocation} 
-                              to={booking.tripType === 'Tour' ? (Array.isArray(booking.destinations) ? booking.destinations.join(', ') : booking.destinations) : booking.toLocation || 'Destination'} 
-                              status={booking.rideStatus}
-                            />
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2 sm:gap-4">
-                              <div>
-                                <h4 className={`text-lg font-bold break-words w-full sm:w-auto text-gray-900 tracking-tight`}>
-                                  {booking.tripType === 'Car Renting'
-                                    ? `Car Rental: ${booking.numberOfDays} days, ${booking.numberOfCars} cars`
-                                    : booking.tripType === 'Tour' 
-                                    ? `${booking.fromLocation} \u2192 ${Array.isArray(booking.destinations) ? booking.destinations.join(', ') : booking.destinations}`
-                                    : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
-                                </h4>
-                                {booking.timestamp && (
-                                  <p className="text-xs text-gray-400 mt-1">Booked on: {format(new Date(booking.timestamp), "MMM d, yyyy 'at' h:mm a")}</p>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium border border-gray-200 border-opacity-50 ${booking.rideStatus === 'Cancelled' ? 'bg-red-500/10 text-red-400' : 'bg-white/10 text-gray-900'}`}>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border border-gray-200 border-opacity-50 ${booking.rideStatus === 'Cancelled' ? 'bg-red-500/10 text-red-500' : 'bg-indigo-500/10 text-indigo-500'}`}>
                                   {booking.rideStatus === 'Cancelled' && booking.refundStatus === 'Processed' ? 'Refunded' : booking.rideStatus}
                                 </span>
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium border border-gray-200 border-opacity-50 ${booking.paymentStatus === 'Paid' ? 'bg-green-500/10 text-green-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border border-gray-200 border-opacity-50 ${booking.paymentStatus === 'Paid' ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
                                   {booking.paymentStatus}
                                 </span>
-                                {expandedBookingId === booking.id ? (
-                                  <ChevronUp className={`w-5 h-5 ml-auto sm:ml-0 text-gray-400`} />
-                                ) : (
-                                  <ChevronDown className={`w-5 h-5 ml-auto sm:ml-0 text-gray-400`} />
+                                {booking.timestamp && (
+                                  <span className="text-[10px] text-gray-400 hidden sm:inline">
+                                    {format(new Date(booking.timestamp), "MMM d, yyyy")}
+                                  </span>
                                 )}
                               </div>
+                              <h4 className={`text-base font-bold text-gray-900 tracking-tight break-words whitespace-pre-wrap`}>
+                                {booking.tripType === 'Car Renting'
+                                  ? `Car Rental: ${booking.numberOfDays} days, ${booking.numberOfCars} cars`
+                                  : booking.tripType === 'Tour' 
+                                  ? `${booking.fromLocation} \u2192 ${Array.isArray(booking.destinations) ? booking.destinations.join(', ') : booking.destinations}`
+                                  : `${booking.fromLocation} \u2192 ${booking.toLocation}`}
+                              </h4>
+                              <div className={`flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-gray-900/60`}>
+                                <div className="flex items-center gap-1">
+                                  <Calendar className={`w-3.5 h-3.5 text-gray-400`} />
+                                  {safeFormatDate(booking.rideDate, 'MMM d, yyyy')}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Clock className={`w-3.5 h-3.5 text-gray-400`} />
+                                  {safeFormatDate(booking.rideDate, 'h:mm a')}
+                                </div>
+                                <div className="font-semibold text-gray-900">
+                                  ₹{parseFloat(booking.fareAmount).toFixed(2)}
+                                </div>
+                              </div>
                             </div>
-                            <div className={`flex flex-wrap gap-4 text-sm text-gray-900/50`}>
-                              <div className="flex items-center gap-1.5">
-                                <Calendar className={`w-4 h-4 text-indigo-400`} />
-                                {safeFormatDate(booking.rideDate, 'MMM d, yyyy')}
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <Clock className={`w-4 h-4 text-fuchsia-400`} />
-                                {safeFormatDate(booking.rideDate, 'h:mm a')}
-                              </div>
-                              <div className={`flex items-center gap-1.5 font-medium text-gray-900`}>
-                                ₹{parseFloat(booking.fareAmount).toFixed(2)}
-                              </div>
+                            
+                            <div className="flex-shrink-0 bg-gray-50 dark:bg-[#ffffff]/5 p-2 rounded-full hidden sm:block">
+                              {expandedBookingId === booking.id ? (
+                                <ChevronUp className={`w-5 h-5 text-gray-500`} />
+                              ) : (
+                                <ChevronDown className={`w-5 h-5 text-gray-500`} />
+                              )}
                             </div>
                           </div>
                           
@@ -2454,45 +2469,56 @@ export default function CustomerDashboard() {
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: 'auto', opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+                                transition={{ duration: 0.2 }}
                                 className={`border-t border-gray-200 border-opacity-50 bg-white/5`}
                               >
-                                <div className="p-6">
-                                  <div className={`flex flex-wrap gap-4 text-sm mb-6 text-gray-900/60`}>
-                                    <div className="flex items-center gap-1.5">
-                                      <Car className="w-4 h-4 text-indigo-400" />
-                                      {booking.suggestedVehicle || 'Sedan'} {booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
+                                <div className="p-4 sm:p-5">
+                                  <div className={`grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs mb-5 p-4 rounded-xl bg-gray-50/50 dark:bg-[#ffffff]/5 border border-gray-200/50`}>
+                                    <div>
+                                      <p className="text-gray-500 mb-1 flex items-center gap-1"><Car className="w-3.5 h-3.5" /> Vehicle</p>
+                                      <p className="font-medium text-gray-900">{booking.suggestedVehicle || 'Sedan'} {booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}</p>
                                     </div>
-                                  {booking.tripType !== 'Car Renting' && (
-                                    <div className="flex items-center gap-1.5">
-                                      <Users className="w-4 h-4 text-fuchsia-400" />
-                                      {booking.numberOfPeople} Passenger{booking.numberOfPeople > 1 ? 's' : ''}
+                                    {booking.tripType !== 'Car Renting' && (
+                                      <div>
+                                        <p className="text-gray-500 mb-1 flex items-center gap-1"><Users className="w-3.5 h-3.5" /> Passengers</p>
+                                        <p className="font-medium text-gray-900">{booking.numberOfPeople}</p>
+                                      </div>
+                                    )}
+                                    {booking.tripType === 'Tour' && (
+                                      <div>
+                                        <p className="text-gray-500 mb-1 flex items-center gap-1"><Car className="w-3.5 h-3.5" /> Fleet</p>
+                                        <p className="font-medium text-gray-900">{booking.numberOfCars} Vehicles</p>
+                                      </div>
+                                    )}
+                                    <div>
+                                      <p className="text-gray-500 mb-1">Booked On</p>
+                                      <p className="font-medium text-gray-900">{booking.timestamp ? format(new Date(booking.timestamp), "MMM d, h:mm a") : 'N/A'}</p>
                                     </div>
-                                  )}
-                                  {booking.tripType === 'Tour' && (
-                                    <div className="flex items-center gap-1.5">
-                                      <Car className="w-4 h-4 text-emerald-400" />
-                                      {booking.numberOfCars} Vehicle{booking.numberOfCars > 1 ? 's' : ''}
+                                    <div className="col-span-2 sm:col-span-4 mt-2 pt-2 border-t border-gray-200/50">
+                                      <AbstractMiniMap 
+                                        from={booking.fromLocation} 
+                                        to={booking.tripType === 'Tour' ? (Array.isArray(booking.destinations) ? booking.destinations.join(', ') : booking.destinations) : booking.toLocation || 'Destination'} 
+                                        status={booking.rideStatus}
+                                      />
                                     </div>
-                                  )}
                                   </div>
                                   
                                   {booking.tripType === 'Wedding' && booking.weddingDetails && (
-                                    <div className={`mb-6 p-4 rounded-2xl border shadow-sm bg-gray-50 border-fuchsia-500/20`}>
-                                      <h5 className={`text-sm font-bold mb-3 flex items-center gap-2 text-fuchsia-400`}>
-                                        <span className="text-lg">💍</span> Wedding Details
+                                    <div className={`mb-5 p-4 rounded-xl border border-fuchsia-500/20 bg-fuchsia-50/50 dark:bg-fuchsia-900/10`}>
+                                      <h5 className={`text-xs font-bold mb-2 flex items-center gap-1.5 text-fuchsia-600 dark:text-fuchsia-400`}>
+                                        <span className="text-sm">💍</span> Wedding Details
                                       </h5>
-                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                                         <div>
-                                          <span className={`block text-xs uppercase tracking-wider mb-1 text-gray-900/40`}>Event Location</span>
+                                          <span className={`block text-gray-400 mb-0.5`}>Event Location</span>
                                           <span className={`font-medium text-gray-900`}>{booking.weddingDetails.eventLocation}</span>
                                         </div>
                                         <div>
-                                          <span className={`block text-xs uppercase tracking-wider mb-1 text-gray-900/40`}>Vehicles Required</span>
+                                          <span className={`block text-gray-400 mb-0.5`}>Vehicles Required</span>
                                           <span className={`font-medium text-gray-900`}>{booking.weddingDetails.vehiclesRequired}</span>
                                         </div>
                                         <div>
-                                          <span className={`block text-xs uppercase tracking-wider mb-1 text-gray-900/40`}>Decoration</span>
+                                          <span className={`block text-gray-400 mb-0.5`}>Decoration</span>
                                           <span className={`font-medium text-gray-900`}>{booking.weddingDetails.decorationRequired}</span>
                                         </div>
                                       </div>
@@ -2575,28 +2601,28 @@ export default function CustomerDashboard() {
                                     </div>
                                   )}
   
-                                  <div className="flex justify-between items-end">
-                                    <div>
-                                      <p className={`text-xs font-semibold uppercase tracking-wider mb-1 text-gray-900/40`}>Booking ID</p>
-                                      <p className={`text-sm font-medium text-gray-900`}>#{booking.id}</p>
+                                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+                                    <div className="w-full sm:w-auto overflow-hidden">
+                                      <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 text-gray-500`}>Booking ID</p>
+                                      <p className={`text-xs font-medium text-gray-900 truncate`} title={`#${booking.id}`}>#{booking.id}</p>
                                     </div>
-                                    <div className="flex flex-col items-end gap-2">
-                                      <div className="flex gap-3">
+                                    <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
+                                      <div className="flex gap-3 w-full sm:w-auto">
                                         {booking.rideStatus === 'Completed' && (
                                           <button
                                             onClick={() => setRebookModal({ isOpen: true, booking })}
-                                            className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 border border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.1)]`}
+                                            className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 border border-indigo-500/20 shadow-sm`}
                                           >
-                                            Rebook Ride
+                                            Rebook
                                           </button>
                                         )}
                                         {(booking.rideStatus === 'Pending' || booking.rideStatus === 'Confirmed' || booking.rideStatus === 'Assigned') && (
                                           <button
                                             onClick={() => {
-                                              const refundInfo = calculateRefund(booking.rideDate, parseFloat(booking.fareAmount || '0'), booking.numberOfDays);
+                                              const refundInfo = calculateRefund(booking.rideDate, parseFloat(booking.fareAmount || '0'), booking.numberOfDays, booking.paymentStatus);
                                               setCancelModal({ isOpen: true, booking, refundInfo });
                                             }}
-                                            className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.1)]`}
+                                            className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20 shadow-sm`}
                                           >
                                             Cancel Ride
                                           </button>
@@ -2637,48 +2663,59 @@ export default function CustomerDashboard() {
               transition={{ duration: 0.3, type: "spring", bounce: 0.4 }}
               className={`rounded-3xl shadow-2xl max-w-md w-full overflow-hidden bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50`}
             >
-              <div className="p-6 sm:p-8">
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className={`text-2xl font-bold text-gray-900 tracking-tight`}>Cancel Ride</h3>
+              <div className="p-5 sm:p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className={`text-xl font-bold text-gray-900 dark:text-white tracking-tight`}>Cancel Ride</h3>
                   <button 
                     onClick={() => setCancelModal({ isOpen: false, booking: null, refundInfo: null })}
-                    className={`hover:text-gray-900 transition-colors text-gray-900/50 p-2 rounded-xl hover:bg-white/5`}
+                    className={`text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10`}
                   >
                     <span className="sr-only">Close</span>
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
                 
-                <div className={`mb-6 p-5 rounded-2xl border bg-black/50 border-gray-200 border-opacity-50 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]`}>
-                  <p className={`text-sm mb-3 text-gray-900/70`}>
-                    <span className={`font-semibold text-gray-900/40 uppercase tracking-wider text-xs mr-2`}>Route:</span> {cancelModal.booking.tripType === 'Car Renting' ? `Car Rental: ${cancelModal.booking.numberOfDays} days, ${cancelModal.booking.numberOfCars} cars` : cancelModal.booking.tripType === 'Tour' ? `${cancelModal.booking.fromLocation} \u2192 ${Array.isArray(cancelModal.booking.destinations) ? cancelModal.booking.destinations.join(', ') : cancelModal.booking.destinations}` : `${cancelModal.booking.fromLocation} \u2192 ${cancelModal.booking.toLocation}`}
-                  </p>
-                  <p className={`text-sm mb-3 text-gray-900/70`}>
-                    <span className={`font-semibold text-gray-900/40 uppercase tracking-wider text-xs mr-2`}>Departure:</span> {cancelModal.booking.rideDate}
-                  </p>
-                  <p className={`text-sm text-gray-900/70`}>
-                    <span className={`font-semibold text-gray-900/40 uppercase tracking-wider text-xs mr-2`}>Fare:</span> ₹{cancelModal.booking.fareAmount}
-                  </p>
+                <div className={`mb-6 p-4 rounded-xl bg-gray-50 dark:bg-[#ffffff]/5 border border-gray-200 dark:border-[#ffffff]/10`}>
+                  <div className="space-y-3">
+                    <div>
+                      <span className={`block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-0.5`}>Route</span>
+                      <p className={`text-sm font-medium text-gray-900 dark:text-white leading-snug`}>
+                        {cancelModal.booking.tripType === 'Car Renting' ? `Car Rental: ${cancelModal.booking.numberOfDays} days, ${cancelModal.booking.numberOfCars} cars` : cancelModal.booking.tripType === 'Tour' ? `${cancelModal.booking.fromLocation} \u2192 ${Array.isArray(cancelModal.booking.destinations) ? cancelModal.booking.destinations.join(', ') : cancelModal.booking.destinations}` : `${cancelModal.booking.fromLocation} \u2192 ${cancelModal.booking.toLocation}`}
+                      </p>
+                    </div>
+                    <div>
+                      <span className={`block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-0.5`}>Departure</span>
+                      <p className={`text-sm font-medium text-gray-900 dark:text-white`}>
+                        {cancelModal.booking.rideDate}
+                      </p>
+                    </div>
+                    <div>
+                      <span className={`block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-0.5`}>Fare</span>
+                      <p className={`text-sm font-medium text-gray-900 dark:text-white`}>
+                        ₹{cancelModal.booking.fareAmount}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 {cancelModal.refundInfo && (
-                  <div className={`mb-8 p-5 rounded-2xl border ${cancelModal.refundInfo.refundPercent > 0 ? ('bg-emerald-500/10 border-emerald-500/20 text-emerald-100') : ('bg-red-500/10 border-red-500/20 text-red-100')}`}>
-                    <h4 className={`font-bold mb-2 ${cancelModal.refundInfo.refundPercent > 0 ? 'text-emerald-400' : 'text-red-400'}`}>Cancellation Policy</h4>
-                    <p className="text-sm mb-4 leading-relaxed opacity-90">{cancelModal.refundInfo.message}</p>
-                    <div className="flex justify-between items-center font-bold text-lg pt-4 border-t border-gray-200 border-opacity-50">
+                  <div className={`mb-6 p-4 rounded-xl border ${cancelModal.refundInfo.refundPercent > 0 ? ('bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30') : ('bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30')}`}>
+                    <h4 className={`text-xs font-bold uppercase tracking-wider mb-1.5 ${cancelModal.refundInfo.refundPercent > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>Cancellation Policy</h4>
+                    <p className={`text-xs mb-3 leading-relaxed ${cancelModal.refundInfo.refundPercent > 0 ? 'text-emerald-800 dark:text-emerald-300' : 'text-red-800 dark:text-red-300'}`}>{cancelModal.refundInfo.message}</p>
+                    <div className={`flex justify-between items-center font-bold text-sm pt-3 border-t ${cancelModal.refundInfo.refundPercent > 0 ? 'border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300' : 'border-red-200 dark:border-red-500/30 text-red-800 dark:text-red-300'}`}>
                       <span>Estimated Refund:</span>
                       <span>₹{cancelModal.refundInfo.refundAmount.toFixed(2)}</span>
                     </div>
                   </div>
                 )}
 
-                <div className="flex gap-4 justify-end">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     type="button"
                     onClick={() => setCancelModal({ isOpen: false, booking: null, refundInfo: null })}
-                    className={`px-6 py-3 text-sm font-medium rounded-xl transition-all text-gray-900/70 hover:text-gray-900 bg-white/5 border border-gray-200 border-opacity-50 hover:bg-white/10`}
+                    className={`flex-1 px-4 py-2 text-sm font-bold rounded-lg transition-all text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white bg-white dark:bg-transparent border border-gray-300 dark:border-[#ffffff]/20 hover:bg-gray-50 dark:hover:bg-[#ffffff]/5`}
                   >
                     Keep Ride
                   </button>
@@ -2690,7 +2727,7 @@ export default function CustomerDashboard() {
                         setCancelModal({ isOpen: false, booking: null, refundInfo: null });
                       }
                     }}
-                    className={`px-6 py-3 text-sm font-medium text-gray-900 border border-red-500/30 rounded-xl transition-all bg-red-600 hover:bg-red-500 shadow-[0_0_20px_rgba(220,38,38,0.4)]`}
+                    className={`flex-1 px-4 py-2 text-sm font-bold text-[#ffffff] rounded-lg transition-all bg-red-600 hover:bg-red-700 border border-transparent shadow-sm`}
                   >
                     Confirm Cancellation
                   </button>
@@ -2712,33 +2749,41 @@ export default function CustomerDashboard() {
               transition={{ duration: 0.3, type: "spring", bounce: 0.4 }}
               className={`rounded-3xl shadow-2xl max-w-md w-full overflow-hidden bg-white dark:bg-[#ffffff]/5 border border-gray-200 border-opacity-50`}
             >
-              <div className="p-6 sm:p-8">
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className={`text-2xl font-bold text-gray-900 tracking-tight`}>Rebook Ride</h3>
+              <div className="p-5 sm:p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className={`text-xl font-bold text-gray-900 tracking-tight`}>Rebook Ride</h3>
                   <button 
                     onClick={() => setRebookModal({ isOpen: false, booking: null })}
-                    className={`hover:text-gray-900 transition-colors text-gray-900/50 p-2 rounded-xl hover:bg-white/5`}
+                    className={`text-gray-400 hover:text-gray-900 transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10`}
                   >
                     <span className="sr-only">Close</span>
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
                 
-                <div className={`mb-6 p-5 rounded-2xl border bg-black/50 border-gray-200 border-opacity-50 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]`}>
-                  <p className={`text-sm mb-3 text-gray-900/70`}>
-                    <span className={`font-semibold text-gray-900/40 uppercase tracking-wider text-xs mr-2`}>Route:</span> {rebookModal.booking.tripType === 'Car Renting' ? `Car Rental: ${rebookModal.booking.numberOfDays} days, ${rebookModal.booking.numberOfCars} cars` : rebookModal.booking.tripType === 'Tour' ? `${rebookModal.booking.fromLocation} \u2192 ${Array.isArray(rebookModal.booking.destinations) ? rebookModal.booking.destinations.join(', ') : rebookModal.booking.destinations}` : `${rebookModal.booking.fromLocation} \u2192 ${rebookModal.booking.toLocation}`}
-                  </p>
-                  <p className={`text-sm text-gray-900/70`}>
-                    <span className={`font-semibold text-gray-900/40 uppercase tracking-wider text-xs mr-2`}>Vehicle:</span> {rebookModal.booking.suggestedVehicle} {rebookModal.booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
-                  </p>
+                <div className={`mb-6 p-4 rounded-xl bg-gray-50 dark:bg-[#ffffff]/5 border border-gray-200 dark:border-[#ffffff]/10`}>
+                  <div className="space-y-3">
+                    <div>
+                      <span className={`block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-0.5`}>Route</span>
+                      <p className={`text-sm font-medium text-gray-900 dark:text-white leading-snug`}>
+                        {rebookModal.booking.tripType === 'Car Renting' ? `Car Rental: ${rebookModal.booking.numberOfDays} days, ${rebookModal.booking.numberOfCars} cars` : rebookModal.booking.tripType === 'Tour' ? `${rebookModal.booking.fromLocation} \u2192 ${Array.isArray(rebookModal.booking.destinations) ? rebookModal.booking.destinations.join(', ') : rebookModal.booking.destinations}` : `${rebookModal.booking.fromLocation} \u2192 ${rebookModal.booking.toLocation}`}
+                      </p>
+                    </div>
+                    <div>
+                      <span className={`block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-0.5`}>Vehicle</span>
+                      <p className={`text-sm font-medium text-gray-900 dark:text-white`}>
+                        {rebookModal.booking.suggestedVehicle} {rebookModal.booking.isAC === 'Yes' ? '(AC)' : '(Non-AC)'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                <form onSubmit={handleRebookSubmit} className="space-y-6">
+                <form onSubmit={handleRebookSubmit} className="space-y-5">
                   
                   <div>
-                    <label className={`block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase`}>Select New Date</label>
+                    <label className={`block text-[10px] font-bold mb-1.5 text-gray-500 dark:text-gray-400 tracking-wider uppercase`}>Select New Date</label>
                     <input
                       type="date"
                       required
@@ -2746,60 +2791,60 @@ export default function CustomerDashboard() {
                       value={rebookDate}
                       onChange={(e) => setRebookDate(e.target.value)}
                       onFocus={handleInputFocus}
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white dark:bg-[#ffffff]/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] border-gray-200 border-opacity-50 text-gray-900`}
+                      className={`block w-full border border-gray-200 dark:border-[#ffffff]/20 bg-white dark:bg-[#ffffff]/5 text-gray-900 dark:text-white rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 sm:text-sm transition-all`}
                     />
                   </div>
                   
                   <div>
-                    <label className={`block text-xs font-semibold mb-2 text-gray-900/50 tracking-wider uppercase`}>Select New Time</label>
+                    <label className={`block text-[10px] font-bold mb-1.5 text-gray-500 dark:text-gray-400 tracking-wider uppercase`}>Select New Time</label>
                     <div className="flex gap-2 items-center">
                       <select
                         value={rebookTimeHour}
                         onChange={(e) => setRebookTimeHour(e.target.value)}
-                        className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-white dark:bg-[#ffffff]/5 border-gray-200 border-opacity-50 text-gray-900 appearance-none`}
+                        className={`block w-full flex-1 border border-gray-200 dark:border-[#ffffff]/20 bg-white dark:bg-[#ffffff]/5 text-gray-900 dark:text-white rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 sm:text-sm transition-all appearance-none`}
                       >
                         {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
-                          <option key={h} value={h.toString().padStart(2, '0')} className="bg-white text-gray-900">{h.toString().padStart(2, '0')}</option>
+                          <option key={h} value={h.toString().padStart(2, '0')} className="bg-white dark:bg-[#060608] text-gray-900 dark:text-white">{h.toString().padStart(2, '0')}</option>
                         ))}
                       </select>
-                      <span className={`flex items-center font-bold text-gray-900/30`}>:</span>
+                      <span className={`flex items-center font-bold text-gray-500 dark:text-gray-400`}>:</span>
                       <select
                         value={rebookTimeMinute}
                         onChange={(e) => setRebookTimeMinute(e.target.value)}
-                        className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-white dark:bg-[#ffffff]/5 border-gray-200 border-opacity-50 text-gray-900 appearance-none`}
+                        className={`block w-full flex-1 border border-gray-200 dark:border-[#ffffff]/20 bg-white dark:bg-[#ffffff]/5 text-gray-900 dark:text-white rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 sm:text-sm transition-all appearance-none`}
                       >
                         {['00', '15', '30', '45'].map(m => (
-                          <option key={m} value={m} className="bg-white text-gray-900">{m}</option>
+                          <option key={m} value={m} className="bg-white dark:bg-[#060608] text-gray-900 dark:text-white">{m}</option>
                         ))}
                       </select>
                       <select
                         value={rebookTimeAmPm}
                         onChange={(e) => setRebookTimeAmPm(e.target.value)}
-                        className={`block w-full flex-1 border rounded-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] py-3 px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all bg-white dark:bg-[#ffffff]/5 border-gray-200 border-opacity-50 text-gray-900 appearance-none`}
+                        className={`block w-full flex-1 border border-gray-200 dark:border-[#ffffff]/20 bg-white dark:bg-[#ffffff]/5 text-gray-900 dark:text-white rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 sm:text-sm transition-all appearance-none`}
                       >
-                        <option value="AM" className="bg-white text-gray-900">AM</option>
-                        <option value="PM" className="bg-white text-gray-900">PM</option>
+                        <option value="AM" className="bg-white dark:bg-[#060608] text-gray-900 dark:text-white">AM</option>
+                        <option value="PM" className="bg-white dark:bg-[#060608] text-gray-900 dark:text-white">PM</option>
                       </select>
                     </div>
                   </div>
                   
-                  <div className="pt-6 flex gap-4">
+                  <div className="pt-2 flex flex-col sm:flex-row gap-3">
                     <button
                       type="button"
                       onClick={() => setRebookModal({ isOpen: false, booking: null })}
-                      className={`flex-1 px-6 py-3 border rounded-xl text-sm font-medium transition-all border-gray-200 border-opacity-50 text-gray-900 dark:text-white/70 bg-white/5 hover:bg-white/10 hover:text-gray-900`}
+                      className={`flex-1 px-4 py-2 rounded-lg text-sm font-bold transition-all text-gray-700 hover:text-gray-900 bg-white dark:bg-transparent border border-gray-300 dark:border-[#ffffff]/20 hover:bg-gray-50 dark:hover:bg-[#ffffff]/5`}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={rebookLoading || !rebookDate}
-                      className={`flex-1 px-6 py-3 border border-indigo-400/30 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] text-sm font-medium text-white dark:text-[#ffffff] disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center transition-all bg-indigo-600 hover:bg-indigo-500`}
+                      className={`flex-1 sm:flex-[2] px-4 py-2 rounded-lg border border-transparent shadow-sm text-sm font-bold text-[#ffffff] disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center transition-all bg-indigo-600 hover:bg-indigo-700`}
                     >
                       {rebookLoading ? (
-                        <RefreshCw className="w-5 h-5 animate-spin" />
+                        <RefreshCw className="w-4 h-4 animate-spin" />
                       ) : (
-                        'Confirm Rebook'
+                        'Confirm Schedule'
                       )}
                     </button>
                   </div>
@@ -2912,6 +2957,7 @@ export default function CustomerDashboard() {
           </div>
         )}
       </AnimatePresence>
+      </motion.div>
 
       {/* Mobile Bottom Navigation */}
       <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-[#060608]/90 backdrop-blur-xl border-t border-gray-200 dark:border-white/10 flex justify-around items-center p-3 z-50 overflow-hidden pb-safe">
@@ -2945,6 +2991,6 @@ export default function CustomerDashboard() {
           <span className="text-[10px] tracking-wide">Profile</span>
         </button>
       </div>
-    </motion.div>
+    </>
   );
 }
