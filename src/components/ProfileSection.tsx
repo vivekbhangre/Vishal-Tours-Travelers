@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
@@ -48,7 +49,7 @@ export default function ProfileSection() {
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } catch (error) {
-      console.error('Failed to update profile:', error);
+      logger.error('Failed to update profile:', error);
       setMessage({ type: 'error', text: 'Failed to update profile. Please try again.' });
     } finally {
       setLoading(false);

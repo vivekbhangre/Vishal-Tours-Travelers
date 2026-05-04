@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import ProfileSection from '../components/ProfileSection';
@@ -64,7 +65,7 @@ export default function StaffDashboard() {
       const data = await api.getBookings(undefined, false, forceRefresh);
       setBookings(data);
     } catch (error) {
-      console.error('Failed to fetch bookings:', error);
+      logger.error('Failed to fetch bookings:', error);
     } finally {
       setLoading(false);
     }
@@ -74,7 +75,7 @@ export default function StaffDashboard() {
     try {
       await api.updateBooking(id, { [field]: value });
     } catch (error) {
-      console.error('Failed to update booking:', error);
+      logger.error('Failed to update booking:', error);
       toast.error('Failed to update booking status');
     }
   };

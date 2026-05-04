@@ -12,6 +12,8 @@ import PDFDocument from 'pdfkit';
 import { GoogleGenAI } from "@google/genai";
 import fs from "fs";
 import path from "path";
+import jwt from 'jsonwebtoken';
+import { JWT_SECRET, authenticateToken } from './server/auth.ts';
 
 dotenv.config();
 
@@ -116,7 +118,8 @@ async function startServer() {
       });
       invalidateCache(targetSheetName);
 
-      res.json({ id, name, email, phone: phone || '', role: userRole });
+      const token = jwt.sign({ id, role: userRole }, JWT_SECRET, { expiresIn: '1d' });
+      res.json({ id, name, email, phone: phone || '', role: userRole, token });
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Failed to register' });
@@ -202,12 +205,14 @@ async function startServer() {
         return res.status(401).json({ error: 'Invalid email or password' });
       }
 
+      const token = jwt.sign({ id: user.get('id'), role: user.get('role') }, JWT_SECRET, { expiresIn: '1d' });
       res.json({
         id: user.get('id'),
         name: user.get('name'),
         email: user.get('email'),
         phone: user.get('phone') || '',
-        role: user.get('role')
+        role: user.get('role'),
+        token
       });
     } catch (error) {
       console.error(error);
@@ -216,7 +221,7 @@ async function startServer() {
   });
 
   // User Profile Routes
-  app.get('/api/users/:id', async (req, res) => {
+  app.get('/api/users/:id', authenticateToken, async (req, res) => {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
@@ -246,7 +251,7 @@ async function startServer() {
     }
   });
 
-  app.put('/api/users/:id', async (req, res) => {
+  app.put('/api/users/:id', authenticateToken, async (req, res) => {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
@@ -426,13 +431,15 @@ async function startServer() {
     }
   });
 
-  app.get('/api/bookings', async (req, res) => {
+  app.get('/api/bookings', authenticateToken, async (req, res) => {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
-    const { userId, isAdmin, forceRefresh } = req.query;
+    const { userId, isAdmin, forceRefresh, page = 1, limit = 50 } = req.query;
     const isUserAdmin = isAdmin === 'true';
     const isForceRefresh = forceRefresh === 'true';
+    const parsedPage = parseInt(page as string);
+    const parsedLimit = parseInt(limit as string);
     
     try {
       const sheet = doc.sheetsByTitle['Bookings'];
@@ -558,14 +565,19 @@ async function startServer() {
         bookings = bookings.filter(b => b.userId === userId);
       }
 
-      res.json(bookings);
+      // Pagination
+      const startIndex = (parsedPage - 1) * parsedLimit;
+      const endIndex = startIndex + parsedLimit;
+      const paginatedBookings = bookings.slice(startIndex, endIndex);
+
+      res.json(paginatedBookings);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Failed to fetch bookings' });
     }
   });
 
-  app.put('/api/bookings/:id', async (req, res) => {
+  app.put('/api/bookings/:id', authenticateToken, async (req, res) => {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
@@ -722,11 +734,13 @@ async function startServer() {
 
   // Drivers and Vehicles Routes
   // Revenue Logs Route
-  app.get('/api/revenue', async (req, res) => {
+  app.get('/api/revenue', authenticateToken, async (req, res) => {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
     const isForceRefresh = req.query.forceRefresh === 'true';
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
 
     try {
       const sheet = doc.sheetsByTitle['Revenue Logs'];
@@ -738,15 +752,40 @@ async function startServer() {
         amount: parseFloat(r.get('amount') || '0')
       }));
 
-      res.json(data);
+      const startIndex = (page - 1) * limit;
+      const paginatedData = data.slice(startIndex, startIndex + limit);
+
+      res.json(paginatedData);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Failed to fetch revenue logs' });
     }
   });
 
+  // System Logs Route
+  app.post('/api/logs', async (req, res) => {
+    const doc = getDoc();
+    if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
+    
+    try {
+      const sheet = doc.sheetsByTitle['System Logs'];
+      if (!sheet) return res.status(404).json({ error: 'System Logs sheet not found' });
+      
+      await sheet.addRow({
+        id: Date.now().toString(),
+        timestamp: new Date().toISOString(),
+        level: req.body.level || 'info',
+        message: req.body.message || '',
+        context: req.body.context || ''
+      });
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: 'Failed to write logs' });
+    }
+  });
+
   // Report Generation
-  app.get('/api/reports/monthly', async (req, res) => {
+  app.get('/api/reports/monthly', authenticateToken, async (req, res) => {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 

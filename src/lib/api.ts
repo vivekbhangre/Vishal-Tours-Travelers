@@ -4,6 +4,14 @@ const API_URL = '/api';
 
 export const socket = io();
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  };
+};
+
 export const api = {
   async register(data: any) {
     const res = await fetch(`${API_URL}/auth/register`, {
@@ -12,7 +20,9 @@ export const api = {
       body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error(await res.text());
-    return res.json();
+    const result = await res.json();
+    if (result.token) localStorage.setItem('token', result.token);
+    return result;
   },
 
   async login(data: any) {
@@ -22,7 +32,9 @@ export const api = {
       body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error(await res.text());
-    return res.json();
+    const result = await res.json();
+    if (result.token) localStorage.setItem('token', result.token);
+    return result;
   },
 
   async verifyReset(data: any) {
@@ -45,8 +57,14 @@ export const api = {
     return res.json();
   },
 
+  logout() {
+    localStorage.removeItem('token');
+  },
+
   async getUser(id: string) {
-    const res = await fetch(`${API_URL}/users/${id}`);
+    const res = await fetch(`${API_URL}/users/${id}`, {
+      headers: getAuthHeaders()
+    });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
@@ -54,7 +72,7 @@ export const api = {
   async updateUser(id: string, data: any) {
     const res = await fetch(`${API_URL}/users/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error(await res.text());
@@ -64,23 +82,25 @@ export const api = {
   async createBooking(data: any) {
     const res = await fetch(`${API_URL}/bookings`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
-  async getBookings(userId?: string, isAdmin?: boolean, forceRefresh?: boolean) {
+  async getBookings(userId?: string, isAdmin?: boolean, forceRefresh?: boolean, page: number = 1, limit: number = 50) {
     let url = `${API_URL}/bookings`;
     const params = new URLSearchParams();
     if (userId) params.append('userId', userId);
     if (isAdmin) params.append('isAdmin', 'true');
     if (forceRefresh) params.append('forceRefresh', 'true');
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
     params.append('_t', Date.now().toString());
     if (params.toString()) url += `?${params.toString()}`;
     
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
@@ -88,7 +108,7 @@ export const api = {
   async updateBooking(id: string, data: any) {
     const res = await fetch(`${API_URL}/bookings/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error(await res.text());
@@ -99,29 +119,35 @@ export const api = {
     window.open(`${API_URL}/reports/monthly`, '_blank');
   },
 
-  async getRevenueLogs(forceRefresh?: boolean) {
+  async getRevenueLogs(forceRefresh?: boolean, page: number = 1, limit: number = 50) {
     const params = new URLSearchParams();
     if (forceRefresh) params.append('forceRefresh', 'true');
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
     params.append('_t', Date.now().toString());
-    const res = await fetch(`${API_URL}/revenue?${params.toString()}`);
+    const res = await fetch(`${API_URL}/revenue?${params.toString()}`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
-  async getVehicles(forceRefresh?: boolean) {
+  async getVehicles(forceRefresh?: boolean, page: number = 1, limit: number = 50) {
     const params = new URLSearchParams();
     if (forceRefresh) params.append('forceRefresh', 'true');
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
     params.append('_t', Date.now().toString());
-    const res = await fetch(`${API_URL}/vehicles?${params.toString()}`);
+    const res = await fetch(`${API_URL}/vehicles?${params.toString()}`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
-  async getDrivers(forceRefresh?: boolean) {
+  async getDrivers(forceRefresh?: boolean, page: number = 1, limit: number = 50) {
     const params = new URLSearchParams();
     if (forceRefresh) params.append('forceRefresh', 'true');
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
     params.append('_t', Date.now().toString());
-    const res = await fetch(`${API_URL}/drivers?${params.toString()}`);
+    const res = await fetch(`${API_URL}/drivers?${params.toString()}`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
@@ -129,7 +155,7 @@ export const api = {
   async addDriver(data: { name: string; phone: string; email: string }) {
     const res = await fetch(`${API_URL}/drivers`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error(await res.text());
@@ -139,6 +165,7 @@ export const api = {
   async deleteDriver(id: string) {
     const res = await fetch(`${API_URL}/drivers/${encodeURIComponent(id)}`, {
       method: 'DELETE',
+      headers: getAuthHeaders()
     });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
@@ -147,7 +174,7 @@ export const api = {
   async addVehicle(data: { name: string; number: string }) {
     const res = await fetch(`${API_URL}/vehicles`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error(await res.text());
@@ -157,6 +184,7 @@ export const api = {
   async deleteVehicle(id: string) {
     const res = await fetch(`${API_URL}/vehicles/${encodeURIComponent(id)}`, {
       method: 'DELETE',
+      headers: getAuthHeaders()
     });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
@@ -166,7 +194,7 @@ export const api = {
     const payload = assignments ? { assignments } : { driverId, vehicleId };
     const res = await fetch(`${API_URL}/bookings/${bookingId}/assign`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(payload),
     });
     if (!res.ok) {

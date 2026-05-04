@@ -33,7 +33,7 @@ export async function initSheets() {
     await doc.updateProperties({ defaultFormat: { wrapStrategy: 'CLIP' } });
 
     // Ensure sheets exist
-    const requiredSheets = ['Users', 'Bookings', 'Staff', 'Revenue Logs', 'vehicles', 'drivers'];
+    const requiredSheets = ['Users', 'Bookings', 'Staff', 'Revenue Logs', 'vehicles', 'drivers', 'System Logs'];
     for (const title of requiredSheets) {
       let sheet = doc.sheetsByTitle[title];
       if (!sheet) {
@@ -53,6 +53,8 @@ export async function initSheets() {
           headerValues = ['vehicleId', 'vehicleName', 'vehicleNumber', 'vehicleType', 'seatingCapacity', 'status', 'nextServiceDate'];
         } else if (title === 'drivers') {
           headerValues = ['id', 'name', 'email', 'phone', 'assignedVehicleId', 'status'];
+        } else if (title === 'System Logs') {
+          headerValues = ['id', 'timestamp', 'level', 'message', 'context'];
         }
         sheet = await doc.addSheet({ title, headerValues });
       } else if (title === 'Bookings') {

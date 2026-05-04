@@ -1,14 +1,18 @@
 import { getDoc, getCachedRows, invalidateCache } from './sheets.ts';
+import { authenticateToken } from './auth.ts';
 
 export const setupFleetRoutes = (app: any, io: any) => {
   // Get all vehicles
-  app.get('/api/vehicles', async (req: any, res: any) => {
+  app.get('/api/vehicles', authenticateToken, async (req: any, res: any) => {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
     try {
       const sheet = doc.sheetsByTitle['vehicles'];
       if (!sheet) return res.json([]);
       const forceRefresh = req.query.forceRefresh === 'true';
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+
       const [rows, rideRows] = await Promise.all([
         getCachedRows('vehicles', forceRefresh),
         getCachedRows('Bookings', forceRefresh)
@@ -16,7 +20,7 @@ export const setupFleetRoutes = (app: any, io: any) => {
       
       const activeRides = rideRows.filter(r => ['Assigned', 'Ongoing'].includes(r.get('rideStatus')));
 
-      res.json(rows.map(r => {
+      const data = rows.map(r => {
         const vehicleId = r.get('vehicleId') || `row-${r.rowNumber}`;
         const isBusy = vehicleId && activeRides.some(ride => {
           const assignmentsStr = ride.get('assignments');
@@ -40,7 +44,12 @@ export const setupFleetRoutes = (app: any, io: any) => {
           status: currentStatus === 'Maintenance' ? 'Maintenance' : (isBusy ? 'In Use' : 'Available'),
           nextServiceDate: r.get('nextServiceDate')
         };
-      }));
+      });
+
+      const startIndex = (page - 1) * limit;
+      const paginatedData = data.slice(startIndex, startIndex + limit);
+
+      res.json(paginatedData);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Failed to fetch vehicles' });
@@ -48,7 +57,7 @@ export const setupFleetRoutes = (app: any, io: any) => {
   });
 
   // Add a vehicle
-  app.post('/api/vehicles', async (req: any, res: any) => {
+  app.post('/api/vehicles', authenticateToken, async (req: any, res: any) => {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
     try {
@@ -69,7 +78,7 @@ export const setupFleetRoutes = (app: any, io: any) => {
   });
 
   // Delete a vehicle
-  app.delete('/api/vehicles/:id', async (req: any, res: any) => {
+  app.delete('/api/vehicles/:id', authenticateToken, async (req: any, res: any) => {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
     try {
@@ -91,13 +100,16 @@ export const setupFleetRoutes = (app: any, io: any) => {
   });
 
   // Get all drivers
-  app.get('/api/drivers', async (req: any, res: any) => {
+  app.get('/api/drivers', authenticateToken, async (req: any, res: any) => {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
     try {
       const sheet = doc.sheetsByTitle['drivers'];
       if (!sheet) return res.json([]);
       const forceRefresh = req.query.forceRefresh === 'true';
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+
       const [rows, rideRows] = await Promise.all([
         getCachedRows('drivers', forceRefresh),
         getCachedRows('Bookings', forceRefresh)
@@ -105,7 +117,7 @@ export const setupFleetRoutes = (app: any, io: any) => {
       
       const activeRides = rideRows.filter(r => ['Assigned', 'Ongoing'].includes(r.get('rideStatus')));
 
-      res.json(rows.map(r => {
+      const data = rows.map(r => {
         const email = r.get('email');
         const isBusy = email && activeRides.some(ride => {
           const assignmentsStr = ride.get('assignments');
@@ -127,7 +139,12 @@ export const setupFleetRoutes = (app: any, io: any) => {
           assignedVehicleId: r.get('assignedVehicleId'),
           status: currentStatus === 'Inactive' ? 'Inactive' : (isBusy ? 'Busy' : 'Available')
         };
-      }));
+      });
+
+      const startIndex = (page - 1) * limit;
+      const paginatedData = data.slice(startIndex, startIndex + limit);
+
+      res.json(paginatedData);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Failed to fetch drivers' });
@@ -135,7 +152,7 @@ export const setupFleetRoutes = (app: any, io: any) => {
   });
 
   // Add a driver
-  app.post('/api/drivers', async (req: any, res: any) => {
+  app.post('/api/drivers', authenticateToken, async (req: any, res: any) => {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
     try {
@@ -157,7 +174,7 @@ export const setupFleetRoutes = (app: any, io: any) => {
   });
 
   // Delete a driver
-  app.delete('/api/drivers/:id', async (req: any, res: any) => {
+  app.delete('/api/drivers/:id', authenticateToken, async (req: any, res: any) => {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
     try {

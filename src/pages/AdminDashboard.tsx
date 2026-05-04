@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import ProfileSection from '../components/ProfileSection';
@@ -109,7 +110,7 @@ export default function AdminDashboard() {
       setVehicles(vData);
       setDrivers(dData);
     } catch (error) {
-      console.error('Failed to fetch fleet data:', error);
+      logger.error('Failed to fetch fleet data:', error);
     }
   };
 
@@ -118,7 +119,7 @@ export default function AdminDashboard() {
       const data = await api.getBookings(undefined, true, forceRefresh);
       setBookings(data);
     } catch (error) {
-      console.error('Failed to fetch bookings:', error);
+      logger.error('Failed to fetch bookings:', error);
     } finally {
       setLoading(false);
     }
@@ -139,7 +140,7 @@ export default function AdminDashboard() {
       });
       setRevenueData(formattedData);
     } catch (error) {
-      console.error('Failed to fetch revenue:', error);
+      logger.error('Failed to fetch revenue:', error);
     }
   };
 
@@ -191,7 +192,7 @@ export default function AdminDashboard() {
           try {
             await api.updateBooking(id, { refundStatus: 'Pending', isAdmin: true });
           } catch (err) {
-            console.error("Failed to automatically update refund status to Pending:", err);
+            logger.error("Failed to automatically update refund status to Pending:", err);
             // Revert optimistic update
             fetchBookings();
           }
@@ -209,7 +210,7 @@ export default function AdminDashboard() {
       await api.updateBooking(id, payload);
       console.log(`Successfully called api.updateBooking for ${field}`);
     } catch (error) {
-      console.error('Failed to update booking:', error);
+      logger.error('Failed to update booking:', error);
       toast.error('Failed to update booking status');
       // Revert optimistic update by fetching bookings again
       fetchBookings();
@@ -988,7 +989,7 @@ export default function AdminDashboard() {
                                           setConfirmDeleteDriverId(null);
                                           await fetchFleetData();
                                         } catch (err: any) {
-                                          console.error(err);
+                                          logger.error(err);
                                         } finally {
                                           setDeletingDriverId(null);
                                         }
@@ -1107,7 +1108,7 @@ export default function AdminDashboard() {
                                           setConfirmDeleteVehicleId(null);
                                           await fetchFleetData();
                                         } catch (err: any) {
-                                          console.error(err);
+                                          logger.error(err);
                                         } finally {
                                           setDeletingVehicleId(null);
                                         }

@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 export const ALLOWED_EMAIL_DOMAINS = ['gmail.com', 'icloud.com', 'outlook.com', 'yahoo.com', 'hotmail.com', 'example.com'];
 
 export const validateEmail = (email: string, restrictDomains: boolean = true): string | null => {
@@ -73,7 +74,7 @@ export const parseRideDate = (rideDateStr: string): Date => {
         }
       }
     } catch (e) {
-      console.error('Error parsing date:', e);
+      logger.error('Error parsing date:', e);
     }
   }
   

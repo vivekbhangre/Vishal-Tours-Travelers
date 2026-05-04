@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import React, { useState, useEffect, useMemo } from 'react';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
@@ -424,7 +425,7 @@ export default function CustomerDashboard() {
           localStorage.removeItem('pendingRoute');
         }
       } catch (e) {
-        console.error('Error parsing pending route', e);
+        logger.error('Error parsing pending route', e);
       }
     }
   }, []);
@@ -471,7 +472,7 @@ export default function CustomerDashboard() {
             setter(data);
           }
         } catch (e) {
-          console.error('Failed to fetch location suggestions', e);
+          logger.error('Failed to fetch location suggestions', e);
         }
       }, 300),
     []
@@ -599,7 +600,7 @@ export default function CustomerDashboard() {
         setEstimatedKM(parseFloat(oneWayDistance.toFixed(2)));
         setEstimatedPrice(finalPrice);
       } catch (error) {
-        console.error('Failed to calculate distance:', error);
+        logger.error('Failed to calculate distance:', error);
         setEstimatedKM(0);
         setEstimatedPrice(0);
       } finally {
@@ -634,7 +635,7 @@ export default function CustomerDashboard() {
       if (error?.message === 'Failed to fetch') {
         console.warn('Network connection to server temporarily lost. Retrying later...');
       } else {
-        console.error('Failed to fetch bookings:', error);
+        logger.error('Failed to fetch bookings:', error);
       }
     } finally {
       setLoading(false);
@@ -653,7 +654,7 @@ export default function CustomerDashboard() {
        if (error?.message === 'Failed to fetch') {
         console.warn('Network connection to server temporarily lost. Retrying later...');
       } else {
-        console.error('Failed to fetch profile:', error);
+        logger.error('Failed to fetch profile:', error);
       }
     }
   };
@@ -1061,7 +1062,7 @@ export default function CustomerDashboard() {
       setRebookTimeAmPm('AM');
       setActiveTab('dashboard'); // Switch to dashboard to show success message
     } catch (error) {
-      console.error('Failed to rebook:', error);
+      logger.error('Failed to rebook:', error);
       setRebookError('Failed to rebook ride. Please try again.');
     } finally {
       setRebookLoading(false);
@@ -1112,7 +1113,7 @@ export default function CustomerDashboard() {
       } else {
         const text = await response.text();
         if (!response.ok) {
-          console.error("Non-JSON error response:", text);
+          logger.error("Non-JSON error response:", text);
           // Revert Optimistic Update
           setBookings(previousBookings);
           setCancelMessage({ id, text: "Failed to cancel ride. Server returned an invalid response.", type: 'error' });
@@ -1140,7 +1141,7 @@ export default function CustomerDashboard() {
               body: JSON.stringify({ refundStatus: "Pending" })
             });
           } catch (err) {
-            console.error("Failed to automatically update refund status to Pending:", err);
+            logger.error("Failed to automatically update refund status to Pending:", err);
             // We could revert here, but it's a background task, so we'll just fetch fresh data later
           }
         }, 10000);
@@ -1150,7 +1151,7 @@ export default function CustomerDashboard() {
         setCancelMessage(null);
       }, 3000);
     } catch (error) {
-      console.error("Error cancelling ride:", error);
+      logger.error("Error cancelling ride:", error);
       // Revert Optimistic Update
       setBookings(previousBookings);
       setCancelMessage({ id, text: "An error occurred while cancelling the ride. Please try again.", type: 'error' });
