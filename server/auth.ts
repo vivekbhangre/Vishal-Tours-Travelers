@@ -15,3 +15,24 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
     next();
   });
 };
+
+export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+  const user = (req as any).user;
+  if (!user || (user.role !== 'admin' && user.role !== 'staff')) {
+    return res.status(403).json({ error: 'Forbidden: Admin access required' });
+  }
+  next();
+};
+
+export const requireOwnershipOrAdmin = (req: Request, res: Response, next: NextFunction) => {
+  const user = (req as any).user;
+  const targetId = req.params.id;
+  
+  if (!user) return res.status(403).json({ error: 'Forbidden' });
+  
+  if (user.id === targetId || user.role === 'admin' || user.role === 'staff') {
+    next();
+  } else {
+    return res.status(403).json({ error: 'Forbidden: You do not have access to this resource' });
+  }
+};

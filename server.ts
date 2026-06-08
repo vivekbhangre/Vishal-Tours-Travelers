@@ -13,12 +13,32 @@ import { GoogleGenAI } from "@google/genai";
 import fs from "fs";
 import path from "path";
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET, authenticateToken } from './server/auth.ts';
+import { JWT_SECRET, authenticateToken, requireAdmin, requireOwnershipOrAdmin } from './server/auth.ts';
+import rateLimit from 'express-rate-limit';
 
 dotenv.config();
 
 async function startServer() {
   const app = express();
+  
+  // See https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/
+  app.set('trust proxy', 1);
+
+  // Rate limiter setup
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, 
+    max: 100, 
+    message: { error: 'Too many requests, please try again later' },
+    validate: { xForwardedForHeader: false, trustProxy: false }
+  });
+
+  const authLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, 
+    max: 20, 
+    message: { error: 'Too many auth attempts, please try again later' },
+    validate: { xForwardedForHeader: false, trustProxy: false }
+  });
+  
   const PORT = 3000;
   const httpServer = createServer(app);
   const io = new Server(httpServer, {
@@ -30,6 +50,31 @@ async function startServer() {
 
   app.use(cors());
   app.use(express.json());
+  
+  // Prevent Google Sheets Injection
+  const sanitizeForSheets = (obj: any) => {
+    if (!obj || typeof obj !== 'object') return;
+    for (const key in obj) {
+      if (typeof obj[key] === 'string') {
+        const val = obj[key] as string;
+        if (/^[=+\-@]/.test(val)) {
+          obj[key] = "'" + val;
+        }
+      } else if (typeof obj[key] === 'object') {
+        sanitizeForSheets(obj[key]);
+      }
+    }
+  };
+
+  app.use((req, res, next) => {
+    sanitizeForSheets(req.body);
+    sanitizeForSheets(req.query);
+    next();
+  });
+  
+  app.use('/api/', apiLimiter);
+  app.use('/api/auth/', authLimiter);
+  app.use('/calculate-distance', apiLimiter);
   
   app.use('/api', cityAutocompleteRouter);
 
@@ -92,8 +137,17 @@ async function startServer() {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
-    const { name, email, phone, password, role, acceptedTerms } = req.body;
-    const userRole = role || 'customer';
+    let { name, email, phone, password, role, acceptedTerms } = req.body;
+    
+    // Prevent unauthenticated elevation to staff
+    if (role === 'staff' || role === 'admin') {
+      return res.status(403).json({ error: 'Forbidden: Cannot register as staff' });
+    }
+    const userRole = 'customer';
+    
+    if (!name || name.length > 100) return res.status(400).json({ error: 'Invalid name' });
+    if (!email || email.length > 100 || !email.includes('@')) return res.status(400).json({ error: 'Invalid email' });
+    if (!password || password.length < 6 || password.length > 100) return res.status(400).json({ error: 'Invalid password (must be 6-100 characters)' });
     
     try {
       const targetSheetName = userRole === 'staff' ? 'Staff' : 'Users';
@@ -221,7 +275,7 @@ async function startServer() {
   });
 
   // User Profile Routes
-  app.get('/api/users/:id', authenticateToken, async (req, res) => {
+  app.get('/api/users/:id', authenticateToken, requireOwnershipOrAdmin, async (req, res) => {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
@@ -251,7 +305,7 @@ async function startServer() {
     }
   });
 
-  app.put('/api/users/:id', authenticateToken, async (req, res) => {
+  app.put('/api/users/:id', authenticateToken, requireOwnershipOrAdmin, async (req, res) => {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
@@ -435,8 +489,14 @@ async function startServer() {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
-    const { userId, isAdmin, forceRefresh, page = 1, limit = 50 } = req.query;
-    const isUserAdmin = isAdmin === 'true';
+    const authUser = (req as any).user;
+    const isUserAdmin = authUser.role === 'admin' || authUser.role === 'staff';
+    
+    const { userId, forceRefresh, page = 1, limit = 50 } = req.query;
+    
+    // If not admin, force the userId to be their own id
+    const finalUserId = isUserAdmin ? userId : authUser.id;
+
     const isForceRefresh = forceRefresh === 'true';
     const parsedPage = parseInt(page as string);
     const parsedLimit = parseInt(limit as string);
@@ -561,8 +621,8 @@ async function startServer() {
           };
         });
 
-      if (userId) {
-        bookings = bookings.filter(b => b.userId === userId);
+      if (finalUserId) {
+        bookings = bookings.filter(b => b.userId === finalUserId);
       }
 
       // Pagination
@@ -581,8 +641,11 @@ async function startServer() {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
+    const authUser = (req as any).user;
+    const isUserAdmin = authUser.role === 'admin' || authUser.role === 'staff';
+
     const { id } = req.params;
-    const { rideStatus, paymentStatus, refundStatus, refundAmount, isAdmin } = req.body;
+    const { rideStatus, paymentStatus, refundStatus, refundAmount } = req.body;
     
     try {
       const sheet = doc.sheetsByTitle['Bookings'];
@@ -593,7 +656,11 @@ async function startServer() {
         return res.status(404).json({ error: 'Booking not found' });
       }
 
-      if (rideStatus === 'Cancelled' && !isAdmin) {
+      if (!isUserAdmin && row.get('userId') !== authUser.id) {
+        return res.status(403).json({ error: 'Forbidden: You do not own this booking' });
+      }
+
+      if (rideStatus === 'Cancelled' && !isUserAdmin) {
         const rideDateStr = row.get('rideDate');
         if (rideDateStr) {
           const rideTime = new Date(rideDateStr);
@@ -734,7 +801,7 @@ async function startServer() {
 
   // Drivers and Vehicles Routes
   // Revenue Logs Route
-  app.get('/api/revenue', authenticateToken, async (req, res) => {
+  app.get('/api/revenue', authenticateToken, requireAdmin, async (req, res) => {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
@@ -785,7 +852,7 @@ async function startServer() {
   });
 
   // Report Generation
-  app.get('/api/reports/monthly', authenticateToken, async (req, res) => {
+  app.get('/api/reports/monthly', authenticateToken, requireAdmin, async (req, res) => {
     const doc = getDoc();
     if (!doc) return res.status(500).json({ error: 'Google Sheets not configured' });
 
@@ -835,8 +902,12 @@ async function startServer() {
   });
 
   app.get('/calculate-distance', async (req, res) => {
-    const { from, to, destinations, isAC } = req.query;
+    let { from, to, destinations, isAC } = req.query;
     
+    if (from && typeof from === 'string' && from.length > 200) from = from.substring(0, 200);
+    if (to && typeof to === 'string' && to.length > 200) to = to.substring(0, 200);
+    if (destinations && typeof destinations === 'string' && destinations.length > 1000) destinations = destinations.substring(0, 1000);
+
     if (!from) {
       return res.status(400).json({ error: 'from is required' });
     }
