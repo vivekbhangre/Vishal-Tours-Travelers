@@ -163,6 +163,7 @@ export default function GenuineIndiaMap() {
           dragging={false}
           touchZoom={false}
           attributionControl={false}
+          keyboard={false}
           className="absolute inset-0 w-full h-full rounded-none"
         >
         <TileLayer

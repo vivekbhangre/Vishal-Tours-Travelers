@@ -57,7 +57,7 @@ export default function Home() {
       {/* Main Content Wrapper to push footer to bottom if content is short */}
       <div className="flex-grow">
         {/* Hero Section */}
-        <div className="relative w-full min-h-[calc(100dvh-64px)] flex items-center justify-center lg:justify-start overflow-hidden">
+        <div className="relative w-full min-h-[calc(100vh-64px)] flex items-center justify-center lg:justify-start overflow-hidden">
           {/* Text Content */}
           <div className="relative z-20 w-full px-4 sm:px-6 lg:px-24 xl:px-32 flex justify-center lg:justify-start pt-8 lg:pt-0">
             <motion.div 
