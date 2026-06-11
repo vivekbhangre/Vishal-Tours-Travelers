@@ -4,5 +4,5 @@ metadata:
   name: my-app-config
 data:
   NODE_ENV: "production"
-  GOOGLE_SHEET_ID: "dummy-google-sheet-id"
-  GOOGLE_SERVICE_ACCOUNT_EMAIL: "dummy-service-account@dummy-project.iam.gserviceaccount.com"
+  GOOGLE_SHEET_ID: "1z-Jx7QuO1nwXH5k0BKPEJNE8QivBtNEqdHf-YEHN2hs"
+  GOOGLE_SERVICE_ACCOUNT_EMAIL: "vishal-tour-and-travelers@civil-authority-488609-k1.iam.gserviceaccount.com"
