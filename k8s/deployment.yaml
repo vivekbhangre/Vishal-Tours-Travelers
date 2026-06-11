@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: travel-booking-deployment
+  labels:
+    app: travel-booking-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: travel-booking-app
+  template:
+    metadata:
+      labels:
+        app: travel-booking-app
+    spec:
+      containers:
+      - name: travel-booking-app
+        image: my-registry/my-app:latest
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - configMapRef:
+            name: my-app-config
+        - secretRef:
+            name: travel-app-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: travel-booking-service
+spec:
+  type: NodePort
+  selector:
+    app: travel-booking-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+      nodePort: 30080

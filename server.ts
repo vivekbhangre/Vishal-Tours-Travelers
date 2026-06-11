@@ -143,7 +143,7 @@ async function startServer() {
     if (role === 'staff' || role === 'admin') {
       return res.status(403).json({ error: 'Forbidden: Cannot register as staff' });
     }
-    const userRole = 'customer';
+    const userRole: string = 'customer';
     
     if (!name || name.length > 100) return res.status(400).json({ error: 'Invalid name' });
     if (!email || email.length > 100 || !email.includes('@')) return res.status(400).json({ error: 'Invalid email' });
