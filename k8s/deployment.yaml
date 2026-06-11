@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: travel-booking-app
-        image: my-registry/my-app:latest
+        image: vivekbhangre/travel-booking-app:latest
         ports:
         - containerPort: 3000
         envFrom:
