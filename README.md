@@ -40,7 +40,8 @@ sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plug
 # Configure current non-root user account to run Docker commands
 sudo usermod -aG docker $USER
 newgrp docker
-2. Containerized Jenkins Setup (Docker-out-of-Docker Architecture)
+```
+### 2. Containerized Jenkins Setup (Docker-out-of-Docker Architecture)
 ```bash
 # Launch Jenkins with the host Docker daemon socket mapped directly inside the container runtime
 docker run -d \
@@ -75,7 +76,7 @@ docker run -d \
 ## ☸️ Phase 2: Kubeadm Cluster Secret & Config Management
 The production environment runs on a bare-metal style Kubernetes setup provisioned manually through Kubeadm.
 
-1. Mandatory Cluster Maintenance
+### 1. Mandatory Cluster Maintenance
 ```bash
 # Completely disable memory swap files to prevent Kubelet execution engine panics
 sudo swapoff -a
